@@ -80,12 +80,12 @@
 #' predicted_probs <- fitted(model)
 #' 
 #' # Perform Ebrahim-Farrington test with 10 groups
-#' result <- ebrahim_farrington_test(y, predicted_probs, G = 10)
+#' result <- ef.gof(y, predicted_probs, G = 10)
 #' print(result)
 #' 
 #' # Example 2: Compare with different number of groups
-#' result_4 <- ebrahim_farrington_test(y, predicted_probs, G = 4)
-#' result_20 <- ebrahim_farrington_test(y, predicted_probs, G = 20)
+#' result_4 <- ef.gof(y, predicted_probs, G = 4)
+#' result_20 <- ef.gof(y, predicted_probs, G = 20)
 #' 
 #' # Example 3: Grouped data (original Farrington test)
 #' # Note: This requires actual grouped data with trials > 1
@@ -105,8 +105,8 @@
 #' predicted_probs_grouped <- fitted(model_grouped)
 #' 
 #' # Original Farrington test
-#' result_grouped <- ebrahim_farrington_test(y_grouped, predicted_probs_grouped, 
-#'                                          model = model_grouped, m = m_trials)
+#' result_grouped <- ef.gof(y_grouped, predicted_probs_grouped, 
+#'                          model = model_grouped, m = m_trials)
 #' print(result_grouped)
 #' }
 #'
@@ -114,7 +114,7 @@
 #' \code{\link[ResourceSelection]{hoslem.test}} for the Hosmer-Lemeshow test
 #'
 #' @export
-ebrahim_farrington_test <- function(y, predicted_probs, model = NULL, m = NULL, G = 10) {
+ef.gof <- function(y, predicted_probs, model = NULL, m = NULL, G = 10) {
   
   # Input validation
   n <- length(y)
@@ -169,10 +169,6 @@ ebrahim_farrington_test <- function(y, predicted_probs, model = NULL, m = NULL, 
     return(.farrington_original(y, predicted_probs, model, m))
   }
 }
-
-#' @rdname ebrahim_farrington_test
-#' @export
-farrington_test <- ebrahim_farrington_test
 
 # Internal function for Ebrahim-Farrington test with grouping
 .ebrahim_farrington_grouped <- function(y, predicted_probs, G) {

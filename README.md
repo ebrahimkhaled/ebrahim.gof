@@ -1,12 +1,12 @@
-# EbrahimFarrington
+# ebrahim.gof
 
-[![CRAN status](https://www.r-pkg.org/badges/version/EbrahimFarrington)](https://CRAN.R-project.org/package=EbrahimFarrington)
-[![R-CMD-check](https://github.com/EbrahimKhaled/EbrahimFarrington/workflows/R-CMD-check/badge.svg)](https://github.com/EbrahimKhaled/EbrahimFarrington/actions)
+[![CRAN status](https://www.r-pkg.org/badges/version/ebrahim.gof)](https://CRAN.R-project.org/package=ebrahim.gof)
+[![R-CMD-check](https://github.com/ebrahimkhaled/ebrahim.gof/workflows/R-CMD-check/badge.svg)](https://github.com/ebrahimkhaled/ebrahim.gof/actions)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 ## Overview
 
-The **EbrahimFarrington** package implements the Ebrahim-Farrington goodness-of-fit test for logistic regression models. This test is particularly effective for binary data and sparse datasets, providing an improved alternative to the traditional Hosmer-Lemeshow test.
+The **ebrahim.gof** package implements the Ebrahim-Farrington goodness-of-fit test for logistic regression models. This test is particularly effective for binary data and sparse datasets, providing an improved alternative to the traditional Hosmer-Lemeshow test.
 
 ## Key Features
 
@@ -26,21 +26,21 @@ if (!requireNamespace("devtools", quietly = TRUE)) {
   install.packages("devtools")
 }
 
-# Install EbrahimFarrington from GitHub
-devtools::install_github("EbrahimKhaled/EbrahimFarrington")
+# Install ebrahim.gof from GitHub
+devtools::install_github("ebrahimkhaled/ebrahim.gof")
 ```
 
 ### From CRAN (Stable Version)
 
 ```r
 # Will be available after CRAN submission
-install.packages("EbrahimFarrington")
+install.packages("ebrahim.gof")
 ```
 
 ## Quick Start
 
 ```r
-library(EbrahimFarrington)
+library(ebrahim.gof)
 
 # Example with binary data
 set.seed(123)
@@ -55,18 +55,18 @@ model <- glm(y ~ x, family = binomial())
 predicted_probs <- fitted(model)
 
 # Perform Ebrahim-Farrington test
-result <- ebrahim_farrington_test(y, predicted_probs, G = 10)
+result <- ef.gof(y, predicted_probs, G = 10)
 print(result)
 ```
 
 ## Main Functions
 
-### `ebrahim_farrington_test()`
+### `ef.gof()`
 
 The main function that performs the goodness-of-fit test:
 
 ```r
-ebrahim_farrington_test(y, predicted_probs, model = NULL, m = NULL, G = 10)
+ef.gof(y, predicted_probs, model = NULL, m = NULL, G = 10)
 ```
 
 **Parameters:**
@@ -84,7 +84,7 @@ A data frame with test name, test statistic, and p-value.
 ### Example 1: Basic Usage with Binary Data
 
 ```r
-library(EbrahimFarrington)
+library(ebrahim.gof)
 
 # Simulate binary data
 set.seed(42)
@@ -100,7 +100,7 @@ model <- glm(y ~ x1 + x2, family = binomial())
 predicted_probs <- fitted(model)
 
 # Test goodness of fit
-result <- ebrahim_farrington_test(y, predicted_probs, G = 10)
+result <- ef.gof(y, predicted_probs, G = 10)
 print(result)
 #>              Test Test_Statistic   p_value
 #> 1 Ebrahim-Farrington     -0.8944    0.8143
@@ -113,9 +113,9 @@ print(result)
 results <- data.frame(
   Groups = c(4, 10, 20),
   P_value = c(
-    ebrahim_farrington_test(y, predicted_probs, G = 4)$p_value,
-    ebrahim_farrington_test(y, predicted_probs, G = 10)$p_value,
-    ebrahim_farrington_test(y, predicted_probs, G = 20)$p_value
+    ef.gof(y, predicted_probs, G = 4)$p_value,
+    ef.gof(y, predicted_probs, G = 10)$p_value,
+    ef.gof(y, predicted_probs, G = 20)$p_value
   )
 )
 print(results)
@@ -127,7 +127,7 @@ print(results)
 library(ResourceSelection)
 
 # Ebrahim-Farrington test
-ef_result <- ebrahim_farrington_test(y, predicted_probs, G = 10)
+ef_result <- ef.gof(y, predicted_probs, G = 10)
 
 # Hosmer-Lemeshow test
 hl_result <- hoslem.test(y, predicted_probs, g = 10)
@@ -159,7 +159,7 @@ simulate_power <- function(n, beta_quad = 0.1, n_sims = 100) {
     pred_probs <- fitted(model_mis)
     
     # Test goodness of fit
-    test_result <- ebrahim_farrington_test(y, pred_probs, G = 10)
+    test_result <- ef.gof(y, pred_probs, G = 10)
     
     if (test_result$p_value < 0.05) {
       rejections <- rejections + 1
@@ -212,9 +212,9 @@ Where:
 If you use this package in your research, please cite:
 
 ```
-Ebrahim, K. E. (2024). EbrahimFarrington: Ebrahim-Farrington Goodness-of-Fit Test 
+Ebrahim, K. E. (2024). ebrahim.gof: Ebrahim-Farrington Goodness-of-Fit Test 
 for Logistic Regression. R package version 1.0.0. 
-https://github.com/EbrahimKhaled/EbrahimFarrington
+https://github.com/ebrahimkhaled/ebrahim.gof
 ```
 
 ## Contributing

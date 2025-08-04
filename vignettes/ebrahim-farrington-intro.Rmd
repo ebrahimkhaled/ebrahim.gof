@@ -20,7 +20,7 @@ knitr::opts_chunk$set(
 
 ## Introduction
 
-The **EbrahimFarrington** package implements the Ebrahim-Farrington goodness-of-fit test for logistic regression models. This test is particularly effective for binary data and sparse datasets, providing an improved alternative to the traditional Hosmer-Lemeshow test.
+The **ebrahim.gof** package implements the Ebrahim-Farrington goodness-of-fit test for logistic regression models. This test is particularly effective for binary data and sparse datasets, providing an improved alternative to the traditional Hosmer-Lemeshow test.
 
 ## Background and Motivation
 
@@ -36,19 +36,19 @@ The Ebrahim-Farrington test addresses these limitations by using a modified Pear
 
 ```{r eval=FALSE}
 # Install from GitHub
-devtools::install_github("EbrahimKhaled/EbrahimFarrington")
+devtools::install_github("ebrahimkhaled/ebrahim.gof")
 
 # Load the package
-library(EbrahimFarrington)
+library(ebrahim.gof)
 ```
 
 ```{r message=FALSE}
-library(EbrahimFarrington)
+library(ebrahim.gof)
 ```
 
 ## Basic Usage
 
-The main function `ebrahim_farrington_test()` performs the goodness-of-fit test:
+The main function `ef.gof()` performs the goodness-of-fit test:
 
 ```{r}
 # Simulate binary data
@@ -64,7 +64,7 @@ model <- glm(y ~ x, family = binomial())
 predicted_probs <- fitted(model)
 
 # Perform Ebrahim-Farrington test
-result <- ebrahim_farrington_test(y, predicted_probs, G = 10)
+result <- ef.gof(y, predicted_probs, G = 10)
 print(result)
 ```
 
@@ -91,7 +91,7 @@ group_sizes <- c(4, 8, 10, 15, 20)
 results <- data.frame(
   Groups = group_sizes,
   P_value = sapply(group_sizes, function(g) {
-    ebrahim_farrington_test(y, predicted_probs, G = g)$p_value
+    ef.gof(y, predicted_probs, G = g)$p_value
   })
 )
 print(results)
@@ -107,7 +107,7 @@ if (requireNamespace("ResourceSelection", quietly = TRUE)) {
   library(ResourceSelection)
   
   # Perform both tests
-  ef_result <- ebrahim_farrington_test(y, predicted_probs, G = 10)
+  ef_result <- ef.gof(y, predicted_probs, G = 10)
   hl_result <- hoslem.test(y, predicted_probs, g = 10)
   
   # Compare results
@@ -144,7 +144,7 @@ simulate_power <- function(n, beta_quad = 0.1, n_sims = 100, G = 10) {
     pred_probs <- fitted(model_mis)
     
     # Ebrahim-Farrington test
-    ef_test <- ebrahim_farrington_test(y, pred_probs, G = G)
+    ef_test <- ef.gof(y, pred_probs, G = G)
     if (ef_test$p_value < 0.05) rejections_ef <- rejections_ef + 1
     
     # Hosmer-Lemeshow test (if available)
@@ -211,7 +211,7 @@ model_grouped <- glm(
 predicted_probs_grouped <- fitted(model_grouped)
 
 # Original Farrington test for grouped data
-result_grouped <- ebrahim_farrington_test(
+result_grouped <- ef.gof(
   y_grouped,
   predicted_probs_grouped,
   model = model_grouped,

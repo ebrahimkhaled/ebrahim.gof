@@ -1,4 +1,4 @@
-test_that("ebrahim_farrington_test works with binary data", {
+test_that("ef.gof works with binary data", {
   # Set up test data
   set.seed(123)
   n <- 200
@@ -11,7 +11,7 @@ test_that("ebrahim_farrington_test works with binary data", {
   predicted_probs <- fitted(model)
   
   # Test with default parameters
-  result <- ebrahim_farrington_test(y, predicted_probs)
+  result <- ef.gof(y, predicted_probs)
   
   expect_s3_class(result, "data.frame")
   expect_equal(ncol(result), 3)
@@ -22,7 +22,7 @@ test_that("ebrahim_farrington_test works with binary data", {
   expect_true(result$p_value >= 0 && result$p_value <= 1)
 })
 
-test_that("ebrahim_farrington_test works with different group numbers", {
+test_that("ef.gof works with different group numbers", {
   set.seed(456)
   n <- 100
   x <- rnorm(n)
@@ -30,9 +30,9 @@ test_that("ebrahim_farrington_test works with different group numbers", {
   predicted_probs <- plogis(x)
   
   # Test with different G values
-  result_4 <- ebrahim_farrington_test(y, predicted_probs, G = 4)
-  result_10 <- ebrahim_farrington_test(y, predicted_probs, G = 10)
-  result_20 <- ebrahim_farrington_test(y, predicted_probs, G = 20)
+  result_4 <- ef.gof(y, predicted_probs, G = 4)
+  result_10 <- ef.gof(y, predicted_probs, G = 10)
+  result_20 <- ef.gof(y, predicted_probs, G = 20)
   
   expect_equal(result_4$Test, "Ebrahim-Farrington")
   expect_equal(result_10$Test, "Ebrahim-Farrington")
@@ -51,49 +51,37 @@ test_that("input validation works correctly", {
   
   # Test length mismatch
   expect_error(
-    ebrahim_farrington_test(y[1:10], predicted_probs),
+    ef.gof(y[1:10], predicted_probs),
     "Length mismatch"
   )
   
   # Test invalid predicted probabilities
   expect_error(
-    ebrahim_farrington_test(y, c(predicted_probs[1:49], 1.5)),
+    ef.gof(y, c(predicted_probs[1:49], 1.5)),
     "must be between 0 and 1"
   )
   
   expect_error(
-    ebrahim_farrington_test(y, c(predicted_probs[1:49], -0.1)),
+    ef.gof(y, c(predicted_probs[1:49], -0.1)),
     "must be between 0 and 1"
   )
   
   # Test invalid G
   expect_error(
-    ebrahim_farrington_test(y, predicted_probs, G = 1),
+    ef.gof(y, predicted_probs, G = 1),
     "must be a single integer >= 2"
   )
   
   expect_error(
-    ebrahim_farrington_test(y, predicted_probs, G = n + 10),
+    ef.gof(y, predicted_probs, G = n + 10),
     "cannot exceed sample size"
   )
   
   # Test non-binary y without m
   expect_error(
-    ebrahim_farrington_test(c(0, 1, 2), c(0.1, 0.5, 0.9)),
+    ef.gof(c(0, 1, 2), c(0.1, 0.5, 0.9)),
     "must contain only 0s and 1s"
   )
-})
-
-test_that("farrington_test alias works", {
-  set.seed(101)
-  n <- 80
-  y <- rbinom(n, 1, 0.3)
-  predicted_probs <- rep(0.3, n)
-  
-  result1 <- ebrahim_farrington_test(y, predicted_probs, G = 8)
-  result2 <- farrington_test(y, predicted_probs, G = 8)
-  
-  expect_identical(result1, result2)
 })
 
 test_that("grouped data (original Farrington) works", {
@@ -121,7 +109,7 @@ test_that("grouped data (original Farrington) works", {
   predicted_probs <- fitted(model_grouped)
   
   # Test original Farrington (should work with grouped data)
-  result <- ebrahim_farrington_test(
+  result <- ef.gof(
     y_successes,
     predicted_probs,
     model = model_grouped,
@@ -141,13 +129,13 @@ test_that("error handling for original Farrington without required parameters", 
   
   # Should error when G is NULL but m is not provided
   expect_error(
-    ebrahim_farrington_test(y, predicted_probs, G = NULL),
+    ef.gof(y, predicted_probs, G = NULL),
     "you must provide the 'm' vector"
   )
   
   # Should error when m is provided but model is not
   expect_error(
-    ebrahim_farrington_test(y, predicted_probs, m = rep(1, 50), G = NULL),
+    ef.gof(y, predicted_probs, m = rep(1, 50), G = NULL),
     "you must provide the fitted 'model' object"
   )
 })
@@ -158,14 +146,14 @@ test_that("handles edge cases gracefully", {
   y_small <- c(0, 1, 0, 1)
   pred_small <- c(0.2, 0.8, 0.3, 0.7)
   
-  result_small <- ebrahim_farrington_test(y_small, pred_small, G = 2)
+  result_small <- ef.gof(y_small, pred_small, G = 2)
   expect_true(is.numeric(result_small$p_value))
   
   # Extreme probabilities (but within bounds)
   y_extreme <- c(0, 0, 1, 1)
   pred_extreme <- c(0.001, 0.001, 0.999, 0.999)
   
-  result_extreme <- ebrahim_farrington_test(y_extreme, pred_extreme, G = 2)
+  result_extreme <- ef.gof(y_extreme, pred_extreme, G = 2)
   expect_true(is.numeric(result_extreme$p_value))
 })
 
@@ -180,8 +168,8 @@ test_that("test produces consistent results with same seed", {
   y2 <- rbinom(n, 1, plogis(x))
   predicted_probs2 <- plogis(x)
   
-  result1 <- ebrahim_farrington_test(y1, predicted_probs1, G = 10)
-  result2 <- ebrahim_farrington_test(y2, predicted_probs2, G = 10)
+  result1 <- ef.gof(y1, predicted_probs1, G = 10)
+  result2 <- ef.gof(y2, predicted_probs2, G = 10)
   
   expect_identical(result1, result2)
 }) 

@@ -1,16 +1,15 @@
-# EbrahimFarrington 1.0.0
+# ebrahim.gof 1.0.0
 
 ## Initial Release
 
-This is the first release of the EbrahimFarrington package, implementing the Ebrahim-Farrington goodness-of-fit test for logistic regression models.
+This is the first release of the ebrahim.gof package, implementing the Ebrahim-Farrington goodness-of-fit test for logistic regression models.
 
 ### Features
 
-* **Main Function**: `ebrahim_farrington_test()` - Performs the Ebrahim-Farrington goodness-of-fit test
+* **Main Function**: `ef.gof()` - Performs the Ebrahim-Farrington goodness-of-fit test
 * **Dual Mode Support**:
   - Ebrahim-Farrington test with automatic grouping for binary data
   - Original Farrington test for grouped binomial data
-* **Alias Function**: `farrington_test()` - Alternative name for the main function
 * **Comprehensive Documentation**: Detailed help files and vignette
 * **Robust Testing**: Extensive test suite with edge case handling
 * **Input Validation**: Thorough parameter checking and error messages

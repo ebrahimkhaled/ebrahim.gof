@@ -1,4 +1,4 @@
 library(testthat)
-library(EbrahimFarrington)
+library(ebrahim.gof)
 
-test_check("EbrahimFarrington") 
+test_check("ebrahim.gof") 
