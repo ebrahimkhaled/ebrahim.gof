@@ -1,0 +1,276 @@
+---
+title: "Introduction to the Ebrahim-Farrington Goodness-of-Fit Test"
+author: "Ebrahim Khaled Ebrahim"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction to the Ebrahim-Farrington Goodness-of-Fit Test}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5
+)
+```
+
+## Introduction
+
+The **EbrahimFarrington** package implements the Ebrahim-Farrington goodness-of-fit test for logistic regression models. This test is particularly effective for binary data and sparse datasets, providing an improved alternative to the traditional Hosmer-Lemeshow test.
+
+## Background and Motivation
+
+Goodness-of-fit testing is crucial in logistic regression to assess whether the fitted model adequately describes the data. The most commonly used test is the Hosmer-Lemeshow test, but it has several limitations:
+
+1. **Limited power** for detecting certain types of model misspecification
+2. **Dependency on grouping strategy** which can affect results
+3. **Poor performance** with sparse data or continuous covariates
+
+The Ebrahim-Farrington test addresses these limitations by using a modified Pearson chi-square statistic based on Farrington's (1996) theoretical framework, but simplified for practical implementation with binary data.
+
+## Installation and Loading
+
+```{r eval=FALSE}
+# Install from GitHub
+devtools::install_github("EbrahimKhaled/EbrahimFarrington")
+
+# Load the package
+library(EbrahimFarrington)
+```
+
+```{r message=FALSE}
+library(EbrahimFarrington)
+```
+
+## Basic Usage
+
+The main function `ebrahim_farrington_test()` performs the goodness-of-fit test:
+
+```{r}
+# Simulate binary data
+set.seed(123)
+n <- 500
+x <- rnorm(n)
+linpred <- 0.5 + 1.2 * x
+prob <- plogis(linpred)  # Convert to probabilities
+y <- rbinom(n, 1, prob)
+
+# Fit logistic regression
+model <- glm(y ~ x, family = binomial())
+predicted_probs <- fitted(model)
+
+# Perform Ebrahim-Farrington test
+result <- ebrahim_farrington_test(y, predicted_probs, G = 10)
+print(result)
+```
+
+## Understanding the Test Statistic
+
+For binary data with automatic grouping, the Ebrahim-Farrington test statistic is:
+
+$$Z_{EF} = \frac{T_{EF} - (G - 2)}{\sqrt{2(G-2)}}$$
+
+Where:
+- $T_{EF}$ is the modified Pearson chi-square statistic
+- $G$ is the number of groups
+- The test statistic follows a standard normal distribution under $H_0$
+
+The null hypothesis is that the model fits the data adequately.
+
+## Comparing with Different Group Numbers
+
+The number of groups $G$ can affect the test's performance:
+
+```{r}
+# Test with different numbers of groups
+group_sizes <- c(4, 8, 10, 15, 20)
+results <- data.frame(
+  Groups = group_sizes,
+  P_value = sapply(group_sizes, function(g) {
+    ebrahim_farrington_test(y, predicted_probs, G = g)$p_value
+  })
+)
+print(results)
+```
+
+## Comparison with Hosmer-Lemeshow Test
+
+Let's compare the Ebrahim-Farrington test with the traditional Hosmer-Lemeshow test:
+
+```{r}
+# Hosmer-Lemeshow test (requires ResourceSelection package)
+if (requireNamespace("ResourceSelection", quietly = TRUE)) {
+  library(ResourceSelection)
+  
+  # Perform both tests
+  ef_result <- ebrahim_farrington_test(y, predicted_probs, G = 10)
+  hl_result <- hoslem.test(y, predicted_probs, g = 10)
+  
+  # Compare results
+  comparison <- data.frame(
+    Test = c("Ebrahim-Farrington", "Hosmer-Lemeshow"),
+    P_value = c(ef_result$p_value, hl_result$p.value),
+    Test_Statistic = c(ef_result$Test_Statistic, hl_result$statistic)
+  )
+  print(comparison)
+} else {
+  cat("ResourceSelection package not available for comparison\n")
+}
+```
+
+## Power Analysis Example
+
+Let's examine the power of the test to detect model misspecification:
+
+```{r}
+# Function to simulate power under model misspecification
+simulate_power <- function(n, beta_quad = 0.1, n_sims = 100, G = 10) {
+  rejections_ef <- 0
+  rejections_hl <- 0
+  
+  for (i in 1:n_sims) {
+    # Generate data with quadratic term (true model)
+    x <- runif(n, -2, 2)
+    linpred_true <- 0 + x + beta_quad * x^2
+    prob_true <- plogis(linpred_true)
+    y <- rbinom(n, 1, prob_true)
+    
+    # Fit misspecified linear model (omitting quadratic term)
+    model_mis <- glm(y ~ x, family = binomial())
+    pred_probs <- fitted(model_mis)
+    
+    # Ebrahim-Farrington test
+    ef_test <- ebrahim_farrington_test(y, pred_probs, G = G)
+    if (ef_test$p_value < 0.05) rejections_ef <- rejections_ef + 1
+    
+    # Hosmer-Lemeshow test (if available)
+    if (requireNamespace("ResourceSelection", quietly = TRUE)) {
+      hl_test <- ResourceSelection::hoslem.test(y, pred_probs, g = G)
+      if (hl_test$p.value < 0.05) rejections_hl <- rejections_hl + 1
+    }
+  }
+  
+  power_ef <- rejections_ef / n_sims
+  power_hl <- if (requireNamespace("ResourceSelection", quietly = TRUE)) {
+    rejections_hl / n_sims
+  } else {
+    NA
+  }
+  
+  return(list(power_ef = power_ef, power_hl = power_hl))
+}
+
+# Calculate power for different sample sizes
+sample_sizes <- c(200, 500, 1000)
+power_results <- data.frame(
+  n = sample_sizes,
+  EbrahimFarrington_Power = sapply(sample_sizes, function(n) {
+    simulate_power(n, beta_quad = 0.15, n_sims = 50)$power_ef
+  })
+)
+
+if (requireNamespace("ResourceSelection", quietly = TRUE)) {
+  power_results$HosmerLemeshow_Power <- sapply(sample_sizes, function(n) {
+    simulate_power(n, beta_quad = 0.15, n_sims = 50)$power_hl
+  })
+}
+
+print(power_results)
+```
+
+## Handling Grouped Data (Original Farrington Test)
+
+For datasets with grouped observations (multiple trials per covariate pattern), you can use the original Farrington test:
+
+```{r}
+# Simulate grouped data
+set.seed(456)
+n_groups <- 30
+m_trials <- sample(5:20, n_groups, replace = TRUE)
+x_grouped <- rnorm(n_groups)
+prob_grouped <- plogis(0.2 + 0.8 * x_grouped)
+y_grouped <- rbinom(n_groups, m_trials, prob_grouped)
+
+# Create data frame and fit model
+data_grouped <- data.frame(
+  successes = y_grouped,
+  trials = m_trials,
+  x = x_grouped
+)
+
+model_grouped <- glm(
+  cbind(successes, trials - successes) ~ x,
+  data = data_grouped,
+  family = binomial()
+)
+
+predicted_probs_grouped <- fitted(model_grouped)
+
+# Original Farrington test for grouped data
+result_grouped <- ebrahim_farrington_test(
+  y_grouped,
+  predicted_probs_grouped,
+  model = model_grouped,
+  m = m_trials,
+  G = NULL  # No automatic grouping for original test
+)
+
+print(result_grouped)
+```
+
+## Practical Guidelines
+
+### When to Use Each Test Mode
+
+1. **Ebrahim-Farrington mode** (`G` specified):
+   - Binary response data (0/1)
+   - Want automatic grouping
+   - Computationally efficient
+   - Recommended for most applications
+
+2. **Original Farrington mode** (`m` provided, `G = NULL`):
+   - Grouped binomial data
+   - Multiple trials per covariate pattern
+   - Requires fitted model object
+
+### Choosing the Number of Groups
+
+- **G = 10**: Standard choice, comparable to Hosmer-Lemeshow
+- **G = 4-8**: For smaller datasets (n < 200)
+- **G = 15-20**: For larger datasets (n > 1000)
+- **Rule of thumb**: Ensure each group has at least 5-10 observations
+
+### Interpreting Results
+
+- **p-value > 0.05**: No evidence of lack of fit (fail to reject H₀)
+- **p-value ≤ 0.05**: Evidence of model misspecification (reject H₀)
+- **Very small p-values**: Strong evidence against model adequacy
+
+## Advantages over Hosmer-Lemeshow Test
+
+1. **Better Power**: More sensitive to model misspecification
+2. **Theoretical Foundation**: Based on rigorous asymptotic theory
+3. **Sparse Data Handling**: Specifically designed for sparse data
+4. **Computational Efficiency**: Simplified calculations for binary data
+
+## Limitations and Considerations
+
+1. **Group Selection**: Results can vary with different numbers of groups
+2. **Sample Size**: More reliable with larger sample sizes (n ≥ 100)
+3. **Model Complexity**: Performance with highly complex models needs further study
+
+## References
+
+1. Farrington, C. P. (1996). On Assessing Goodness of Fit of Generalized Linear Models to Sparse Data. *Journal of the Royal Statistical Society. Series B (Methodological)*, 58(2), 349-360.
+
+2. Ebrahim, Khaled Ebrahim (2024). Goodness-of-Fits Tests and Calibration Machine Learning Algorithms for Logistic Regression Model with Sparse Data. *Master's Thesis*, Alexandria University.
+
+3. Hosmer, D. W., & Lemeshow, S. (2000). Applied Logistic Regression, Second Edition. New York: Wiley.
+
+## Conclusion
+
+The Ebrahim-Farrington test provides a powerful and practical tool for assessing goodness-of-fit in logistic regression, particularly for binary data and sparse datasets. Its simplified implementation makes it accessible for routine use while maintaining strong theoretical foundations. 
