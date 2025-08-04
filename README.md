@@ -1,4 +1,4 @@
-# ebrahim.gof
+# Ebrahim-Farrington Goodness of Fit test
 
 [![CRAN status](https://www.r-pkg.org/badges/version/ebrahim.gof)](https://CRAN.R-project.org/package=ebrahim.gof)
 [![R-CMD-check](https://github.com/ebrahimkhaled/ebrahim.gof/workflows/R-CMD-check/badge.svg)](https://github.com/ebrahimkhaled/ebrahim.gof/actions)
@@ -18,8 +18,8 @@ The **ebrahim.gof** package implements the Ebrahim-Farrington goodness-of-fit te
 
 ## Installation
 
-### From GitHub (Development Version)
-
+### From GitHub (Development Version) 
+Copy and paste this in R or R-studio.
 ```r
 # Install devtools if you haven't already
 if (!requireNamespace("devtools", quietly = TRUE)) {
@@ -30,8 +30,9 @@ if (!requireNamespace("devtools", quietly = TRUE)) {
 devtools::install_github("ebrahimkhaled/ebrahim.gof")
 ```
 
-### From CRAN (Stable Version)
+### From CRAN (Stable Version) (NOT AVAILABLE YET)
 
+Another way to install the R-Libarary, but its not avaialbe yet.
 ```r
 # Will be available after CRAN submission
 install.packages("ebrahim.gof")
@@ -66,15 +67,16 @@ print(result)
 The main function that performs the goodness-of-fit test:
 
 ```r
-ef.gof(y, predicted_probs, model = NULL, m = NULL, G = 10)
+ef.gof(y, predicted_probs , G = 10, model = NULL, m = NULL)
 ```
 
 **Parameters:**
 - `y`: Binary response vector (0/1) or success counts for grouped data
 - `predicted_probs`: Vector of predicted probabilities from logistic model
-- `model`: Optional glm object (required for original Farrington test)
-- `m`: Optional vector of trial counts (for grouped data)
 - `G`: Number of groups for binary data (default: 10)
+- `model`: Optional glm object (required for original Farrington  only, not for Ebrahim-Farrington test)
+- `m`: Optional vector of trial counts (for grouped data) (required for original Farrington  only, not for Ebrahim-Farrington test)
+
 
 **Returns:**
 A data frame with test name, test statistic, and p-value.
@@ -198,12 +200,16 @@ Where:
 2. **Sparse Data Handling**: Specifically designed for sparse data situations
 3. **Computational Efficiency**: Simplified calculations for binary data
 4. **Theoretical Foundation**: Based on rigorous asymptotic theory
+## Superior Performance at G=10
+Simulation results consistently demonstrate that the Ebrahim-Farrington test outperforms the Hosmer-Lemeshow test, even when the model misspecification is minimal—such as with a missing interaction or omitted quadratic term—when using **G = 10** groups (Ebrahim, 2025).
+![Power_Comparison_All_Scenarios_Combined.png](Power_Comparison_All_Scenarios_Combined.png)
+
 
 ## References
 
 1. Farrington, C. P. (1996). On Assessing Goodness of Fit of Generalized Linear Models to Sparse Data. *Journal of the Royal Statistical Society. Series B (Methodological)*, 58(2), 349-360.
 
-2. Ebrahim, Khaled Ebrahim (2024). Goodness-of-Fits Tests and Calibration Machine Learning Algorithms for Logistic Regression Model with Sparse Data. *Master's Thesis*, Alexandria University.
+2. Ebrahim, Khaled Ebrahim (2025). Goodness-of-Fits Tests and Calibration Machine Learning Algorithms for Logistic Regression Model with Sparse Data. *Master's Thesis*, Alexandria University.
 
 3. Hosmer, D. W., & Lemeshow, S. (2000). Applied Logistic Regression, Second Edition. New York: Wiley.
 
@@ -212,7 +218,7 @@ Where:
 If you use this package in your research, please cite:
 
 ```
-Ebrahim, K. E. (2024). ebrahim.gof: Ebrahim-Farrington Goodness-of-Fit Test 
+Ebrahim, K. E. (2025). ebrahim.gof: Ebrahim-Farrington Goodness-of-Fit Test 
 for Logistic Regression. R package version 1.0.0. 
 https://github.com/ebrahimkhaled/ebrahim.gof
 ```
@@ -234,5 +240,5 @@ Email: ebrahim.khaled@alexu.edu.eg
 ## Acknowledgments
 
 - Prof. Osama Abd ElAziz Hussien (Alexandria University) for supervision
-- Dr. Ahmed El-Kotory (Alexandria University) for guidance
+- Dr. Ahmed El-Kotory (Alexandria University) for  guidance and supervision
 - The R community for continuous support and feedback 
