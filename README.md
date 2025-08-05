@@ -1,7 +1,7 @@
 # Ebrahim-Farrington Goodness of Fit test
 
 [![CRAN status](https://www.r-pkg.org/badges/version/ebrahim.gof)](https://CRAN.R-project.org/package=ebrahim.gof)
-[![R-CMD-check](https://github.com/ebrahimkhaled/ebrahim.gof/workflows/R-CMD-check/badge.svg)](https://github.com/ebrahimkhaled/ebrahim.gof/actions)
+
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 ## Overview

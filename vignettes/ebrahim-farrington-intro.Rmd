@@ -241,8 +241,8 @@ print(result_grouped)
 
 - **G = 10**: Standard choice, comparable to Hosmer-Lemeshow
 - **G = 4-8**: For smaller datasets (n < 200)
-- **G = 15-20**: For larger datasets (n > 1000)
-- **Rule of thumb**: Ensure each group has at least 5-10 observations
+- **G = 20+**: For larger datasets (n > 20000)
+- **Rule of thumb**: Ensure each group sample size is large enough.
 
 ### Interpreting Results
 
@@ -254,7 +254,7 @@ print(result_grouped)
 
 1. **Better Power**: More sensitive to model misspecification
 2. **Theoretical Foundation**: Based on rigorous asymptotic theory
-3. **Sparse Data Handling**: Specifically designed for sparse data
+3. **Sparse Data Handling**: Specifically designed for fully sparse data
 4. **Computational Efficiency**: Simplified calculations for binary data
 
 ## Limitations and Considerations
@@ -271,6 +271,7 @@ print(result_grouped)
 
 3. Hosmer, D. W., & Lemeshow, S. (2000). Applied Logistic Regression, Second Edition. New York: Wiley.
 
-## Conclusion
+
+4. Hosmer, D. W., & Lemeshow, S. (1980). A goodness-of-fit test for the multiple logistic regression model. *Communications in Statistics - Theory and Methods*, 9(10), 1043–1069. https://doi.org/10.1080/03610928008827941
 
 The Ebrahim-Farrington test provides a powerful and practical tool for assessing goodness-of-fit in logistic regression, particularly for binary data and sparse datasets. Its simplified implementation makes it accessible for routine use while maintaining strong theoretical foundations. 

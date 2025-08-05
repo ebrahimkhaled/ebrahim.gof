@@ -59,10 +59,10 @@
 #'   \item Farrington, C. P. (1996). On Assessing Goodness of Fit of Generalized
 #'         Linear Models to Sparse Data. \emph{Journal of the Royal Statistical Society.
 #'         Series B (Methodological)}, 58(2), 349-360.
-#'   \item Ebrahim, Khaled Ebrahim (2024). Goodness-of-Fits Tests and Calibration
+#'   \item Ebrahim, K. E. (2025). Goodness-of-Fits Tests and Calibration
 #'         Machine Learning Algorithms for Logistic Regression Model with Sparse Data.
 #'         \emph{Master's Thesis}, Alexandria University.
-#' }
+#'   \item Hosmer, D. W., & Lemeshow, S. (1980). A goodness-of-fit test for the multiple logistic regression model. \emph{Communications in Statistics - Theory and Methods}, 9(10), 1043–1069. \url{https://doi.org/10.1080/03610928008827941}
 #'
 #' @author Ebrahim Khaled Ebrahim \email{ebrahim.khaled@@alexu.edu.eg}
 #'
