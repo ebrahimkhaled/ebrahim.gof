@@ -30,9 +30,10 @@ if (!requireNamespace("devtools", quietly = TRUE)) {
 devtools::install_github("ebrahimkhaled/ebrahim.gof")
 ```
 
-### From CRAN (Stable Version) (NOT AVAILABLE YET)
 
-Another way to install the R-Libarary, but its not avaialbe yet.
+### From CRAN (Stable Version) (_NOT AVAILABLE YET_)
+
+Another way to install the R-Libarary, but its _not avaialbe yet_.
 ```r
 # Will be available after CRAN submission
 install.packages("ebrahim.gof")
@@ -204,6 +205,16 @@ Where:
 Simulation results consistently demonstrate that the Ebrahim-Farrington test outperforms the Hosmer-Lemeshow test, even when the model misspecification is minimal—such as with a missing interaction or omitted quadratic term—when using **G = 10** groups (Ebrahim, 2025).
 ![Power_Comparison_All_Scenarios_Combined.png](Power_Comparison_All_Scenarios_Combined.png)
 
+## Assympotitically Following the Standard Normal Distn
+The following two figures illustrate that, under the null hypothesis, the Ebrahim-Farrington test statistic is asymptotically standard normal for both single-predictor and multiple-predictor logistic regression models. This property holds even in sparse data settings, confirming the theoretical foundation of the test and supporting its use for model assessment. (see (Ebrahim,2025))
+
+- **Figure 1:** Empirical cumulative distribution function (CDF) of the Ebrahim-Farrington test statistic under the null for a single predictor, compared to the standard normal CDF.
+- **Figure 2:** Empirical CDF for the test statistic under the null for a multiple independent predictors scenario, again compared to the standard normal.
+
+These results demonstrate that the Ebrahim-Farrington test maintains the correct type I error rate and its statistic converges to the standard normal distribution as sample size increases, validating its asymptotic properties.
+
+![Farrington CDF Comparison (U-3_3)](Farrington%20CDF%20Comparison%20(U-3_3).png)
+![Farrington CDF Comparison (multi_indep)](Farrington%20CDF%20Comparison%20(multi_indep).png)
 
 ## References
 
