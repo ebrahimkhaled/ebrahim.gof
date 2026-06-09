@@ -1,11 +1,12 @@
 Package: ebrahim.gof
 Type: Package
 Title: Ebrahim-Farrington Goodness-of-Fit Test for Logistic Regression
-Version: 1.0.0
-Date: 2025-08-20
-Authors@R: person("Ebrahim", "Khaled Ebrahim", 
-                  email = "ebrahimkhaled@alexu.edu.eg", 
-                  role = c("aut", "cre"))
+Version: 2.0.0
+Date: 2026-06-09
+Authors@R: person("Ebrahim", "Khaled Ebrahim",
+                  email = "ebrahimkhaled@alexu.edu.eg",
+                  role = c("aut", "cre"),
+                  comment = c(ORCID = "0009-0006-7839-8778"))
 Maintainer: Ebrahim Khaled Ebrahim <ebrahimkhaled@alexu.edu.eg>
 Description: Implements the Ebrahim-Farrington goodness-of-fit test for logistic 
     regression models, particularly effective for sparse data and binary outcomes. 
@@ -13,20 +14,27 @@ Description: Implements the Ebrahim-Farrington goodness-of-fit test for logistic
     test by using a modified Pearson chi-square statistic with data-dependent 
     grouping. The test is based on Farrington (1996) theoretical framework but 
     simplified for practical implementation with binary data. Includes functions 
-    for both the original Farrington test (for grouped data) and the new 
-    Ebrahim-Farrington test (for binary data with automatic grouping). For more details see Hosmer (1980) <doi:10.1080/03610928008827941> and Farrington (1996) <doi:10.1111/j.2517-6161.1996.tb02086.x>.
+    for both the original Farrington test (for grouped data) and the new
+    Ebrahim-Farrington test (for binary data with automatic grouping), the
+    Directed Ebrahim-Farrington (DEF) test that targets calibration-shape
+    departures, and an ensemble that combines the DEF bases via the Cauchy
+    combination test. For more details see Hosmer (1980) <doi:10.1080/03610928008827941> and Farrington (1996) <doi:10.1111/j.2517-6161.1996.tb02086.x>.
 License: GPL-3
 URL: https://github.com/ebrahimkhaled/ebrahim.gof
 BugReports: https://github.com/ebrahimkhaled/ebrahim.gof/issues
 Depends: R (>= 3.5.0)
 Imports: 
     stats
-Suggests: 
+Suggests:
     testthat (>= 3.0.0),
     knitr,
     rmarkdown,
     ResourceSelection,
-    ggplot2
+    ggplot2,
+    CompQuadForm,
+    statmod,
+    mgcv,
+    BAGofT
 LazyData: true
 Encoding: UTF-8
 RoxygenNote: 7.3.2

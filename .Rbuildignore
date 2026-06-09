@@ -1,0 +1,6 @@
+^\.github$
+^\.git$
+^_try_examples\.R$
+^.*\.Rproj$
+^\.Rproj\.user$
+^\.Rhistory$
