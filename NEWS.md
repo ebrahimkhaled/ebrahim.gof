@@ -47,7 +47,12 @@
   reps via `control = list("Stute-Zhu" = list(B = ...))`; statistic matches the
   source exactly). The Lai & Liu Hosmer bootstrap is intentionally not included
   (it returns a standardized-power fraction and a randomized decision, not a
-  p-value); the e-value HL (`eHL`) and `BAGofT` remain candidates for later.
+  p-value).
+* Two further opt-in slow tests: `eHL` (the e-value Hosmer-Lemeshow test of Henzi
+  et al. 2024; base-R reimplementation, with attribution, of the marius-cp/eHL
+  code, matching it to ~1e-11; reported as `p = min(1, 1/e)`), and `BAGofT` (the
+  binary-adaptive GOF test, wrapping the `BAGofT` package; set `nsim` via
+  `control = list(BAGofT = list(nsim = ...))`).
 * An opt-in slow test, `le-Cessie` (le Cessie-van Houwelingen 1995, general
   multivariate smoothed-residual test), runs when `include_slow = TRUE`. It is
   O(n^2)-O(n^3). Adapted with attribution from the USGS `smwrStats` package

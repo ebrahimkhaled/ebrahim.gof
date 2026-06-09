@@ -115,21 +115,33 @@ test_that("Pulkstenis-Robinson returns NA when no categorical covariate", {
   expect_true(is.na(res$p_value[res$Test == "Pulkstenis-Robinson"]))
 })
 
-test_that("Tier-2 GAM and Stute-Zhu are opt-in and return valid results", {
+test_that("Tier-2 tests are opt-in and return valid results", {
+  skip_on_cran()                 # the full slow battery is heavy; keep CRAN fast
   skip_if_not_installed("mgcv")
   set.seed(202)
   n <- 300
   x1 <- runif(n, -3, 3); x2 <- rnorm(n); d <- factor(sample(c("A", "B"), n, replace = TRUE))
   y <- rbinom(n, 1, plogis(0.3 + 0.7 * x1 - 0.4 * x2 + ifelse(d == "B", 0.5, 0)))
   fit <- glm(y ~ x1 + x2 + d, family = binomial())
-  slow_names <- c("HL-GAM", "PR-GAM", "Xie-GAM", "Stute-Zhu")
+  slow_names <- c("HL-GAM", "PR-GAM", "Xie-GAM", "Stute-Zhu", "eHL", "BAGofT")
   expect_false(any(slow_names %in% run.all.gof(fit)$Test))   # not in default battery
   set.seed(1)
-  res <- run.all.gof(fit, include_slow = TRUE, control = list("Stute-Zhu" = list(B = 30)))
+  res <- run.all.gof(fit, include_slow = TRUE,
+                     control = list("Stute-Zhu" = list(B = 30), "BAGofT" = list(nsim = 10)))
   for (tt in slow_names) {
     p <- res$p_value[res$Test == tt]
     expect_true(length(p) == 1 && (is.na(p) || (p >= 0 && p <= 1)))
   }
+})
+
+test_that("eHL internal reimplementation matches the source value", {
+  # set.seed(5): .gof_ehl matches the marius-cp/eHL source eHL() to ~1e-11.
+  set.seed(202)
+  n <- 400; x <- runif(n, -3, 3)
+  y <- rbinom(n, 1, plogis(0.3 + 0.7 * x))
+  P <- plogis(0.3 + 0.7 * x)
+  set.seed(5)
+  expect_equal(ebrahim.gof:::.gof_ehl(y, P, boot = 10, s = 0.5), 0.068584, tolerance = 1e-3)
 })
 
 test_that("le Cessie is opt-in (slow) and matches its source", {

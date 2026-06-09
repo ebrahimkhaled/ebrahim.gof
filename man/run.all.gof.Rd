@@ -60,8 +60,11 @@ and \code{Stukel} (directed); \code{Tsiatis}, \code{Xie}, and
 combination test; and, when \code{include_slow = TRUE}, the opt-in slow tests:
 \code{le-Cessie}-van Houwelingen smoothing, the GAM-based tests \code{HL-GAM},
 \code{PR-GAM}, \code{Xie-GAM} (need \pkg{mgcv}; fit an overfit GAM for grouping),
-and \code{Stute-Zhu} (a cumulative-residual parametric-bootstrap test; set the
-number of reps with \code{control = list("Stute-Zhu" = list(B = ...))}).
+\code{Stute-Zhu} (a cumulative-residual parametric-bootstrap test; set the
+number of reps with \code{control = list("Stute-Zhu" = list(B = ...))}),
+\code{eHL} (the e-value Hosmer-Lemeshow test, reported as p = min(1, 1/e)), and
+\code{BAGofT} (the binary-adaptive GOF test; needs the \pkg{BAGofT} package,
+\code{control = list(BAGofT = list(nsim = ...))}).
 
 Notes: \code{Tsiatis} and \code{Xie} cluster the covariate space with k-means
 (a fixed internal seed, so results are reproducible and the caller's RNG is

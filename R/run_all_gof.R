@@ -21,8 +21,11 @@
 #' combination test; and, when \code{include_slow = TRUE}, the opt-in slow tests:
 #' \code{le-Cessie}-van Houwelingen smoothing, the GAM-based tests \code{HL-GAM},
 #' \code{PR-GAM}, \code{Xie-GAM} (need \pkg{mgcv}; fit an overfit GAM for grouping),
-#' and \code{Stute-Zhu} (a cumulative-residual parametric-bootstrap test; set the
-#' number of reps with \code{control = list("Stute-Zhu" = list(B = ...))}).
+#' \code{Stute-Zhu} (a cumulative-residual parametric-bootstrap test; set the
+#' number of reps with \code{control = list("Stute-Zhu" = list(B = ...))}),
+#' \code{eHL} (the e-value Hosmer-Lemeshow test, reported as p = min(1, 1/e)), and
+#' \code{BAGofT} (the binary-adaptive GOF test; needs the \pkg{BAGofT} package,
+#' \code{control = list(BAGofT = list(nsim = ...))}).
 #'
 #' Notes: \code{Tsiatis} and \code{Xie} cluster the covariate space with k-means
 #' (a fixed internal seed, so results are reproducible and the caller's RNG is
@@ -555,7 +558,8 @@ gof_lecessie <- function(ctx, opts = list()) {
       terms <- c(terms, paste0("s(", cont[i], ",", cont[j], ")"))
   if (length(terms) == 0) return(NULL)
   fml <- stats::as.formula(paste(resp, "~", paste(terms, collapse = "+")))
-  g <- tryCatch(mgcv::gam(fml, family = stats::binomial(), data = dat), error = function(e) NULL)
+  g <- tryCatch(suppressWarnings(mgcv::gam(fml, family = stats::binomial(), data = dat)),
+                error = function(e) NULL)
   if (is.null(g)) return(NULL)
   list(pi = as.numeric(stats::predict(g, type = "response")),
        cont = cont, cats = cats, k = length(preds))
@@ -611,12 +615,85 @@ gof_stutezhu <- function(ctx, opts = list()) {
   Tobs <- .gof_tsz_stat(y - ph, eta)
   Tb <- replicate(B, {
     yb <- stats::rbinom(length(y), 1, ph)
-    fb <- tryCatch(stats::glm.fit(X, yb, family = stats::binomial()), error = function(e) NULL)
+    fb <- tryCatch(suppressWarnings(stats::glm.fit(X, yb, family = stats::binomial())),
+                   error = function(e) NULL)
     if (is.null(fb) || !isTRUE(fb$converged)) return(NA_real_)
     .gof_tsz_stat(yb - fb$fitted.values, as.numeric(X %*% fb$coefficients))
   })
   list(Statistic = Tobs, df = NA_real_, p_value = mean(Tb >= Tobs, na.rm = TRUE),
        Note = paste0(B, " bootstrap reps"))
+}
+
+# --- eHL: e-value Hosmer-Lemeshow (Henzi et al. 2024) ---
+# Adapted (base-R reimplementation, with attribution) from the marius-cp/eHL
+# repository. Splits the data, fits isotonic recalibration on the training half,
+# and accumulates an e-value on the test half; p = min(1, 1 / mean(e-values)).
+
+.gof_ehl_interp <- function(x_min, x_max, q, xout) {
+  x_min[which.min(x_min)] <- 0
+  x_max[which.max(x_max)] <- 1
+  p  <- c(x_max, x_min)
+  qq <- c(q, q)
+  o  <- order(p)
+  stats::approx(x = p[o], y = qq[o], xout = xout, method = "linear", ties = "ordered")$y
+}
+
+.gof_ehl <- function(y, P, boot = 10L, s = 0.5) {
+  n  <- length(y)
+  ev <- numeric(boot)
+  for (t in seq_len(boot)) {
+    idx <- sample(n, floor(n * s), replace = FALSE)
+    o1  <- order(P[idx]);  P1 <- P[idx][o1];  y1 <- y[idx][o1]      # training, sorted
+    o2  <- order(P[-idx]); P2 <- P[-idx][o2]; y2 <- y[-idx][o2]     # test, sorted
+    iso <- stats::isoreg(P1, y1)
+    iK  <- iso$iKnots
+    red <- iK[!duplicated(iso$yf[iK], fromLast = TRUE)]
+    bin <- rep.int(seq_along(red), times = diff(c(0, red)))
+    sp  <- split(seq_along(P1), bin)
+    nb  <- length(sp)
+    x_min <- x_max <- q <- numeric(nb)
+    for (b in seq_len(nb)) {
+      I  <- sp[[b]]; sz <- length(I); sy <- sum(y1[I])
+      x_min[b] <- min(P1[I]); x_max[b] <- max(P1[I])
+      hatpi    <- sy / sz
+      q[b]     <- if (hatpi %in% c(0, 1)) (sy + 0.5) / (sz + 1) else hatpi
+    }
+    qte   <- .gof_ehl_interp(x_min, x_max, q, P2)
+    E     <- (qte^y2 * (1 - qte)^(1 - y2)) / (P2^y2 * (1 - P2)^(1 - y2))
+    ev[t] <- prod(E)
+  }
+  mean(ev)
+}
+
+gof_ehl <- function(ctx, opts = list()) {
+  boot <- if (is.null(opts$boot)) 10L else as.integer(opts$boot)
+  HLe  <- tryCatch(.gof_ehl(ctx$y, ctx$ph, boot = boot, s = 0.5), error = function(e) NA_real_)
+  if (!is.finite(HLe))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "eHL failed"))
+  list(Statistic = HLe, df = NA_real_, p_value = min(1, 1 / HLe),
+       Note = "e-value test; p = min(1, 1/e)")
+}
+
+# BAGofT (binary-adaptive GOF test) via the BAGofT package.
+gof_bagoft <- function(ctx, opts = list()) {
+  if (!ctx$has_model || is.null(ctx$data))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "needs a glm model"))
+  if (!requireNamespace("BAGofT", quietly = TRUE))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "install the 'BAGofT' package"))
+  nsim  <- if (is.null(opts$nsim)) 100L else as.integer(opts$nsim)
+  dat   <- ctx$data
+  attr(dat, "terms") <- NULL                       # a model.frame's terms attr breaks BAGofT
+  preds <- names(dat)[-1]
+  link  <- ctx$model$family$link
+  r <- tryCatch(suppressWarnings(
+    BAGofT::BAGofT(testModel = BAGofT::testGlmBi(formula = stats::formula(ctx$model), link = link),
+                   parFun = BAGofT::parRF(parVar = preds),
+                   data = dat, nsim = nsim)),
+    error = function(e) NULL)
+  if (is.null(r) || is.null(r$p.value))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "BAGofT failed"))
+  list(Statistic = NA_real_, df = NA_real_, p_value = as.numeric(r$p.value),
+       Note = paste0("nsim=", nsim))
 }
 
 # Registry of the bundled tests (test wrappers are internal, not exported).
@@ -642,5 +719,7 @@ gof_stutezhu <- function(ctx, opts = list()) {
   "HL-GAM"              = list(fn = gof_gam_hl,    family = "GAM",            needs_model = TRUE, slow = TRUE),
   "PR-GAM"              = list(fn = gof_gam_pr,    family = "GAM",            needs_model = TRUE, slow = TRUE),
   "Xie-GAM"             = list(fn = gof_gam_xie,   family = "GAM",            needs_model = TRUE, slow = TRUE),
-  "Stute-Zhu"           = list(fn = gof_stutezhu,  family = "Bootstrap",      needs_model = TRUE, slow = TRUE)
+  "Stute-Zhu"           = list(fn = gof_stutezhu,  family = "Bootstrap",      needs_model = TRUE,  slow = TRUE),
+  "eHL"                 = list(fn = gof_ehl,        family = "Calibration",    needs_model = FALSE, slow = TRUE),
+  "BAGofT"              = list(fn = gof_bagoft,     family = "Bootstrap",      needs_model = TRUE,  slow = TRUE)
 )
