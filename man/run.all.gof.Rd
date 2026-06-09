@@ -48,7 +48,8 @@ one test never aborts the whole run.
 }
 \details{
 The currently bundled tests are: \code{Pearson}, \code{Deviance},
-\code{Osius-Rojek}, and \code{Copas-RSS} (global / standardized);
+\code{Osius-Rojek}, \code{Copas-RSS}, and \code{Information-Matrix} (the
+White/Orme test) (global / standardized);
 \code{HL} (Hosmer-Lemeshow deciles), \code{HL-equalwidth}, and
 \code{Pigeon-Heyse} (partition); \code{EF} and \code{EF-normal} (the omnibus
 Ebrahim-Farrington test with the chi-square and normal references; the normal

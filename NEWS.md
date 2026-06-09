@@ -49,10 +49,17 @@
   `coef()` returning `NULL` on a predicted-probability list; the statistic is the
   same, only the p-value differs.)
 
+* Added the `Information-Matrix` test (White 1982 / Orme 1988), the closed-form
+  IM test; verified to match the thesis `IMtest_fast` exactly.
+
 ## Pending for the 2.0.0 release
 
-* More `run.all.gof()` tests: McCullagh, information-matrix, and the opt-in
-  bootstrap/GAM tests are planned for a later build.
+* The remaining thesis tests are all slow / third-party and will be added as
+  opt-in `include_slow = TRUE` tests in a later build: the GAM-based tests
+  (HL-GAM, PR-GAM, Xie-GAM; need `mgcv`), the bootstrap tests (Hosmer bootstrap,
+  Stute-Zhu), the e-value HL (`eHL`; needs `isotone`), and `BAGofT`. (McCullagh
+  is not added: it appears only in the unused `goflogit` macro, not in the thesis
+  simulation.)
 
 # ebrahim.gof 1.0.0
 

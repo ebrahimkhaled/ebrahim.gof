@@ -9,7 +9,8 @@
 #'
 #' @details
 #' The currently bundled tests are: \code{Pearson}, \code{Deviance},
-#' \code{Osius-Rojek}, and \code{Copas-RSS} (global / standardized);
+#' \code{Osius-Rojek}, \code{Copas-RSS}, and \code{Information-Matrix} (the
+#' White/Orme test) (global / standardized);
 #' \code{HL} (Hosmer-Lemeshow deciles), \code{HL-equalwidth}, and
 #' \code{Pigeon-Heyse} (partition); \code{EF} and \code{EF-normal} (the omnibus
 #' Ebrahim-Farrington test with the chi-square and normal references; the normal
@@ -226,6 +227,28 @@ gof_copas <- function(ctx, opts = list()) {
     return(list(Statistic = NA, df = NA, p_value = NA, Note = "non-positive variance"))
   z <- (copas - meacopas) / sqrt(varcopas)
   list(Statistic = z, df = 1, p_value = stats::pchisq(z^2, 1, lower.tail = FALSE), Note = "")
+}
+
+# White/Orme information-matrix (IM) test. Explained sum of squares from
+# regressing the Pearson residuals on the auxiliary regressors [sqrt(V) X |
+# sqrt(V)(1-2p) X^2]; statistic ~ chi-square_{ncol(X)}. From IM (infromation
+# Matrix).R (IMtest_fast); matches the thesis simulation.
+gof_im <- function(ctx, opts = list()) {
+  if (is.null(ctx$X))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "needs the design matrix X"))
+  X <- ctx$X; ph <- ctx$ph; y <- ctx$y
+  if (any(ph < 1e-8) || any(ph > 1 - 1e-8))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "fitted probabilities too extreme"))
+  r       <- (y - ph) / sqrt(ph * (1 - ph))
+  w_sqrt  <- sqrt(ph * (1 - ph))
+  W_aux   <- cbind(w_sqrt * X, (w_sqrt * (1 - 2 * ph)) * (X^2))
+  xtx_inv <- tryCatch(solve(crossprod(W_aux)), error = function(e) NULL)
+  if (is.null(xtx_inv))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "singular auxiliary matrix"))
+  Wr <- crossprod(W_aux, r)
+  im <- as.numeric(crossprod(Wr, xtx_inv %*% Wr))
+  df <- ncol(X)
+  list(Statistic = im, df = df, p_value = stats::pchisq(im, df, lower.tail = FALSE), Note = "")
 }
 
 gof_hl <- function(ctx, opts = list()) {
@@ -491,6 +514,7 @@ gof_lecessie <- function(ctx, opts = list()) {
   "Deviance"      = list(fn = gof_deviance, family = "Global",       needs_model = FALSE, slow = FALSE),
   "Osius-Rojek"   = list(fn = gof_osius,    family = "Standardized", needs_model = TRUE,  slow = FALSE),
   "Copas-RSS"     = list(fn = gof_copas,    family = "Standardized", needs_model = TRUE,  slow = FALSE),
+  "Information-Matrix" = list(fn = gof_im,  family = "Global",       needs_model = TRUE,  slow = FALSE),
   "HL"            = list(fn = gof_hl,       family = "Partition",    needs_model = FALSE, slow = FALSE),
   "HL-equalwidth" = list(fn = gof_hlw,      family = "Partition",    needs_model = FALSE, slow = FALSE),
   "Pigeon-Heyse"  = list(fn = gof_ph_test,  family = "Partition",    needs_model = FALSE, slow = FALSE),

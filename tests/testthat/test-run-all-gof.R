@@ -42,6 +42,20 @@ test_that("Osius-Rojek and Copas match the thesis sources (golden values)", {
   expect_equal(cps$p_value, 0.466596, tolerance = 1e-4)   # Copas p
 })
 
+test_that("Information-Matrix matches its source (golden)", {
+  # Verified vs IMtest_fast (IM (infromation Matrix).R), diff = 0.
+  set.seed(42)
+  n <- 400
+  x1 <- rnorm(n); x2 <- runif(n, -2, 2)
+  y  <- rbinom(n, 1, plogis(0.3 + 0.8 * x1 - 0.5 * x2))
+  fit <- glm(y ~ x1 + x2, family = binomial())
+  im <- run.all.gof(fit)
+  im <- im[im$Test == "Information-Matrix", ]
+  expect_equal(im$Statistic, 1.198150, tolerance = 1e-4)
+  expect_equal(im$df, 3)
+  expect_equal(im$p_value, 0.753448, tolerance = 1e-4)
+})
+
 test_that("EF appears in both chisq and normal forms", {
   set.seed(8)
   n <- 400; x <- rnorm(n)
