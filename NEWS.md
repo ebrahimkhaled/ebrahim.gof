@@ -22,11 +22,17 @@
   the grouped statistic is referred to a chi-square_{G-2} distribution. Use
   `method = "normal"` to reproduce the previous (standardized-normal) p-value.
 
+* `run.all.gof()` - a one-shot runner that returns a tidy `data.frame`, one row
+  per test. Pass a fitted `glm` for the whole battery, or `(y, predicted_probs)`
+  for the prediction-only tests. One failing test never aborts the run. This
+  build bundles Pearson, Deviance, Hosmer-Lemeshow (deciles and equal-width), EF,
+  the three DEF bases, Stukel, and the two Cauchy-combination ensemble rows.
+
 ## Pending for the 2.0.0 release
 
-* `run.all.gof()` - a one-shot runner for the full thesis test battery
-  (partition, global/standardized, smoothing, and opt-in bootstrap/GAM tests).
-  Not yet included in this development build.
+* More `run.all.gof()` tests: Osius-Rojek, McCullagh, information-matrix, Copas,
+  Tsiatis, Xie, Pulkstenis-Robinson, le Cessie, and the opt-in bootstrap/GAM
+  tests are planned for a later build.
 
 # ebrahim.gof 1.0.0
 
