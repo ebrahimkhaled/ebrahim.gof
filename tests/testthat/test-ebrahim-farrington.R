@@ -146,14 +146,14 @@ test_that("handles edge cases gracefully", {
   y_small <- c(0, 1, 0, 1)
   pred_small <- c(0.2, 0.8, 0.3, 0.7)
   
-  result_small <- ef.gof(y_small, pred_small, G = 2)
+  result_small <- ef.gof(y_small, pred_small, G = 4)
   expect_true(is.numeric(result_small$p_value))
   
   # Extreme probabilities (but within bounds)
   y_extreme <- c(0, 0, 1, 1)
   pred_extreme <- c(0.001, 0.001, 0.999, 0.999)
   
-  result_extreme <- ef.gof(y_extreme, pred_extreme, G = 2)
+  result_extreme <- ef.gof(y_extreme, pred_extreme, G = 4)
   expect_true(is.numeric(result_extreme$p_value))
 })
 
@@ -165,8 +165,9 @@ test_that("test produces consistent results with same seed", {
   predicted_probs1 <- plogis(x)
   
   set.seed(505)
-  y2 <- rbinom(n, 1, plogis(x))
-  predicted_probs2 <- plogis(x)
+  x2 <- rnorm(n)
+  y2 <- rbinom(n, 1, plogis(x2))
+  predicted_probs2 <- plogis(x2)
   
   result1 <- ef.gof(y1, predicted_probs1, G = 10)
   result2 <- ef.gof(y2, predicted_probs2, G = 10)

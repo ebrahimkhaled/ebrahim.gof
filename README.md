@@ -1,8 +1,6 @@
 # Ebrahim-Farrington Goodness of Fit test
 
-[![CRAN status](https://www.r-pkg.org/badges/version/ebrahim.gof)](https://CRAN.R-project.org/package=ebrahim.gof)
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 ## Overview
 
@@ -33,7 +31,7 @@ devtools::install_github("ebrahimkhaled/ebrahim.gof")
 
 ### From CRAN (Stable Version) (_NOT AVAILABLE YET_)
 
-Another way to install the R-Libarary, but its _not avaialbe yet_.
+Another way to install the R-Libarary, but its _not availabe yet_.
 ```r
 # Will be available after CRAN submission
 install.packages("ebrahim.gof")
@@ -203,7 +201,7 @@ Where:
 4. **Theoretical Foundation**: Based on rigorous asymptotic theory
 ## Superior Performance at G=10
 Simulation results consistently demonstrate that the Ebrahim-Farrington test outperforms the Hosmer-Lemeshow test, even when the model misspecification is minimal—such as with a missing interaction or omitted quadratic term—when using **G = 10** groups (Ebrahim, 2025).
-![Power_Comparison_All_Scenarios_Combined.png](Power_Comparison_All_Scenarios_Combined.png)
+![Power_Comparison_All_Scenarios_Combined.png](vignettes/Power_Comparison_All_Scenarios_Combined.png)
 
 ## Assympotitically Following the Standard Normal Distn
 The following two figures illustrate that, under the null hypothesis, the Ebrahim-Farrington test statistic is asymptotically standard normal for both single-predictor and multiple-predictor logistic regression models. This property holds even in sparse data settings, confirming the theoretical foundation of the test and supporting its use for model assessment. (see (Ebrahim,2025))
@@ -213,8 +211,8 @@ The following two figures illustrate that, under the null hypothesis, the Ebrahi
 
 These results demonstrate that the Ebrahim-Farrington test maintains the correct type I error rate and its statistic converges to the standard normal distribution as sample size increases, validating its asymptotic properties.
 
-![Farrington CDF Comparison (U-3_3)](Farrington%20CDF%20Comparison%20(U-3_3).png)
-![Farrington CDF Comparison (multi_indep)](Farrington%20CDF%20Comparison%20(multi_indep).png)
+![Farrington CDF Comparison (U-3_3)](vignettes/farrington_cdf_comparison_u_3_3.png)
+![Farrington CDF Comparison (multi_indep)](vignettes/farrington_cdf_comparison_multi_indep.png)
 
 ## References
 
@@ -240,13 +238,13 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 
 ## License
 
-This project is licensed under the GPL-3 License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GPL-3 License
 
 ## Author
 
 **Ebrahim Khaled Ebrahim**  
 Alexandria University  
-Email: ebrahim.khaled@alexu.edu.eg
+Email: ebrahimkhaled@alexu.edu.eg
 
 ## Acknowledgments
 

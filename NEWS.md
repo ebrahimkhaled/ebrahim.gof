@@ -44,4 +44,4 @@ This is the first release of the ebrahim.gof package, implementing the Ebrahim-F
 ### Author
 
 Ebrahim Khaled Ebrahim (Alexandria University)
-Email: ebrahim.khaled@alexu.edu.eg 
+Email: ebrahimkhaled@alexu.edu.eg 

@@ -55,16 +55,11 @@
 #' }
 #'
 #' @references
-#' \itemize{
-#'   \item Farrington, C. P. (1996). On Assessing Goodness of Fit of Generalized
-#'         Linear Models to Sparse Data. \emph{Journal of the Royal Statistical Society.
-#'         Series B (Methodological)}, 58(2), 349-360.
-#'   \item Ebrahim, K. E. (2025). Goodness-of-Fits Tests and Calibration
-#'         Machine Learning Algorithms for Logistic Regression Model with Sparse Data.
-#'         \emph{Master's Thesis}, Alexandria University.
-#'   \item Hosmer, D. W., & Lemeshow, S. (1980). A goodness-of-fit test for the multiple logistic regression model. \emph{Communications in Statistics - Theory and Methods}, 9(10), 1043–1069. \url{https://doi.org/10.1080/03610928008827941}
+#' Farrington, C. P. (1996). On Assessing Goodness of Fit of Generalized Linear Models to Sparse Data. *Journal of the Royal Statistical Society. Series B (Methodological)*, 58(2), 349-360.
+#' Ebrahim, K. E. (2025). Goodness-of-Fits Tests and Calibration Machine Learning Algorithms for Logistic Regression Model with Sparse Data. *Master's Thesis*, Alexandria University.
+#' Hosmer, D. W., & Lemeshow, S. (1980). A goodness-of-fit test for the multiple logistic regression model. *Communications in Statistics - Theory and Methods*, 9(10), 1043–1069. https://doi.org/10.1080/03610928008827941
 #'
-#' @author Ebrahim Khaled Ebrahim \email{ebrahim.khaled@@alexu.edu.eg}
+#' @author Ebrahim Khaled Ebrahim \email{ebrahimkhaled@@alexu.edu.eg}
 #'
 #' @examples
 #' # Example 1: Binary data with automatic grouping (Ebrahim-Farrington test)

@@ -4,13 +4,7 @@
 \alias{ef.gof}
 \title{Ebrahim-Farrington Goodness-of-Fit Test for Logistic Regression}
 \usage{
-ef.gof(
-  y,
-  predicted_probs,
-  model = NULL,
-  m = NULL,
-  G = 10
-)
+ef.gof(y, predicted_probs, model = NULL, m = NULL, G = 10)
 }
 \arguments{
 \item{y}{Numeric vector of binary responses (0/1) for binary data, or counts
@@ -94,7 +88,6 @@ result_20 <- ef.gof(y, predicted_probs, G = 20)
 
 # Example 3: Grouped data (original Farrington test)
 # Note: This requires actual grouped data with trials > 1
-\dontrun{
 # Simulated grouped data
 n_groups <- 50
 m_trials <- sample(5:20, n_groups, replace = TRUE)
@@ -113,22 +106,17 @@ predicted_probs_grouped <- fitted(model_grouped)
 result_grouped <- ef.gof(y_grouped, predicted_probs_grouped, 
                          model = model_grouped, m = m_trials)
 print(result_grouped)
-}
+
 
 }
 \references{
-\itemize{
-  \item Farrington, C. P. (1996). On Assessing Goodness of Fit of Generalized
-        Linear Models to Sparse Data. \emph{Journal of the Royal Statistical Society.
-        Series B (Methodological)}, 58(2), 349-360.
-  \item Ebrahim, Khaled Ebrahim (2024). Goodness-of-Fits Tests and Calibration
-        Machine Learning Algorithms for Logistic Regression Model with Sparse Data.
-        \emph{Master's Thesis}, Alexandria University.
-}
+Farrington, C. P. (1996). On Assessing Goodness of Fit of Generalized Linear Models to Sparse Data. *Journal of the Royal Statistical Society. Series B (Methodological)*, 58(2), 349-360.
+Ebrahim, K. E. (2025). Goodness-of-Fits Tests and Calibration Machine Learning Algorithms for Logistic Regression Model with Sparse Data. *Master's Thesis*, Alexandria University.
+Hosmer, D. W., & Lemeshow, S. (1980). A goodness-of-fit test for the multiple logistic regression model. *Communications in Statistics - Theory and Methods*, 9(10), 1043–1069. https://doi.org/10.1080/03610928008827941
 }
 \seealso{
 \code{\link[ResourceSelection]{hoslem.test}} for the Hosmer-Lemeshow test
 }
 \author{
-Ebrahim Khaled Ebrahim \email{ebrahim.khaled@alexu.edu.eg}
-} 
+Ebrahim Khaled Ebrahim \email{ebrahimkhaled@alexu.edu.eg}
+}
