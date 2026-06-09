@@ -29,8 +29,9 @@ to run (e.g. \code{c("EF","DEF.poly3","HL")}).}
 
 \item{G}{Integer number of groups passed to the grouping tests (default 10).}
 
-\item{include_slow}{Logical; reserved for opt-in slow (bootstrap/GAM) tests.
-No slow tests are bundled yet, so this currently has no effect.}
+\item{include_slow}{Logical; when \code{TRUE}, also run the opt-in slow tests
+(currently the le Cessie-van Houwelingen smoothing test, which builds an
+n-by-n kernel matrix and is O(n^2)-O(n^3)). Default \code{FALSE}.}
 
 \item{control}{Optional named list of per-test options (reserved).}
 }
@@ -52,10 +53,12 @@ The currently bundled tests are: \code{Pearson}, \code{Deviance},
 \code{Pigeon-Heyse} (partition); \code{EF} (the omnibus Ebrahim-Farrington
 test); \code{DEF.poly2/poly3/stukel}
 and \code{Stukel} (directed); \code{Tsiatis}, \code{Xie}, and
-\code{Pulkstenis-Robinson} (covariate-space); plus the two ensemble rows
+\code{Pulkstenis-Robinson} (covariate-space); the two ensemble rows
 (\code{Ensemble.Vote(3DEF)} and \code{Ensemble.Univ(3DEF+EF)}) from the Cauchy
-combination test. Further thesis tests (McCullagh, information matrix,
-le Cessie, and opt-in bootstrap/GAM) are planned for a later build.
+combination test; and, when \code{include_slow = TRUE}, the
+\code{le-Cessie}-van Houwelingen smoothing test. Further thesis tests
+(McCullagh, information matrix, and opt-in bootstrap/GAM) are planned for a
+later build.
 
 Notes: \code{Tsiatis} and \code{Xie} cluster the covariate space with k-means
 (a fixed internal seed, so results are reproducible and the caller's RNG is

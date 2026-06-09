@@ -14,10 +14,12 @@
 #' \code{Pigeon-Heyse} (partition); \code{EF} (the omnibus Ebrahim-Farrington
 #' test); \code{DEF.poly2/poly3/stukel}
 #' and \code{Stukel} (directed); \code{Tsiatis}, \code{Xie}, and
-#' \code{Pulkstenis-Robinson} (covariate-space); plus the two ensemble rows
+#' \code{Pulkstenis-Robinson} (covariate-space); the two ensemble rows
 #' (\code{Ensemble.Vote(3DEF)} and \code{Ensemble.Univ(3DEF+EF)}) from the Cauchy
-#' combination test. Further thesis tests (McCullagh, information matrix,
-#' le Cessie, and opt-in bootstrap/GAM) are planned for a later build.
+#' combination test; and, when \code{include_slow = TRUE}, the
+#' \code{le-Cessie}-van Houwelingen smoothing test. Further thesis tests
+#' (McCullagh, information matrix, and opt-in bootstrap/GAM) are planned for a
+#' later build.
 #'
 #' Notes: \code{Tsiatis} and \code{Xie} cluster the covariate space with k-means
 #' (a fixed internal seed, so results are reproducible and the caller's RNG is
@@ -36,8 +38,9 @@
 #' @param tests Either \code{"all"} (default) or a character vector of test names
 #'   to run (e.g. \code{c("EF","DEF.poly3","HL")}).
 #' @param G Integer number of groups passed to the grouping tests (default 10).
-#' @param include_slow Logical; reserved for opt-in slow (bootstrap/GAM) tests.
-#'   No slow tests are bundled yet, so this currently has no effect.
+#' @param include_slow Logical; when \code{TRUE}, also run the opt-in slow tests
+#'   (currently the le Cessie-van Houwelingen smoothing test, which builds an
+#'   n-by-n kernel matrix and is O(n^2)-O(n^3)). Default \code{FALSE}.
 #' @param control Optional named list of per-test options (reserved).
 #'
 #' @return A \code{data.frame} with columns \code{Test}, \code{Family},
@@ -56,7 +59,7 @@
 #' run.all.gof(y, fitted(fit))            # prediction-only tests
 #'
 #' @seealso \code{\link{ef.gof}}, \code{\link{def.gof}}, \code{\link{def.ensemble.gof}}.
-#' @importFrom stats fitted predict model.matrix model.frame coef deviance pchisq binomial glm.fit kmeans median
+#' @importFrom stats fitted predict model.matrix model.frame coef deviance pchisq binomial glm.fit kmeans median dist
 #' @export
 run.all.gof <- function(object, predicted_probs = NULL, X = NULL,
                         tests = "all", G = 10, include_slow = FALSE,
@@ -400,6 +403,56 @@ gof_pr <- function(ctx, opts = list()) {
        Note = paste0("cat: ", paste(cat_vars, collapse = ",")))
 }
 
+# le Cessie-van Houwelingen smoothed-residual GOF test (general, multivariate).
+# Reference: le Cessie, S. & van Houwelingen, H.C. (1995), Biometrics 51:600-614.
+# Adapted (with attribution) from the USGS 'smwrStats' package leCessie.test(),
+# which is a work of the US federal government (public domain). It builds an
+# n-by-n smoothing/kernel matrix, so it is O(n^2)-O(n^3): a Tier-2 ('slow') test.
+gof_lecessie <- function(ctx, opts = list()) {
+  if (!ctx$has_model || is.null(ctx$data))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "needs a glm model"))
+  fits   <- ctx$ph
+  resids <- ctx$y - fits
+  N      <- length(resids)
+  covs   <- ctx$data[, -1, drop = FALSE]                 # model.frame minus response
+  if (ncol(covs) < 1)
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "no covariates"))
+
+  # per-covariate squared distances (lower-triangle vectors), summed across covariates
+  dlist <- lapply(covs, function(x) {
+    if (is.numeric(x)) {
+      as.numeric(0.5 * (stats::dist(scale(x)))^2)
+    } else {
+      xx <- as.numeric(as.factor(x)); nc <- length(unique(xx))
+      if (nc <= 1) rep(0, N * (N - 1) / 2)
+      else as.numeric((stats::dist(xx, method = "manhattan") != 0) * nc / (nc - 1))
+    }
+  })
+  dist.mat <- matrix(0, N, N)
+  dist.mat[lower.tri(dist.mat)] <- sqrt(rowSums(as.data.frame(dlist)))
+  dist.mat <- dist.mat + t(dist.mat)
+  bandwidth <- if (!is.null(opts$bandwidth)) opts$bandwidth else mean(dist.mat)
+  R.raw <- pmax(1 - dist.mat / bandwidth, 0)
+  Q.raw <- sum(as.numeric(resids %*% R.raw) * resids)
+
+  X   <- ctx$X
+  mu2 <- fits * (1 - fits)
+  hat <- (mu2 * X) %*% solve(crossprod(X, mu2 * X)) %*% t(X)   # V X (X'VX)^{-1} X'
+  R.cor <- diag(N) - hat
+  R.cor <- R.cor %*% R.raw %*% R.cor
+  E.Q   <- sum(diag(R.cor) * mu2)
+  mu4   <- mu2 * (1 - 3 * mu2)
+  VarQ1 <- sum(diag(R.cor)^2 * (mu4 - 3 * mu2^2))
+  R.tmp <- R.cor * rep(mu2, each = N)
+  VarQ2 <- 2 * sum(diag(R.tmp %*% R.tmp))
+  VarQ  <- VarQ1 + VarQ2
+  if (!is.finite(VarQ) || VarQ <= 0)
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "non-positive variance"))
+  Test <- Q.raw * 2 * E.Q / VarQ
+  df   <- 2 * E.Q^2 / VarQ
+  list(Statistic = Test, df = df, p_value = stats::pchisq(Test, df, lower.tail = FALSE), Note = "")
+}
+
 # Registry of the bundled tests (test wrappers are internal, not exported).
 .GOF_REGISTRY <- list(
   "Pearson"       = list(fn = gof_pearson,  family = "Global",       needs_model = FALSE, slow = FALSE),
@@ -416,5 +469,6 @@ gof_pr <- function(ctx, opts = list()) {
   "Stukel"        = list(fn = gof_stukel,   family = "Directed",     needs_model = TRUE,  slow = FALSE),
   "Tsiatis"             = list(fn = gof_tsiatis, family = "Covariate-space", needs_model = TRUE, slow = FALSE),
   "Xie"                 = list(fn = gof_xie,     family = "Covariate-space", needs_model = TRUE, slow = FALSE),
-  "Pulkstenis-Robinson" = list(fn = gof_pr,      family = "Covariate-space", needs_model = TRUE, slow = FALSE)
+  "Pulkstenis-Robinson" = list(fn = gof_pr,      family = "Covariate-space", needs_model = TRUE, slow = FALSE),
+  "le-Cessie"           = list(fn = gof_lecessie, family = "Smoothing",      needs_model = TRUE, slow = TRUE)
 )

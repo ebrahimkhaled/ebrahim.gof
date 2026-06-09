@@ -91,6 +91,19 @@ test_that("Pulkstenis-Robinson returns NA when no categorical covariate", {
   expect_true(is.na(res$p_value[res$Test == "Pulkstenis-Robinson"]))
 })
 
+test_that("le Cessie is opt-in (slow) and matches its source", {
+  set.seed(321)
+  n <- 150
+  x1 <- rnorm(n); x2 <- runif(n, -2, 2)
+  y <- rbinom(n, 1, plogis(0.2 + 0.7 * x1 - 0.5 * x2))
+  fit <- glm(y ~ x1 + x2, family = binomial())
+  expect_false("le-Cessie" %in% run.all.gof(fit)$Test)         # not in the default battery
+  res <- run.all.gof(fit, include_slow = TRUE)
+  lc <- res[res$Test == "le-Cessie", ]
+  expect_equal(lc$Statistic, 16.794627, tolerance = 1e-4)      # verified vs lecessie1995.r
+  expect_equal(lc$p_value,   0.149928, tolerance = 1e-4)
+})
+
 test_that("run.all.gof flags a cloglog link misfit", {
   set.seed(7)
   x <- runif(1500, -3, 3)

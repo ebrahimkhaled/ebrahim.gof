@@ -31,6 +31,10 @@
   Cauchy-combination ensemble rows. Osius-Rojek, Copas-RSS, Pigeon-Heyse,
   Tsiatis, and Pulkstenis-Robinson were verified to match their original
   implementations to ~1e-15 (Xie's statistic also matches).
+* An opt-in slow test, `le-Cessie` (le Cessie-van Houwelingen 1995, general
+  multivariate smoothed-residual test), runs when `include_slow = TRUE`. It is
+  O(n^2)-O(n^3). Adapted with attribution from the USGS `smwrStats` package
+  (public domain); verified to match it exactly.
 * The `Xie` test uses the corrected degrees of freedom `G - k/2 - 1` with `k` the
   number of predictors. (Earlier thesis runs used `df = G - 0.5`, an artifact of
   `coef()` returning `NULL` on a predicted-probability list; the statistic is the
@@ -38,9 +42,8 @@
 
 ## Pending for the 2.0.0 release
 
-* More `run.all.gof()` tests: McCullagh, information-matrix, le Cessie (general
-  multivariate version), and the opt-in bootstrap/GAM tests are planned for a
-  later build.
+* More `run.all.gof()` tests: McCullagh, information-matrix, and the opt-in
+  bootstrap/GAM tests are planned for a later build.
 
 # ebrahim.gof 1.0.0
 
