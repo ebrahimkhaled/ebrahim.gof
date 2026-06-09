@@ -1,3 +1,33 @@
+# ebrahim.gof 2.0.0 (in development)
+
+## New features
+
+* `def.gof()` - the Directed Ebrahim-Farrington (DEF) goodness-of-fit test.
+  Projects grouped standardized residuals onto a smooth calibration-shape basis
+  (`"poly2"`, `"poly3"`, `"stukel"`) and calibrates the statistic as a weighted
+  sum of chi-square_1 variables (Satterthwaite by default; Imhof via the
+  suggested `CompQuadForm`). `basis = "ensemble"` is a shortcut to
+  `def.ensemble.gof()`.
+* `def.ensemble.gof()` - combines the three DEF bases (optionally the omnibus EF,
+  or extra p-values) into one decision via the Cauchy combination test (default),
+  with `minp` and `fisher` offered for comparison.
+* `ef.gof()`, `def.gof()`, and `def.ensemble.gof()` now accept **either** a fitted
+  `glm` **or** `(y, predicted_probs)` as input. For `def.gof`, supplying the design
+  matrix `X` (with the `y`/`predicted_probs` form) gives the exact calibration;
+  without it a conservative chi-square reference is used and a warning is issued.
+
+## Breaking changes
+
+* `ef.gof()` now defaults to the **chi-square** reference (`method = "chisq"`):
+  the grouped statistic is referred to a chi-square_{G-2} distribution. Use
+  `method = "normal"` to reproduce the previous (standardized-normal) p-value.
+
+## Pending for the 2.0.0 release
+
+* `run.all.gof()` - a one-shot runner for the full thesis test battery
+  (partition, global/standardized, smoothing, and opt-in bootstrap/GAM tests).
+  Not yet included in this development build.
+
 # ebrahim.gof 1.0.0
 
 ## Initial Release

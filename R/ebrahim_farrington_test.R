@@ -23,8 +23,9 @@
 #' For grouped data (when \code{m} is provided), the test applies the original
 #' Farrington test with full variance calculations.
 #'
-#' @param y Numeric vector of binary responses (0/1) for binary data, or counts
-#'   of successes for grouped data.
+#' @param y A fitted binary logistic \code{glm} (then \code{predicted_probs} is
+#'   taken from it automatically), or a numeric vector of binary responses (0/1)
+#'   for binary data / counts of successes for grouped data.
 #' @param predicted_probs Numeric vector of predicted probabilities from the
 #'   logistic regression model. Must be same length as \code{y}.
 #' @param model Optional \code{glm} object. Required only for the original
@@ -34,6 +35,10 @@
 #' @param G Optional integer specifying the number of groups for binary data
 #'   grouping. Default is 10. If NULL, no grouping is performed and \code{m}
 #'   must be provided.
+#' @param method Reference distribution for the grouped EF statistic:
+#'   \code{"chisq"} (default) refers \eqn{T_{EF}} to a \eqn{\chi^2_{G-2}}
+#'   distribution; \code{"normal"} uses the standardized \eqn{Z_{EF}} (the
+#'   behaviour of package versions <= 1.0.0).
 #'
 #' @return
 #' A data frame with the following columns:
@@ -109,8 +114,21 @@
 #' \code{\link[ResourceSelection]{hoslem.test}} for the Hosmer-Lemeshow test
 #'
 #' @export
-ef.gof <- function(y, predicted_probs, model = NULL, m = NULL, G = 10) {
-  
+ef.gof <- function(y, predicted_probs = NULL, model = NULL, m = NULL, G = 10,
+                   method = c("chisq", "normal")) {
+
+  method <- match.arg(method)
+
+  # The first argument may be a fitted binomial glm; extract y and predictions.
+  if (inherits(y, "glm")) {
+    if (y$family$family != "binomial") stop("ef.gof: the model must be a binomial glm.")
+    predicted_probs <- as.numeric(stats::fitted(y))
+    y <- as.numeric(y$y)
+  }
+  if (is.null(predicted_probs)) {
+    stop("Provide 'predicted_probs' (or pass a fitted glm as the first argument).")
+  }
+
   # Input validation
   n <- length(y)
   if (n != length(predicted_probs)) {
@@ -146,7 +164,7 @@ ef.gof <- function(y, predicted_probs, model = NULL, m = NULL, G = 10) {
       stop("Number of groups 'G' cannot exceed sample size 'n'")
     }
     
-    return(.ebrahim_farrington_grouped(y, predicted_probs, G))
+    return(.ebrahim_farrington_grouped(y, predicted_probs, G, method))
     
   } else {
     # Original Farrington test for grouped data
@@ -166,7 +184,7 @@ ef.gof <- function(y, predicted_probs, model = NULL, m = NULL, G = 10) {
 }
 
 # Internal function for Ebrahim-Farrington test with grouping
-.ebrahim_farrington_grouped <- function(y, predicted_probs, G) {
+.ebrahim_farrington_grouped <- function(y, predicted_probs, G, method = "chisq") {
   n <- length(y)
   
   # Sort data by predicted probabilities
@@ -216,9 +234,14 @@ ef.gof <- function(y, predicted_probs, model = NULL, m = NULL, G = 10) {
     warning("Variance too small for reliable test. Consider using more groups.")
   } else {
     z_statistic <- (test_statistic_raw - expected_value) / sqrt(variance_value)
-    p_value <- 1 - stats::pnorm(z_statistic)
+    # chisq (default): refer T_EF to chi-square_{G-2}; normal: the standardized Z_EF
+    p_value <- if (identical(method, "normal")) {
+      1 - stats::pnorm(z_statistic)
+    } else {
+      stats::pchisq(test_statistic_raw, df = G - 2, lower.tail = FALSE)
+    }
   }
-  
+
   # Return results
   data.frame(
     Test = "Ebrahim-Farrington",

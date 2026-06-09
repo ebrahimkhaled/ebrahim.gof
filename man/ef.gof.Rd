@@ -4,11 +4,19 @@
 \alias{ef.gof}
 \title{Ebrahim-Farrington Goodness-of-Fit Test for Logistic Regression}
 \usage{
-ef.gof(y, predicted_probs, model = NULL, m = NULL, G = 10)
+ef.gof(
+  y,
+  predicted_probs = NULL,
+  model = NULL,
+  m = NULL,
+  G = 10,
+  method = c("chisq", "normal")
+)
 }
 \arguments{
-\item{y}{Numeric vector of binary responses (0/1) for binary data, or counts
-of successes for grouped data.}
+\item{y}{A fitted binary logistic \code{glm} (then \code{predicted_probs} is
+taken from it automatically), or a numeric vector of binary responses (0/1)
+for binary data / counts of successes for grouped data.}
 
 \item{predicted_probs}{Numeric vector of predicted probabilities from the
 logistic regression model. Must be same length as \code{y}.}
@@ -22,6 +30,11 @@ Farrington test with grouped data (when \code{m} is provided and \code{G} is NUL
 \item{G}{Optional integer specifying the number of groups for binary data
 grouping. Default is 10. If NULL, no grouping is performed and \code{m}
 must be provided.}
+
+\item{method}{Reference distribution for the grouped EF statistic:
+\code{"chisq"} (default) refers \eqn{T_{EF}} to a \eqn{\chi^2_{G-2}}
+distribution; \code{"normal"} uses the standardized \eqn{Z_{EF}} (the
+behaviour of package versions <= 1.0.0).}
 }
 \value{
 A data frame with the following columns:
@@ -88,6 +101,7 @@ result_20 <- ef.gof(y, predicted_probs, G = 20)
 
 # Example 3: Grouped data (original Farrington test)
 # Note: This requires actual grouped data with trials > 1
+\dontrun{
 # Simulated grouped data
 n_groups <- 50
 m_trials <- sample(5:20, n_groups, replace = TRUE)
@@ -106,7 +120,7 @@ predicted_probs_grouped <- fitted(model_grouped)
 result_grouped <- ef.gof(y_grouped, predicted_probs_grouped, 
                          model = model_grouped, m = m_trials)
 print(result_grouped)
-
+}
 
 }
 \references{
