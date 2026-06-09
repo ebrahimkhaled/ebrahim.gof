@@ -122,6 +122,55 @@ if (requireNamespace("ResourceSelection", quietly = TRUE)) {
 }
 ```
 
+## New in 2.0.0: Directed test, ensemble, and the full battery
+
+Version 2.0.0 turns the package into a full goodness-of-fit toolkit. The
+**Directed EF (DEF)** test concentrates power on calibration-curve shape
+directions, `def.ensemble.gof()` combines the DEF bases via the Cauchy
+combination test, and `run.all.gof()` runs a whole battery of GOF tests at once.
+
+```{r}
+# Directed Ebrahim-Farrington test (takes the fitted model)
+def.gof(model)                       # default poly3 basis
+def.gof(model, basis = "ensemble")   # combine all three bases (Cauchy)
+
+# Ensemble of the three DEF bases
+def.ensemble.gof(model)
+def.ensemble.gof(model, add_ef = TRUE)   # add the omnibus EF
+```
+
+`run.all.gof()` returns one tidy data frame, one row per test:
+
+```{r}
+run.all.gof(model)
+```
+
+Add `include_slow = TRUE` to also run the opt-in slow tests (le Cessie, the
+GAM-based tests, Stute-Zhu, eHL, BAGofT, and the Lai & Liu standardized-power
+test), or pass `tests = c("EF", "DEF.poly3", "HL")` to run a chosen subset.
+
+### Powerful, but not liberal
+
+A key property of the directed tests is that they gain power **without**
+inflating the type I error rate. In a quick Monte Carlo (n = 500, 1000
+replications, α = 0.05), the rejection rates are:
+
+| Test | Size (null model) | Power: omitted quadratic | Power: wrong link |
+|---|:---:|:---:|:---:|
+| Hosmer–Lemeshow | 0.060 | 0.588 | 0.179 |
+| EF (omnibus) | 0.058 | 0.480 | 0.218 |
+| DEF (poly2) | 0.068 | 0.784 | 0.509 |
+| DEF (poly3) | 0.060 | 0.709 | 0.404 |
+| DEF (ensemble) | 0.066 | 0.767 | 0.468 |
+
+Every test keeps its size near the nominal 0.05 (the directed tests are not
+liberal), while DEF and the ensemble are clearly more powerful than HL and EF
+against both a smooth (omitted-quadratic) and a link (complementary log-log)
+misspecification.
+
+> Note: as of 2.0.0, `ef.gof()` defaults to the chi-square reference
+> (`method = "chisq"`); use `method = "normal"` for the version 1.0.0 behaviour.
+
 ## Power Analysis Example
 
 Let's examine the power of the test to detect model misspecification:
@@ -267,7 +316,7 @@ print(result_grouped)
 
 1. Farrington, C. P. (1996). On Assessing Goodness of Fit of Generalized Linear Models to Sparse Data. *Journal of the Royal Statistical Society. Series B (Methodological)*, 58(2), 349-360.
 
-2. Ebrahim, Khaled Ebrahim (2024). Goodness-of-Fits Tests and Calibration Machine Learning Algorithms for Logistic Regression Model with Sparse Data. *Master's Thesis*, Alexandria University.
+2. Ebrahim, Khaled Ebrahim (2025). Goodness-of-Fits Tests and Calibration Machine Learning Algorithms for Logistic Regression Model with Sparse Data. *Master's Thesis*, Alexandria University.
 
 3. Hosmer, D. W., & Lemeshow, S. (2000). Applied Logistic Regression, Second Edition. New York: Wiley.
 
