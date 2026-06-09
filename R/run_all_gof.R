@@ -10,8 +10,9 @@
 #' @details
 #' The currently bundled tests are: \code{Pearson}, \code{Deviance},
 #' \code{Osius-Rojek}, and \code{Copas-RSS} (global / standardized);
-#' \code{HL} (Hosmer-Lemeshow deciles) and \code{HL-equalwidth} (partition);
-#' \code{EF} (the omnibus Ebrahim-Farrington test); \code{DEF.poly2/poly3/stukel}
+#' \code{HL} (Hosmer-Lemeshow deciles), \code{HL-equalwidth}, and
+#' \code{Pigeon-Heyse} (partition); \code{EF} (the omnibus Ebrahim-Farrington
+#' test); \code{DEF.poly2/poly3/stukel}
 #' and \code{Stukel} (directed); \code{Tsiatis}, \code{Xie}, and
 #' \code{Pulkstenis-Robinson} (covariate-space); plus the two ensemble rows
 #' (\code{Ensemble.Vote(3DEF)} and \code{Ensemble.Univ(3DEF+EF)}) from the Cauchy
@@ -233,6 +234,29 @@ gof_hlw <- function(ctx, opts = list()) {
        p_value = stats::pchisq(h$stat, h$df, lower.tail = FALSE), Note = "")
 }
 
+# Pigeon-Heyse J2: Hosmer-Lemeshow-type statistic with a per-group variance
+# correction phi_k and df = g - 1. Quantile (equal-frequency) groups. From
+# pigeonheyse.R; needs only the response and fitted probabilities.
+gof_ph_test <- function(ctx, opts = list()) {
+  ph <- ctx$ph; y <- ctx$y; g <- ctx$G
+  br  <- stats::quantile(ph, probs = seq(0, 1, length.out = g + 1))
+  grp <- tryCatch(cut(ph, breaks = br, labels = FALSE, include.lowest = TRUE),
+                  error = function(e) NULL)
+  if (is.null(grp) || length(unique(grp[!is.na(grp)])) < 2)
+    return(list(Statistic = NA, df = NA, p_value = NA,
+                Note = "could not form groups (ties in fitted probabilities)"))
+  idx  <- split(seq_along(y), grp)
+  Ok   <- vapply(idx, function(I) sum(y[I]),   numeric(1))
+  nk   <- vapply(idx, length,                  numeric(1))
+  pbar <- vapply(idx, function(I) mean(ph[I]), numeric(1))
+  Vk   <- nk * pbar * (1 - pbar)
+  phik <- vapply(idx, function(I) sum(ph[I] * (1 - ph[I])), numeric(1)) / Vk
+  ok   <- is.finite(Vk) & Vk > 0 & is.finite(phik) & phik > 0
+  J2   <- sum(((Ok[ok] - nk[ok] * pbar[ok])^2 / Vk[ok]) / phik[ok])
+  df   <- length(idx) - 1
+  list(Statistic = J2, df = df, p_value = stats::pchisq(J2, df, lower.tail = FALSE), Note = "")
+}
+
 gof_ef <- function(ctx, opts = list()) {
   r <- ef.gof(ctx$y, ctx$ph, G = ctx$G)
   list(Statistic = r$Test_Statistic, df = ctx$G - 2, p_value = r$p_value, Note = "")
@@ -384,6 +408,7 @@ gof_pr <- function(ctx, opts = list()) {
   "Copas-RSS"     = list(fn = gof_copas,    family = "Standardized", needs_model = TRUE,  slow = FALSE),
   "HL"            = list(fn = gof_hl,       family = "Partition",    needs_model = FALSE, slow = FALSE),
   "HL-equalwidth" = list(fn = gof_hlw,      family = "Partition",    needs_model = FALSE, slow = FALSE),
+  "Pigeon-Heyse"  = list(fn = gof_ph_test,  family = "Partition",    needs_model = FALSE, slow = FALSE),
   "EF"            = list(fn = gof_ef,       family = "Standardized", needs_model = FALSE, slow = FALSE),
   "DEF.poly2"     = list(fn = function(ctx, opts) gof_def(ctx, list(basis = "poly2")),  family = "Directed", needs_model = TRUE, slow = FALSE),
   "DEF.poly3"     = list(fn = function(ctx, opts) gof_def(ctx, list(basis = "poly3")),  family = "Directed", needs_model = TRUE, slow = FALSE),

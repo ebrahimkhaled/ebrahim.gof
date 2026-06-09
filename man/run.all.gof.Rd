@@ -48,8 +48,9 @@ one test never aborts the whole run.
 \details{
 The currently bundled tests are: \code{Pearson}, \code{Deviance},
 \code{Osius-Rojek}, and \code{Copas-RSS} (global / standardized);
-\code{HL} (Hosmer-Lemeshow deciles) and \code{HL-equalwidth} (partition);
-\code{EF} (the omnibus Ebrahim-Farrington test); \code{DEF.poly2/poly3/stukel}
+\code{HL} (Hosmer-Lemeshow deciles), \code{HL-equalwidth}, and
+\code{Pigeon-Heyse} (partition); \code{EF} (the omnibus Ebrahim-Farrington
+test); \code{DEF.poly2/poly3/stukel}
 and \code{Stukel} (directed); \code{Tsiatis}, \code{Xie}, and
 \code{Pulkstenis-Robinson} (covariate-space); plus the two ensemble rows
 (\code{Ensemble.Vote(3DEF)} and \code{Ensemble.Univ(3DEF+EF)}) from the Cauchy

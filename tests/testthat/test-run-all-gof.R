@@ -42,6 +42,19 @@ test_that("Osius-Rojek and Copas match goflogit (golden values)", {
   expect_equal(cps$p_value, 0.466596, tolerance = 1e-4)   # Copas p
 })
 
+test_that("Pigeon-Heyse matches its source (deterministic golden)", {
+  set.seed(77)
+  n <- 600
+  x1 <- rnorm(n); x2 <- runif(n, -2, 2)
+  y <- rbinom(n, 1, plogis(0.1 + 0.8 * x1 - 0.4 * x2))
+  fit <- glm(y ~ x1 + x2, family = binomial())
+  ph <- run.all.gof(fit)
+  ph <- ph[ph$Test == "Pigeon-Heyse", ]
+  expect_equal(ph$Statistic, 8.658528, tolerance = 1e-4)
+  expect_equal(ph$df, 9)
+  expect_equal(ph$p_value, 0.469373, tolerance = 1e-4)
+})
+
 test_that("covariate-space tests appear and return valid results", {
   set.seed(5)
   n <- 400

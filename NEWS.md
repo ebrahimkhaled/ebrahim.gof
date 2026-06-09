@@ -26,11 +26,11 @@
   per test. Pass a fitted `glm` for the whole battery, or `(y, predicted_probs)`
   for the prediction-only tests. One failing test never aborts the run. This
   build bundles Pearson, Deviance, Osius-Rojek, Copas-RSS, Hosmer-Lemeshow
-  (deciles and equal-width), EF, the three DEF bases, Stukel, the covariate-space
-  tests Tsiatis, Xie, and Pulkstenis-Robinson, and the two Cauchy-combination
-  ensemble rows. Osius-Rojek, Copas-RSS, Tsiatis, and Pulkstenis-Robinson were
-  verified to match their original implementations to ~1e-15 (Xie's statistic
-  also matches).
+  (deciles and equal-width), Pigeon-Heyse, EF, the three DEF bases, Stukel, the
+  covariate-space tests Tsiatis, Xie, and Pulkstenis-Robinson, and the two
+  Cauchy-combination ensemble rows. Osius-Rojek, Copas-RSS, Pigeon-Heyse,
+  Tsiatis, and Pulkstenis-Robinson were verified to match their original
+  implementations to ~1e-15 (Xie's statistic also matches).
 * The `Xie` test uses the corrected degrees of freedom `G - k/2 - 1` with `k` the
   number of predictors. (Earlier thesis runs used `df = G - 0.5`, an artifact of
   `coef()` returning `NULL` on a predicted-probability list; the statistic is the
@@ -38,8 +38,9 @@
 
 ## Pending for the 2.0.0 release
 
-* More `run.all.gof()` tests: McCullagh, information-matrix, le Cessie, and the
-  opt-in bootstrap/GAM tests are planned for a later build.
+* More `run.all.gof()` tests: McCullagh, information-matrix, le Cessie (general
+  multivariate version), and the opt-in bootstrap/GAM tests are planned for a
+  later build.
 
 # ebrahim.gof 1.0.0
 
