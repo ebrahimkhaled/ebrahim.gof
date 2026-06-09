@@ -40,6 +40,14 @@
 * A second EF row, `EF-normal`, reports the omnibus EF test with the normal
   reference used in the thesis simulation (the `EF` row uses the chi-square
   default).
+* More opt-in slow (`include_slow = TRUE`) tests: the GAM-based `HL-GAM`,
+  `PR-GAM`, and `Xie-GAM` (Xie et al. 2021; need `mgcv`; HL-GAM and PR-GAM match
+  the source `gam_gof_tests` exactly, Xie-GAM uses a fixed clustering seed), and
+  `Stute-Zhu` (cumulative-residual parametric-bootstrap test; sequential, set
+  reps via `control = list("Stute-Zhu" = list(B = ...))`; statistic matches the
+  source exactly). The Lai & Liu Hosmer bootstrap is intentionally not included
+  (it returns a standardized-power fraction and a randomized decision, not a
+  p-value); the e-value HL (`eHL`) and `BAGofT` remain candidates for later.
 * An opt-in slow test, `le-Cessie` (le Cessie-van Houwelingen 1995, general
   multivariate smoothed-residual test), runs when `include_slow = TRUE`. It is
   O(n^2)-O(n^3). Adapted with attribution from the USGS `smwrStats` package

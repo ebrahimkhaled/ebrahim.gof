@@ -57,10 +57,11 @@ form reproduces the thesis simulation); \code{DEF.poly2/poly3/stukel}
 and \code{Stukel} (directed); \code{Tsiatis}, \code{Xie}, and
 \code{Pulkstenis-Robinson} (covariate-space); the two ensemble rows
 (\code{Ensemble.Vote(3DEF)} and \code{Ensemble.Univ(3DEF+EF)}) from the Cauchy
-combination test; and, when \code{include_slow = TRUE}, the
-\code{le-Cessie}-van Houwelingen smoothing test. Further thesis tests
-(McCullagh, information matrix, and opt-in bootstrap/GAM) are planned for a
-later build.
+combination test; and, when \code{include_slow = TRUE}, the opt-in slow tests:
+\code{le-Cessie}-van Houwelingen smoothing, the GAM-based tests \code{HL-GAM},
+\code{PR-GAM}, \code{Xie-GAM} (need \pkg{mgcv}; fit an overfit GAM for grouping),
+and \code{Stute-Zhu} (a cumulative-residual parametric-bootstrap test; set the
+number of reps with \code{control = list("Stute-Zhu" = list(B = ...))}).
 
 Notes: \code{Tsiatis} and \code{Xie} cluster the covariate space with k-means
 (a fixed internal seed, so results are reproducible and the caller's RNG is

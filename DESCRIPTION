@@ -32,7 +32,8 @@ Suggests:
     ResourceSelection,
     ggplot2,
     CompQuadForm,
-    statmod
+    statmod,
+    mgcv
 LazyData: true
 Encoding: UTF-8
 RoxygenNote: 7.3.2

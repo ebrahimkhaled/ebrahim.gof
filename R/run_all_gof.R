@@ -18,10 +18,11 @@
 #' and \code{Stukel} (directed); \code{Tsiatis}, \code{Xie}, and
 #' \code{Pulkstenis-Robinson} (covariate-space); the two ensemble rows
 #' (\code{Ensemble.Vote(3DEF)} and \code{Ensemble.Univ(3DEF+EF)}) from the Cauchy
-#' combination test; and, when \code{include_slow = TRUE}, the
-#' \code{le-Cessie}-van Houwelingen smoothing test. Further thesis tests
-#' (McCullagh, information matrix, and opt-in bootstrap/GAM) are planned for a
-#' later build.
+#' combination test; and, when \code{include_slow = TRUE}, the opt-in slow tests:
+#' \code{le-Cessie}-van Houwelingen smoothing, the GAM-based tests \code{HL-GAM},
+#' \code{PR-GAM}, \code{Xie-GAM} (need \pkg{mgcv}; fit an overfit GAM for grouping),
+#' and \code{Stute-Zhu} (a cumulative-residual parametric-bootstrap test; set the
+#' number of reps with \code{control = list("Stute-Zhu" = list(B = ...))}).
 #'
 #' Notes: \code{Tsiatis} and \code{Xie} cluster the covariate space with k-means
 #' (a fixed internal seed, so results are reproducible and the caller's RNG is
@@ -508,6 +509,116 @@ gof_lecessie <- function(ctx, opts = list()) {
   list(Statistic = Test, df = df, p_value = stats::pchisq(Test, df, lower.tail = FALSE), Note = "")
 }
 
+# ---- Tier-2 (opt-in, slow) tests ----
+
+# dplyr::ntile equivalent (equal-sized groups, larger groups first).
+.gof_ntile <- function(x, n) {
+  r <- rank(x, ties.method = "first")
+  as.integer(floor((n * (r - 1) / length(x)) + 1))
+}
+
+# Observed-vs-expected chi-square over groups (expected from the tested model's ph).
+.gof_oe_chisq <- function(y, ph, grp, dfree) {
+  idx <- split(seq_along(y), grp)
+  o1 <- vapply(idx, function(I) sum(y[I] == 1), numeric(1))
+  o0 <- vapply(idx, function(I) sum(y[I] == 0), numeric(1))
+  e1 <- vapply(idx, function(I) sum(ph[I]),     numeric(1))
+  e0 <- vapply(idx, function(I) sum(1 - ph[I]), numeric(1))
+  keep  <- e1 > 0 & e0 > 0
+  chisq <- sum((o1[keep] - e1[keep])^2 / e1[keep] + (o0[keep] - e0[keep])^2 / e0[keep])
+  if (dfree <= 0)
+    return(list(Statistic = chisq, df = dfree, p_value = NA, Note = "df <= 0"))
+  list(Statistic = chisq, df = dfree,
+       p_value = stats::pchisq(chisq, dfree, lower.tail = FALSE), Note = "")
+}
+
+# Fit the overfit GAM (smooth continuous + main categorical + smooth pair
+# interactions) and return its fitted probabilities (used for grouping). From GAM.R.
+.gof_gam_pi <- function(ctx) {
+  if (!requireNamespace("mgcv", quietly = TRUE) || is.null(ctx$data)) return(NULL)
+  dat   <- ctx$data
+  resp  <- names(dat)[1]
+  preds <- names(dat)[-1]
+  if (length(preds) == 0) return(NULL)
+  maxlev <- getOption("ebrahim.gof.pr.maxlev", 6)
+  is_cat <- vapply(preds, function(v) {
+    col <- dat[[v]]
+    is.factor(col) || is.character(col) || is.logical(col) ||
+      (is.numeric(col) && length(unique(col)) <= maxlev)
+  }, logical(1))
+  cont <- preds[!is_cat]; cats <- preds[is_cat]
+  terms <- character(0)
+  if (length(cont) > 0) terms <- c(terms, paste0("s(", cont, ")"))
+  if (length(cats) > 0) terms <- c(terms, cats)
+  if (length(cont) > 1)
+    for (i in 1:(length(cont) - 1)) for (j in (i + 1):length(cont))
+      terms <- c(terms, paste0("s(", cont[i], ",", cont[j], ")"))
+  if (length(terms) == 0) return(NULL)
+  fml <- stats::as.formula(paste(resp, "~", paste(terms, collapse = "+")))
+  g <- tryCatch(mgcv::gam(fml, family = stats::binomial(), data = dat), error = function(e) NULL)
+  if (is.null(g)) return(NULL)
+  list(pi = as.numeric(stats::predict(g, type = "response")),
+       cont = cont, cats = cats, k = length(preds))
+}
+
+gof_gam_hl <- function(ctx, opts = list()) {
+  if (!ctx$has_model) return(list(Statistic = NA, df = NA, p_value = NA, Note = "needs a glm model"))
+  gf <- .gof_gam_pi(ctx)
+  if (is.null(gf)) return(list(Statistic = NA, df = NA, p_value = NA, Note = "install 'mgcv' / no covariates"))
+  .gof_oe_chisq(ctx$y, ctx$ph, .gof_ntile(gf$pi, 10), 10 - 2)
+}
+
+gof_gam_pr <- function(ctx, opts = list()) {
+  if (!ctx$has_model) return(list(Statistic = NA, df = NA, p_value = NA, Note = "needs a glm model"))
+  gf <- .gof_gam_pi(ctx)
+  if (is.null(gf)) return(list(Statistic = NA, df = NA, p_value = NA, Note = "install 'mgcv' / no covariates"))
+  if (length(gf$cats) == 0)
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "no categorical covariate"))
+  patt <- do.call(paste, c(lapply(gf$cats, function(v) as.character(ctx$data[[v]])), sep = "_"))
+  M <- length(unique(patt)); pig <- gf$pi
+  lev <- character(length(ctx$y))
+  for (pp in unique(patt)) {
+    ix <- which(patt == pp); lev[ix] <- ifelse(pig[ix] <= stats::median(pig[ix]), "low", "high")
+  }
+  .gof_oe_chisq(ctx$y, ctx$ph, paste(patt, lev, sep = "::"), 2 * M - length(gf$cats) - 2)
+}
+
+gof_gam_xie <- function(ctx, opts = list()) {
+  if (!ctx$has_model) return(list(Statistic = NA, df = NA, p_value = NA, Note = "needs a glm model"))
+  gf <- .gof_gam_pi(ctx)
+  if (is.null(gf)) return(list(Statistic = NA, df = NA, p_value = NA, Note = "install 'mgcv' / no covariates"))
+  G  <- if (gf$k < 5) 10 else gf$k + 5
+  cm <- as.data.frame(ctx$data[c(gf$cont, gf$cats)])
+  for (v in gf$cats) cm[[v]] <- as.numeric(as.factor(cm[[v]]))
+  cl <- tryCatch(.gof_kmeans(scale(as.matrix(cm)), G, nstart = 10L), error = function(e) NULL)
+  if (is.null(cl)) return(list(Statistic = NA, df = NA, p_value = NA, Note = "clustering failed"))
+  .gof_oe_chisq(ctx$y, ctx$ph, cl, round(G - gf$k / 2 - 2))
+}
+
+# Stute-Zhu cumulative-residual statistic (residuals ordered by linear predictor).
+.gof_tsz_stat <- function(resid, eta) {
+  n <- length(resid)
+  (1 / n^2) * sum(cumsum(resid[order(eta)])^2)
+}
+
+# Stute-Zhu GOF test via parametric (model-based) bootstrap. From Stute-Zhu(Bootstrap).R
+# (sequential; no parallelism). opts$B sets the number of bootstrap reps (default 200).
+gof_stutezhu <- function(ctx, opts = list()) {
+  if (!ctx$has_model) return(list(Statistic = NA, df = NA, p_value = NA, Note = "needs a glm model"))
+  B   <- if (is.null(opts$B)) 200L else as.integer(opts$B)
+  y   <- ctx$y; ph <- ctx$ph; X <- ctx$X
+  eta <- as.numeric(stats::predict(ctx$model, type = "link"))
+  Tobs <- .gof_tsz_stat(y - ph, eta)
+  Tb <- replicate(B, {
+    yb <- stats::rbinom(length(y), 1, ph)
+    fb <- tryCatch(stats::glm.fit(X, yb, family = stats::binomial()), error = function(e) NULL)
+    if (is.null(fb) || !isTRUE(fb$converged)) return(NA_real_)
+    .gof_tsz_stat(yb - fb$fitted.values, as.numeric(X %*% fb$coefficients))
+  })
+  list(Statistic = Tobs, df = NA_real_, p_value = mean(Tb >= Tobs, na.rm = TRUE),
+       Note = paste0(B, " bootstrap reps"))
+}
+
 # Registry of the bundled tests (test wrappers are internal, not exported).
 .GOF_REGISTRY <- list(
   "Pearson"       = list(fn = gof_pearson,  family = "Global",       needs_model = FALSE, slow = FALSE),
@@ -527,5 +638,9 @@ gof_lecessie <- function(ctx, opts = list()) {
   "Tsiatis"             = list(fn = gof_tsiatis, family = "Covariate-space", needs_model = TRUE, slow = FALSE),
   "Xie"                 = list(fn = gof_xie,     family = "Covariate-space", needs_model = TRUE, slow = FALSE),
   "Pulkstenis-Robinson" = list(fn = gof_pr,      family = "Covariate-space", needs_model = TRUE, slow = FALSE),
-  "le-Cessie"           = list(fn = gof_lecessie, family = "Smoothing",      needs_model = TRUE, slow = TRUE)
+  "le-Cessie"           = list(fn = gof_lecessie, family = "Smoothing",      needs_model = TRUE, slow = TRUE),
+  "HL-GAM"              = list(fn = gof_gam_hl,    family = "GAM",            needs_model = TRUE, slow = TRUE),
+  "PR-GAM"              = list(fn = gof_gam_pr,    family = "GAM",            needs_model = TRUE, slow = TRUE),
+  "Xie-GAM"             = list(fn = gof_gam_xie,   family = "GAM",            needs_model = TRUE, slow = TRUE),
+  "Stute-Zhu"           = list(fn = gof_stutezhu,  family = "Bootstrap",      needs_model = TRUE, slow = TRUE)
 )
