@@ -11,8 +11,9 @@
 #' The currently bundled tests are: \code{Pearson}, \code{Deviance},
 #' \code{Osius-Rojek}, and \code{Copas-RSS} (global / standardized);
 #' \code{HL} (Hosmer-Lemeshow deciles), \code{HL-equalwidth}, and
-#' \code{Pigeon-Heyse} (partition); \code{EF} (the omnibus Ebrahim-Farrington
-#' test); \code{DEF.poly2/poly3/stukel}
+#' \code{Pigeon-Heyse} (partition); \code{EF} and \code{EF-normal} (the omnibus
+#' Ebrahim-Farrington test with the chi-square and normal references; the normal
+#' form reproduces the thesis simulation); \code{DEF.poly2/poly3/stukel}
 #' and \code{Stukel} (directed); \code{Tsiatis}, \code{Xie}, and
 #' \code{Pulkstenis-Robinson} (covariate-space); the two ensemble rows
 #' (\code{Ensemble.Vote(3DEF)} and \code{Ensemble.Univ(3DEF+EF)}) from the Cauchy
@@ -28,6 +29,13 @@
 #' auto-detects the categorical covariate (any factor/character/logical, or a
 #' numeric with at most \code{getOption("ebrahim.gof.pr.maxlev", 6)} distinct
 #' values); it returns \code{NA} with a note when none is present.
+#'
+#' Every bundled test reproduces the implementation used in the original thesis
+#' simulation: \code{Osius-Rojek} and \code{Stukel} follow \pkg{LogisticDx}'s
+#' \code{gof.glm} (Stukel via \code{statmod::glm.scoretest} when \pkg{statmod} is
+#' installed), \code{Copas-RSS} follows \pkg{rms}'s gof residual, \code{HL} follows
+#' \code{ResourceSelection::hoslem.test}, and the others match their standalone
+#' reference functions; all were checked to agree numerically.
 #'
 #' @param object A fitted binary logistic \code{\link[stats]{glm}}, or a binary
 #'   (0/1) response vector \code{y} (then supply \code{predicted_probs}).
@@ -175,26 +183,27 @@ gof_deviance <- function(ctx, opts = list()) {
        Note = if (ctx$has_model) "" else "df = n-1 (no model)")
 }
 
-# Osius-Rojek normal-approximation correction of the Pearson statistic.
-# Ported from goflogit (7 tests.R); xpxi = (X'WX)^{-1}, W = diag(p(1-p)).
+# Osius-Rojek normal-approximation test. Matches the thesis simulation, which
+# uses LogisticDx::gof.glm: z = (Pearson - (N - p)) / sqrt(A1 + RSS1), where RSS1
+# is the residual SS of the WLS regression of (1-2p)/(p(1-p)) on X (weights V),
+# and A1 = 2*(N - sum(1/n_i)) = 0 for one-trial (binary) data. Two-sided p-value.
 gof_osius <- function(ctx, opts = list()) {
   if (is.null(ctx$X))
     return(list(Statistic = NA, df = NA, p_value = NA, Note = "needs the design matrix X"))
-  X <- ctx$X; ph <- ctx$ph; y <- ctx$y; n <- length(ph)
-  V <- ph * (1 - ph)
-  xpxi <- tryCatch(solve(crossprod(X, V * X)), error = function(e) NULL)
-  if (is.null(xpxi))
-    return(list(Statistic = NA, df = NA, p_value = NA, Note = "singular information matrix"))
-  pearson <- sum((y - ph)^2 / V)
-  vosius  <- sum(1 / V - 4)                       # binary (m = 1): 2 + 1/V - 6
-  cvec    <- crossprod(X, 1 - 2 * ph)             # X'(1 - 2p)
-  qosius  <- as.numeric(t(cvec) %*% xpxi %*% cvec)
-  varosius <- vosius - qosius
-  if (!is.finite(varosius) || varosius <= 0)
+  X <- ctx$X; ph <- ctx$ph; y <- ctx$y; N <- length(ph); p <- ncol(X)
+  V    <- ph * (1 - ph)
+  PrG  <- sum((y - ph)^2 / V)
+  A1   <- 2 * (N - sum(1 / rep(1, N)))            # binary: n_i = 1 -> A1 = 0
+  cvar <- (1 - 2 * ph) / V
+  fit  <- tryCatch(stats::lm.wfit(X, cvar, V), error = function(e) NULL)
+  if (is.null(fit))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "WLS regression failed"))
+  RSS1 <- sum(V * fit$residuals^2)
+  varz <- A1 + RSS1
+  if (!is.finite(varz) || varz <= 0)
     return(list(Statistic = NA, df = NA, p_value = NA, Note = "non-positive variance"))
-  z <- (pearson - n) / sqrt(varosius)
-  # one-sided upper, matching the validated goflogit implementation
-  list(Statistic = z, df = NA_real_, p_value = stats::pnorm(z, lower.tail = FALSE), Note = "")
+  z <- (PrG - (N - p)) / sqrt(varz)
+  list(Statistic = z, df = NA_real_, p_value = 2 * stats::pnorm(abs(z), lower.tail = FALSE), Note = "")
 }
 
 # Copas (1989) unweighted residual-sum-of-squares test. Binary expansion is
@@ -261,8 +270,15 @@ gof_ph_test <- function(ctx, opts = list()) {
 }
 
 gof_ef <- function(ctx, opts = list()) {
-  r <- ef.gof(ctx$y, ctx$ph, G = ctx$G)
+  r <- ef.gof(ctx$y, ctx$ph, G = ctx$G)            # chisq reference (package default)
   list(Statistic = r$Test_Statistic, df = ctx$G - 2, p_value = r$p_value, Note = "")
+}
+
+# EF with the normal reference: reproduces the thesis simulation's farrington_test.
+gof_ef_normal <- function(ctx, opts = list()) {
+  r <- ef.gof(ctx$y, ctx$ph, G = ctx$G, method = "normal")
+  list(Statistic = r$Test_Statistic, df = ctx$G - 2, p_value = r$p_value,
+       Note = "normal reference (thesis)")
 }
 
 gof_def <- function(ctx, opts = list()) {
@@ -274,24 +290,40 @@ gof_def <- function(ctx, opts = list()) {
   list(Statistic = r$Test_Statistic, df = r$df, p_value = r$p_value, Note = "")
 }
 
-# Stukel (1988) two-direction link test: add sign-split squared-logit terms and
-# do a likelihood-ratio test for their joint significance.
+# Stukel (1988) two-direction link test, "SstBoth". Matches the thesis simulation
+# (LogisticDx::gof.glm), which uses the Rao SCORE test (statmod::glm.scoretest) on
+# the sign-split squared-logit directions: the two marginal score-z values are
+# squared and summed to a chi-square_2 statistic.
 gof_stukel <- function(ctx, opts = list()) {
   if (!ctx$has_model)
     return(list(Statistic = NA, df = NA, p_value = NA, Note = "needs a glm model"))
+  ph  <- ctx$ph; y <- ctx$y; X <- ctx$X
   eta <- as.numeric(stats::predict(ctx$model, type = "link"))
-  aug <- cbind(za = 0.5 * eta^2 * (eta >= 0), zb = -0.5 * eta^2 * (eta < 0))
-  aug <- aug[, colSums(abs(aug)) > 1e-8, drop = FALSE]
-  if (ncol(aug) == 0)
-    return(list(Statistic = NA, df = NA, p_value = NA, Note = "Stukel terms degenerate"))
-  Xaug <- cbind(stats::model.matrix(ctx$model), aug)
-  m1 <- tryCatch(stats::glm.fit(Xaug, ctx$y, family = stats::binomial()),
-                 error = function(e) NULL)
-  if (is.null(m1))
-    return(list(Statistic = NA, df = NA, p_value = NA, Note = "augmented fit failed"))
-  LR <- as.numeric(ctx$model$deviance - m1$deviance)
-  df <- ncol(aug)
-  list(Statistic = LR, df = df, p_value = stats::pchisq(LR, df, lower.tail = FALSE), Note = "")
+  za  <- 0.5 * eta^2 * (ph >= 0.5)                 # Stukel direction, p >= 0.5
+  zb  <- -0.5 * eta^2 * (ph < 0.5)                 # Stukel direction, p < 0.5
+  if (requireNamespace("statmod", quietly = TRUE)) {
+    # exact match to the thesis simulation (LogisticDx::gof.glm uses glm.scoretest)
+    Z <- abs(statmod::glm.scoretest(ctx$model, cbind(za, zb)))
+    chi <- sum(Z^2)
+  } else {
+    za_z <- .gof_score_z(za, y, ph, X)
+    zb_z <- .gof_score_z(zb, y, ph, X)
+    if (!is.finite(za_z) || !is.finite(zb_z))
+      return(list(Statistic = NA, df = NA, p_value = NA, Note = "score test undefined"))
+    chi <- za_z^2 + zb_z^2
+  }
+  list(Statistic = chi, df = 2, p_value = stats::pchisq(chi, 2, lower.tail = FALSE), Note = "")
+}
+
+# Rao score-test z for adding one column to a fitted binomial glm. Equals
+# statmod::glm.scoretest for the binomial family (dispersion = 1).
+.gof_score_z <- function(z, y, ph, X) {
+  W   <- ph * (1 - ph)
+  U   <- sum(z * (y - ph))
+  WzX <- crossprod(X, W * z)
+  Vv  <- sum(W * z^2) - as.numeric(t(WzX) %*% solve(crossprod(X, W * X)) %*% WzX)
+  if (!is.finite(Vv) || Vv <= 0) return(NA_real_)
+  U / sqrt(Vv)
 }
 
 # Moore-Penrose pseudo-inverse via SVD (matches MASS::ginv; avoids a dependency).
@@ -463,6 +495,7 @@ gof_lecessie <- function(ctx, opts = list()) {
   "HL-equalwidth" = list(fn = gof_hlw,      family = "Partition",    needs_model = FALSE, slow = FALSE),
   "Pigeon-Heyse"  = list(fn = gof_ph_test,  family = "Partition",    needs_model = FALSE, slow = FALSE),
   "EF"            = list(fn = gof_ef,       family = "Standardized", needs_model = FALSE, slow = FALSE),
+  "EF-normal"     = list(fn = gof_ef_normal, family = "Standardized", needs_model = FALSE, slow = FALSE),
   "DEF.poly2"     = list(fn = function(ctx, opts) gof_def(ctx, list(basis = "poly2")),  family = "Directed", needs_model = TRUE, slow = FALSE),
   "DEF.poly3"     = list(fn = function(ctx, opts) gof_def(ctx, list(basis = "poly3")),  family = "Directed", needs_model = TRUE, slow = FALSE),
   "DEF.stukel"    = list(fn = function(ctx, opts) gof_def(ctx, list(basis = "stukel")), family = "Directed", needs_model = TRUE, slow = FALSE),

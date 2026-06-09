@@ -27,8 +27,8 @@ test_that("prediction-only input runs the ph-only tests with a message", {
   expect_true(is.finite(res$p_value[res$Test == "EF"]))
 })
 
-test_that("Osius-Rojek and Copas match goflogit (golden values)", {
-  # Verified 2026-06-09 against the goflogit() macro (7 tests.R) to ~1e-15.
+test_that("Osius-Rojek and Copas match the thesis sources (golden values)", {
+  # Osius verified vs LogisticDx::gof.glm; Copas vs rms::lrm resid(., "gof").
   set.seed(42)
   n <- 400
   x1 <- rnorm(n); x2 <- runif(n, -2, 2)
@@ -37,9 +37,19 @@ test_that("Osius-Rojek and Copas match goflogit (golden values)", {
   res <- run.all.gof(fit)
   o <- res[res$Test == "Osius-Rojek", ]
   cps <- res[res$Test == "Copas-RSS", ]
-  expect_equal(o$Statistic, 0.985610, tolerance = 1e-4)   # Osius z
-  expect_equal(o$p_value,  0.162162, tolerance = 1e-4)
+  expect_equal(o$Statistic, 1.341183, tolerance = 1e-4)   # Osius z (LogisticDx form)
+  expect_equal(o$p_value,  0.179861, tolerance = 1e-4)
   expect_equal(cps$p_value, 0.466596, tolerance = 1e-4)   # Copas p
+})
+
+test_that("EF appears in both chisq and normal forms", {
+  set.seed(8)
+  n <- 400; x <- rnorm(n)
+  fit <- glm(rbinom(n, 1, plogis(0.5 * x)) ~ x, family = binomial())
+  res <- run.all.gof(fit)
+  expect_true(all(c("EF", "EF-normal") %in% res$Test))
+  expect_equal(res$p_value[res$Test == "EF-normal"],
+               ef.gof(fit, method = "normal")$p_value, tolerance = 1e-8)
 })
 
 test_that("Pigeon-Heyse matches its source (deterministic golden)", {

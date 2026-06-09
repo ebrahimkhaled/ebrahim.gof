@@ -31,7 +31,8 @@ Suggests:
     rmarkdown,
     ResourceSelection,
     ggplot2,
-    CompQuadForm
+    CompQuadForm,
+    statmod
 LazyData: true
 Encoding: UTF-8
 RoxygenNote: 7.3.2

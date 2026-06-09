@@ -50,8 +50,9 @@ one test never aborts the whole run.
 The currently bundled tests are: \code{Pearson}, \code{Deviance},
 \code{Osius-Rojek}, and \code{Copas-RSS} (global / standardized);
 \code{HL} (Hosmer-Lemeshow deciles), \code{HL-equalwidth}, and
-\code{Pigeon-Heyse} (partition); \code{EF} (the omnibus Ebrahim-Farrington
-test); \code{DEF.poly2/poly3/stukel}
+\code{Pigeon-Heyse} (partition); \code{EF} and \code{EF-normal} (the omnibus
+Ebrahim-Farrington test with the chi-square and normal references; the normal
+form reproduces the thesis simulation); \code{DEF.poly2/poly3/stukel}
 and \code{Stukel} (directed); \code{Tsiatis}, \code{Xie}, and
 \code{Pulkstenis-Robinson} (covariate-space); the two ensemble rows
 (\code{Ensemble.Vote(3DEF)} and \code{Ensemble.Univ(3DEF+EF)}) from the Cauchy
@@ -67,6 +68,13 @@ left untouched). \code{Xie} uses the corrected degrees of freedom
 auto-detects the categorical covariate (any factor/character/logical, or a
 numeric with at most \code{getOption("ebrahim.gof.pr.maxlev", 6)} distinct
 values); it returns \code{NA} with a note when none is present.
+
+Every bundled test reproduces the implementation used in the original thesis
+simulation: \code{Osius-Rojek} and \code{Stukel} follow \pkg{LogisticDx}'s
+\code{gof.glm} (Stukel via \code{statmod::glm.scoretest} when \pkg{statmod} is
+installed), \code{Copas-RSS} follows \pkg{rms}'s gof residual, \code{HL} follows
+\code{ResourceSelection::hoslem.test}, and the others match their standalone
+reference functions; all were checked to agree numerically.
 }
 \examples{
 set.seed(1)

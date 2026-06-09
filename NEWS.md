@@ -31,6 +31,15 @@
   Cauchy-combination ensemble rows. Osius-Rojek, Copas-RSS, Pigeon-Heyse,
   Tsiatis, and Pulkstenis-Robinson were verified to match their original
   implementations to ~1e-15 (Xie's statistic also matches).
+* All `run.all.gof()` tests were verified to reproduce the implementations used
+  in the original thesis simulation. In particular `Osius-Rojek` and `Stukel` now
+  follow `LogisticDx::gof.glm` (Stukel via `statmod::glm.scoretest`; `statmod`
+  added to Suggests), matching it numerically; `Copas-RSS` matches `rms`'s gof
+  residual; `HL` matches `ResourceSelection::hoslem.test`; and `HL-equalwidth`,
+  Pigeon-Heyse, Tsiatis, Xie, and Pulkstenis-Robinson match their source scripts.
+* A second EF row, `EF-normal`, reports the omnibus EF test with the normal
+  reference used in the thesis simulation (the `EF` row uses the chi-square
+  default).
 * An opt-in slow test, `le-Cessie` (le Cessie-van Houwelingen 1995, general
   multivariate smoothed-residual test), runs when `include_slow = TRUE`. It is
   O(n^2)-O(n^3). Adapted with attribution from the USGS `smwrStats` package
