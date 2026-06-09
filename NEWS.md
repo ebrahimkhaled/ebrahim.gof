@@ -25,14 +25,16 @@
 * `run.all.gof()` - a one-shot runner that returns a tidy `data.frame`, one row
   per test. Pass a fitted `glm` for the whole battery, or `(y, predicted_probs)`
   for the prediction-only tests. One failing test never aborts the run. This
-  build bundles Pearson, Deviance, Hosmer-Lemeshow (deciles and equal-width), EF,
-  the three DEF bases, Stukel, and the two Cauchy-combination ensemble rows.
+  build bundles Pearson, Deviance, Osius-Rojek, Copas-RSS, Hosmer-Lemeshow
+  (deciles and equal-width), EF, the three DEF bases, Stukel, and the two
+  Cauchy-combination ensemble rows. Osius-Rojek and Copas-RSS were verified to
+  match the GOFLOGIT macro to ~1e-15.
 
 ## Pending for the 2.0.0 release
 
-* More `run.all.gof()` tests: Osius-Rojek, McCullagh, information-matrix, Copas,
-  Tsiatis, Xie, Pulkstenis-Robinson, le Cessie, and the opt-in bootstrap/GAM
-  tests are planned for a later build.
+* More `run.all.gof()` tests: McCullagh, information-matrix, Tsiatis, Xie,
+  Pulkstenis-Robinson, le Cessie, and the opt-in bootstrap/GAM tests are planned
+  for a later build.
 
 # ebrahim.gof 1.0.0
 

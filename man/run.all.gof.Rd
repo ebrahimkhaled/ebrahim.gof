@@ -46,14 +46,14 @@ the tests that need only predictions. Each test is wrapped so that a failure of
 one test never aborts the whole run.
 }
 \details{
-The currently bundled tests are: \code{Pearson} and \code{Deviance} (global),
-\code{HL} (Hosmer-Lemeshow deciles) and \code{HL-equalwidth} (partition),
-\code{EF} (the omnibus Ebrahim-Farrington test), \code{DEF.poly2/poly3/stukel}
-and \code{Stukel} (directed), plus the two ensemble rows
+The currently bundled tests are: \code{Pearson}, \code{Deviance},
+\code{Osius-Rojek}, and \code{Copas-RSS} (global / standardized);
+\code{HL} (Hosmer-Lemeshow deciles) and \code{HL-equalwidth} (partition);
+\code{EF} (the omnibus Ebrahim-Farrington test); \code{DEF.poly2/poly3/stukel}
+and \code{Stukel} (directed); plus the two ensemble rows
 (\code{Ensemble.Vote(3DEF)} and \code{Ensemble.Univ(3DEF+EF)}) from the Cauchy
-combination test. Further thesis tests (Osius-Rojek, McCullagh, information
-matrix, Copas, Tsiatis, Xie, Pulkstenis-Robinson, le Cessie) are planned for a
-later build.
+combination test. Further thesis tests (McCullagh, information matrix, Tsiatis,
+Xie, Pulkstenis-Robinson, le Cessie) are planned for a later build.
 }
 \examples{
 set.seed(1)

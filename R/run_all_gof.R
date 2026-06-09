@@ -8,14 +8,14 @@
 #' one test never aborts the whole run.
 #'
 #' @details
-#' The currently bundled tests are: \code{Pearson} and \code{Deviance} (global),
-#' \code{HL} (Hosmer-Lemeshow deciles) and \code{HL-equalwidth} (partition),
-#' \code{EF} (the omnibus Ebrahim-Farrington test), \code{DEF.poly2/poly3/stukel}
-#' and \code{Stukel} (directed), plus the two ensemble rows
+#' The currently bundled tests are: \code{Pearson}, \code{Deviance},
+#' \code{Osius-Rojek}, and \code{Copas-RSS} (global / standardized);
+#' \code{HL} (Hosmer-Lemeshow deciles) and \code{HL-equalwidth} (partition);
+#' \code{EF} (the omnibus Ebrahim-Farrington test); \code{DEF.poly2/poly3/stukel}
+#' and \code{Stukel} (directed); plus the two ensemble rows
 #' (\code{Ensemble.Vote(3DEF)} and \code{Ensemble.Univ(3DEF+EF)}) from the Cauchy
-#' combination test. Further thesis tests (Osius-Rojek, McCullagh, information
-#' matrix, Copas, Tsiatis, Xie, Pulkstenis-Robinson, le Cessie) are planned for a
-#' later build.
+#' combination test. Further thesis tests (McCullagh, information matrix, Tsiatis,
+#' Xie, Pulkstenis-Robinson, le Cessie) are planned for a later build.
 #'
 #' @param object A fitted binary logistic \code{\link[stats]{glm}}, or a binary
 #'   (0/1) response vector \code{y} (then supply \code{predicted_probs}).
@@ -162,6 +162,50 @@ gof_deviance <- function(ctx, opts = list()) {
        Note = if (ctx$has_model) "" else "df = n-1 (no model)")
 }
 
+# Osius-Rojek normal-approximation correction of the Pearson statistic.
+# Ported from goflogit (7 tests.R); xpxi = (X'WX)^{-1}, W = diag(p(1-p)).
+gof_osius <- function(ctx, opts = list()) {
+  if (is.null(ctx$X))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "needs the design matrix X"))
+  X <- ctx$X; ph <- ctx$ph; y <- ctx$y; n <- length(ph)
+  V <- ph * (1 - ph)
+  xpxi <- tryCatch(solve(crossprod(X, V * X)), error = function(e) NULL)
+  if (is.null(xpxi))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "singular information matrix"))
+  pearson <- sum((y - ph)^2 / V)
+  vosius  <- sum(1 / V - 4)                       # binary (m = 1): 2 + 1/V - 6
+  cvec    <- crossprod(X, 1 - 2 * ph)             # X'(1 - 2p)
+  qosius  <- as.numeric(t(cvec) %*% xpxi %*% cvec)
+  varosius <- vosius - qosius
+  if (!is.finite(varosius) || varosius <= 0)
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "non-positive variance"))
+  z <- (pearson - n) / sqrt(varosius)
+  # one-sided upper, matching the validated goflogit implementation
+  list(Statistic = z, df = NA_real_, p_value = stats::pnorm(z, lower.tail = FALSE), Note = "")
+}
+
+# Copas (1989) unweighted residual-sum-of-squares test. Binary expansion is
+# trivial (one trial per observation). Ported from goflogit (7 tests.R).
+gof_copas <- function(ctx, opts = list()) {
+  if (is.null(ctx$X))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "needs the design matrix X"))
+  X <- ctx$X; ph <- ctx$ph; y <- ctx$y
+  V <- ph * (1 - ph)
+  copas    <- sum((y - ph)^2)
+  meacopas <- sum(V)
+  W   <- diag(V)
+  c12 <- 1 - 2 * ph
+  M   <- tryCatch(diag(length(ph)) - W %*% X %*% solve(t(X) %*% W %*% X) %*% t(X),
+                  error = function(e) NULL)
+  if (is.null(M))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "singular information matrix"))
+  varcopas <- as.numeric(t(c12) %*% M %*% W %*% c12)
+  if (!is.finite(varcopas) || varcopas <= 0)
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "non-positive variance"))
+  z <- (copas - meacopas) / sqrt(varcopas)
+  list(Statistic = z, df = 1, p_value = stats::pchisq(z^2, 1, lower.tail = FALSE), Note = "")
+}
+
 gof_hl <- function(ctx, opts = list()) {
   h <- .gof_hl_stat(ctx$y, ctx$ph, .gof_groups_ef(ctx$ph, ctx$G))
   if (h$df < 1) return(list(Statistic = h$stat, df = h$df, p_value = NA_real_,
@@ -218,6 +262,8 @@ gof_stukel <- function(ctx, opts = list()) {
 .GOF_REGISTRY <- list(
   "Pearson"       = list(fn = gof_pearson,  family = "Global",       needs_model = FALSE, slow = FALSE),
   "Deviance"      = list(fn = gof_deviance, family = "Global",       needs_model = FALSE, slow = FALSE),
+  "Osius-Rojek"   = list(fn = gof_osius,    family = "Standardized", needs_model = TRUE,  slow = FALSE),
+  "Copas-RSS"     = list(fn = gof_copas,    family = "Standardized", needs_model = TRUE,  slow = FALSE),
   "HL"            = list(fn = gof_hl,       family = "Partition",    needs_model = FALSE, slow = FALSE),
   "HL-equalwidth" = list(fn = gof_hlw,      family = "Partition",    needs_model = FALSE, slow = FALSE),
   "EF"            = list(fn = gof_ef,       family = "Standardized", needs_model = FALSE, slow = FALSE),
