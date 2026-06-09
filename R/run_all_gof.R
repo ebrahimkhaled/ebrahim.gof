@@ -25,7 +25,11 @@
 #' number of reps with \code{control = list("Stute-Zhu" = list(B = ...))}),
 #' \code{eHL} (the e-value Hosmer-Lemeshow test, reported as p = min(1, 1/e)), and
 #' \code{BAGofT} (the binary-adaptive GOF test; needs the \pkg{BAGofT} package,
-#' \code{control = list(BAGofT = list(nsim = ...))}).
+#' \code{control = list(BAGofT = list(nsim = ...))}), and \code{Lai-Liu-HL} (Lai
+#' & Liu's standardized-power procedure for the Hosmer-Lemeshow test, which has no
+#' p-value: it reports the standardized power as the statistic and a randomized
+#' accept/reject decision in the \code{Note}; target size via
+#' \code{control = list("Lai-Liu-HL" = list(n0 = ..., k = ...))}).
 #'
 #' Notes: \code{Tsiatis} and \code{Xie} cluster the covariate space with k-means
 #' (a fixed internal seed, so results are reproducible and the caller's RNG is
@@ -696,6 +700,54 @@ gof_bagoft <- function(ctx, opts = list()) {
        Note = paste0("nsim=", nsim))
 }
 
+# Lai & Liu (2018) standardized-power procedure for the Hosmer-Lemeshow test.
+# Reference: Lai, X. & Liu, L. (2018), "A simple test procedure in standardizing
+# the power of Hosmer-Lemeshow test in large data sets", J. Statist. Comput.
+# Simul. It resamples (stratified by outcome, with replacement) to a target size
+# n0, refits the model, computes the HL statistic each time, and estimates the
+# rejection rate ("standardized power") at n0. The final decision is randomized:
+# reject H0 if U(0,1) < power. There is no p-value: the statistic is the power
+# and the accept/reject decision is reported in the Note. From Hosmer Bootstrap.R.
+gof_lailiu <- function(ctx, opts = list()) {
+  if (!ctx$has_model || is.null(ctx$data))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "needs a glm model"))
+  if (!requireNamespace("ResourceSelection", quietly = TRUE))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "install 'ResourceSelection'"))
+  dat <- ctx$data; attr(dat, "terms") <- NULL
+  y   <- dat[[1]]
+  n   <- length(y)
+  n0    <- if (is.null(opts$n0))    n    else as.integer(opts$n0)   # target sample size
+  k     <- if (is.null(opts$k))     200L else as.integer(opts$k)    # resamples
+  alpha <- if (is.null(opts$alpha)) 0.05 else opts$alpha
+  G     <- ctx$G
+  fml   <- stats::formula(ctx$model)
+  ev_grp <- dat[y == 1, , drop = FALSE]; ne_grp <- dat[y == 0, , drop = FALSE]
+  m <- nrow(ev_grp); nn <- nrow(ne_grp)
+  if (m < 2 || nn < 2)
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "too few events/non-events"))
+  m0  <- max(1, min(round(n0 * (m / n)), m))
+  n0e <- max(1, min(n0 - m0, nn))
+  crit <- stats::qchisq(1 - alpha, df = G - 2)
+  hl <- replicate(k, {
+    rs <- rbind(ev_grp[sample(seq_len(m),  m0,  replace = TRUE), , drop = FALSE],
+                ne_grp[sample(seq_len(nn), n0e, replace = TRUE), , drop = FALSE])
+    mb <- tryCatch(suppressWarnings(stats::glm(fml, data = rs, family = stats::binomial())),
+                   error = function(e) NULL)
+    if (is.null(mb) || !isTRUE(mb$converged)) return(NA_real_)
+    tryCatch(suppressWarnings(as.numeric(
+      ResourceSelection::hoslem.test(mb$y, stats::fitted(mb), g = G)$statistic)),
+      error = function(e) NA_real_)
+  })
+  valid <- hl[!is.na(hl)]
+  if (length(valid) == 0)
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "no valid resamples"))
+  power    <- mean(valid >= crit)
+  decision <- if (stats::runif(1) < power) "REJECT H0 (lack of fit)" else "fail to reject H0"
+  list(Statistic = power, df = NA_real_, p_value = NA_real_,
+       Note = paste0("standardized power=", round(power, 3),
+                     " (n0=", n0, "); decision: ", decision))
+}
+
 # Registry of the bundled tests (test wrappers are internal, not exported).
 .GOF_REGISTRY <- list(
   "Pearson"       = list(fn = gof_pearson,  family = "Global",       needs_model = FALSE, slow = FALSE),
@@ -721,5 +773,6 @@ gof_bagoft <- function(ctx, opts = list()) {
   "Xie-GAM"             = list(fn = gof_gam_xie,   family = "GAM",            needs_model = TRUE, slow = TRUE),
   "Stute-Zhu"           = list(fn = gof_stutezhu,  family = "Bootstrap",      needs_model = TRUE,  slow = TRUE),
   "eHL"                 = list(fn = gof_ehl,        family = "Calibration",    needs_model = FALSE, slow = TRUE),
-  "BAGofT"              = list(fn = gof_bagoft,     family = "Bootstrap",      needs_model = TRUE,  slow = TRUE)
+  "BAGofT"              = list(fn = gof_bagoft,     family = "Bootstrap",      needs_model = TRUE,  slow = TRUE),
+  "Lai-Liu-HL"          = list(fn = gof_lailiu,     family = "Bootstrap",      needs_model = TRUE,  slow = TRUE)
 )

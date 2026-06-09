@@ -45,9 +45,13 @@
   the source `gam_gof_tests` exactly, Xie-GAM uses a fixed clustering seed), and
   `Stute-Zhu` (cumulative-residual parametric-bootstrap test; sequential, set
   reps via `control = list("Stute-Zhu" = list(B = ...))`; statistic matches the
-  source exactly). The Lai & Liu Hosmer bootstrap is intentionally not included
-  (it returns a standardized-power fraction and a randomized decision, not a
-  p-value).
+  source exactly).
+* `Lai-Liu-HL` (Lai & Liu 2018, standardized-power procedure for the
+  Hosmer-Lemeshow test). It has no p-value: it resamples to a target size, fits
+  the model, estimates the HL rejection rate ("standardized power"), and returns
+  a randomized accept/reject decision. The standardized power is reported as the
+  statistic and the decision in the `Note` (set `n0`/`k` via `control`). Verified
+  to match the source `lai_liu_test` exactly.
 * Two further opt-in slow tests: `eHL` (the e-value Hosmer-Lemeshow test of Henzi
   et al. 2024; base-R reimplementation, with attribution, of the marius-cp/eHL
   code, matching it to ~1e-11; reported as `p = min(1, 1/e)`), and `BAGofT` (the

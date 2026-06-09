@@ -64,7 +64,11 @@ combination test; and, when \code{include_slow = TRUE}, the opt-in slow tests:
 number of reps with \code{control = list("Stute-Zhu" = list(B = ...))}),
 \code{eHL} (the e-value Hosmer-Lemeshow test, reported as p = min(1, 1/e)), and
 \code{BAGofT} (the binary-adaptive GOF test; needs the \pkg{BAGofT} package,
-\code{control = list(BAGofT = list(nsim = ...))}).
+\code{control = list(BAGofT = list(nsim = ...))}), and \code{Lai-Liu-HL} (Lai
+& Liu's standardized-power procedure for the Hosmer-Lemeshow test, which has no
+p-value: it reports the standardized power as the statistic and a randomized
+accept/reject decision in the \code{Note}; target size via
+\code{control = list("Lai-Liu-HL" = list(n0 = ..., k = ...))}).
 
 Notes: \code{Tsiatis} and \code{Xie} cluster the covariate space with k-means
 (a fixed internal seed, so results are reproducible and the caller's RNG is
