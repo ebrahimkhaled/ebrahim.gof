@@ -33,13 +33,14 @@ devtools::install_github("ebrahimkhaled/ebrahim.gof")
 ```
 
 
-### From CRAN (Stable Version) (_NOT AVAILABLE YET_)
+### From CRAN (Stable Version)
 
-Another way to install the R library, but it is _not available yet_.
+The released version is on CRAN (currently **1.0.0**):
 ```r
-# Will be available after CRAN submission
 install.packages("ebrahim.gof")
 ```
+Version **2.0.0** — this version, with the directed test, the ensemble, and the
+one-call battery — is available from GitHub now and is being submitted to CRAN.
 
 ## Quick Start
 
@@ -139,33 +140,61 @@ le Cessie-van Houwelingen, the GAM-based tests (HL-GAM, PR-GAM, Xie-GAM; need
 `mgcv`), Stute-Zhu, eHL, BAGofT, and the Lai & Liu standardized-power HL test.
 Every test reproduces the implementation used in the original thesis simulation.
 
-## Power and size: DEF and the DEF ensemble
+## Power and size: the partition-based family
 
-The directed tests are designed to be **powerful without being liberal**. In a
-quick Monte Carlo (n = 500, 1000 replications, α = 0.05) the DEF bases and their
-ensemble hold the nominal size under a correctly specified model, yet detect
-misspecification far more often than the Hosmer–Lemeshow (HL) test or the omnibus
-EF test:
+Most goodness-of-fit tests for logistic regression are **partition-based**: they
+split the data into groups — by the fitted probability, by covariate-space
+clusters, or by categorical patterns — and compare observed with expected event
+counts in each group. This is the family that `ef.gof()`, `def.gof()`, and
+`def.ensemble.gof()` belong to. In a Monte Carlo study (n = 500, 1000 replications,
+α = 0.05) the partition tests compare as follows:
 
-| Test | Size (null model) | Power: omitted quadratic | Power: wrong link (cloglog) |
-|---|:---:|:---:|:---:|
-| Hosmer–Lemeshow | 0.060 | 0.588 | 0.179 |
-| EF (omnibus) | 0.058 | 0.480 | 0.218 |
-| DEF (poly2) | 0.068 | 0.784 | 0.509 |
-| DEF (poly3) | 0.060 | 0.709 | 0.404 |
-| **DEF (ensemble)** | **0.066** | **0.767** | **0.468** |
+| Test | Grouping | Size (null) | Power: quadratic | Power: wrong link |
+|---|---|:---:|:---:|:---:|
+| Hosmer–Lemeshow (decile) | fitted prob | 0.060 | 0.588 | 0.179 |
+| Hosmer–Lemeshow (equal-width) | fitted prob | 0.053 | 0.332 | 0.244 |
+| Pigeon–Heyse | fitted prob | 0.035 | 0.535 | 0.133 |
+| EF (omnibus) | fitted prob | 0.058 | 0.480 | 0.218 |
+| Tsiatis | covariate clusters | 0.056 | 0.574 | 0.162 |
+| Xie | covariate clusters | 0.042 | 0.557 | 0.147 |
+| DEF (poly3) | fitted prob + shape basis | 0.060 | 0.709 | 0.404 |
+| **DEF (ensemble, vote)** | fitted prob + 3 bases | **0.066** | **0.767** | **0.468** |
 
-The size stays around the nominal 0.05 for every test — the directed tests **do
-not over-reject** (they are not liberal) — while DEF and the ensemble are markedly
-more powerful, roughly **2–3× the power of HL** on the wrong-link scenario and
-clearly ahead on the omitted-quadratic scenario.
+Across the family, **DEF and its vote ensemble are the most powerful while keeping
+the size near the nominal 0.05** — they are not liberal — and they roughly double
+the power of Hosmer–Lemeshow, Tsiatis, and Xie on the wrong-link misfit.
 
-![Size and power of DEF and the DEF ensemble](vignettes/power_size_def.png)
+![Size and power across partition-based GOF tests](vignettes/power_size_def.png)
 
-*Setup: covariate `x ~ Uniform(-3, 3)`, models fitted as `glm(y ~ x)`; the null
-is a correct logit model, the power scenarios omit a quadratic term and fit a
-logit when the truth is complementary log-log. Computed with the package's own
-`ef.gof()`, `def.gof()`, and `def.ensemble.gof()`.*
+### Pros and cons of partition-based tests
+
+**Pros**
+- Intuitive — compare observed vs expected event counts within groups.
+- Work for **sparse data and continuous covariates**, where the classical Pearson
+  and deviance chi-square tests break down (those need replicated covariate
+  patterns).
+- Widely used and understood (Hosmer–Lemeshow is the de-facto standard).
+- Flexible — group by the fitted probability (HL, EF, Pigeon–Heyse, DEF) or by the
+  covariate space (Tsiatis, Xie) to target different kinds of misfit.
+
+**Cons**
+- The result depends on the **grouping choice** — the number of groups `G` and the
+  grouping rule. Hosmer–Lemeshow in particular is known to give different answers
+  for different `G` and across software.
+- **Limited power for some departures** — omnibus partition tests (HL) spread their
+  few degrees of freedom thinly; fitted-probability grouping can miss misfit that
+  cancels along the predicted probability; covariate-clustering tests can miss
+  smooth link departures.
+- The chi-square reference is **asymptotic** and needs adequate group sizes.
+
+DEF is built to fix the power cons **without** giving up size control: it keeps the
+intuitive fitted-probability grouping but *directs* the test at calibration-curve
+shapes, and the ensemble removes the basis choice by combining those directions —
+which is why it tops the table above while staying at the nominal size.
+
+*Setup: covariate `x ~ Uniform(-3, 3)`, models fitted as `glm(y ~ x)`; all tests
+computed in one call with the package's own `run.all.gof()`. The dashed red line
+marks the nominal 0.05 size.*
 
 ## Examples
 
@@ -264,6 +293,46 @@ power_results <- data.frame(
   power = sapply(c(100, 200, 500, 1000), simulate_power)
 )
 print(power_results)
+```
+
+### Example 5: Run the whole battery at once (`run.all.gof`)
+
+```r
+library(ebrahim.gof)
+
+# a model on the classic low-birth-weight data
+fit <- glm(low ~ age + lwt + factor(race) + smoke,
+           data = MASS::birthwt, family = binomial())
+
+# every test in one tidy data frame (one row per test)
+run.all.gof(fit)
+
+# also run the opt-in slow tests (le Cessie, GAM-based, Stute-Zhu, eHL, BAGofT,
+# Lai-Liu); set the bootstrap reps via control
+run.all.gof(fit, include_slow = TRUE,
+            control = list("Stute-Zhu" = list(B = 200)))
+
+# or just a chosen subset
+run.all.gof(fit, tests = c("EF", "DEF.poly3", "Tsiatis", "HL"))
+```
+
+### Example 6: Directed test and the ensemble (`def.gof`, `def.ensemble.gof`)
+
+```r
+set.seed(1)
+n <- 800
+x <- runif(n, -3, 3)
+y <- rbinom(n, 1, 1 - exp(-exp(0.6 * x)))   # true link is complementary log-log
+fit <- glm(y ~ x, family = binomial())       # fitted as logit (misspecified)
+
+# the directed test with different shape bases
+def.gof(fit, basis = "poly2")
+def.gof(fit, basis = "stukel")
+
+# the recommended default: combine the three bases with the Cauchy combination
+# test (no basis to choose, valid size)
+def.ensemble.gof(fit)
+def.ensemble.gof(fit, add_ef = TRUE)   # also fold in the omnibus EF
 ```
 
 ## Methodology
