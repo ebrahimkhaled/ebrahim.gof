@@ -1,5 +1,6 @@
 ^\.github$
 ^\.git$
+^cran-comments\.md$
 ^_try_examples\.R$
 ^.*\.Rproj$
 ^\.Rproj\.user$
