@@ -1,4 +1,4 @@
-# ebrahim.gof 2.0.0 (in development)
+# ebrahim.gof 2.0.0
 
 ## New features
 
