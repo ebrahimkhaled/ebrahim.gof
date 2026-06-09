@@ -50,10 +50,19 @@ The currently bundled tests are: \code{Pearson}, \code{Deviance},
 \code{Osius-Rojek}, and \code{Copas-RSS} (global / standardized);
 \code{HL} (Hosmer-Lemeshow deciles) and \code{HL-equalwidth} (partition);
 \code{EF} (the omnibus Ebrahim-Farrington test); \code{DEF.poly2/poly3/stukel}
-and \code{Stukel} (directed); plus the two ensemble rows
+and \code{Stukel} (directed); \code{Tsiatis}, \code{Xie}, and
+\code{Pulkstenis-Robinson} (covariate-space); plus the two ensemble rows
 (\code{Ensemble.Vote(3DEF)} and \code{Ensemble.Univ(3DEF+EF)}) from the Cauchy
-combination test. Further thesis tests (McCullagh, information matrix, Tsiatis,
-Xie, Pulkstenis-Robinson, le Cessie) are planned for a later build.
+combination test. Further thesis tests (McCullagh, information matrix,
+le Cessie, and opt-in bootstrap/GAM) are planned for a later build.
+
+Notes: \code{Tsiatis} and \code{Xie} cluster the covariate space with k-means
+(a fixed internal seed, so results are reproducible and the caller's RNG is
+left untouched). \code{Xie} uses the corrected degrees of freedom
+\eqn{G - k/2 - 1} with \eqn{k} the number of predictors. \code{Pulkstenis-Robinson}
+auto-detects the categorical covariate (any factor/character/logical, or a
+numeric with at most \code{getOption("ebrahim.gof.pr.maxlev", 6)} distinct
+values); it returns \code{NA} with a note when none is present.
 }
 \examples{
 set.seed(1)

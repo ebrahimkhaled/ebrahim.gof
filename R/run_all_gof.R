@@ -12,10 +12,19 @@
 #' \code{Osius-Rojek}, and \code{Copas-RSS} (global / standardized);
 #' \code{HL} (Hosmer-Lemeshow deciles) and \code{HL-equalwidth} (partition);
 #' \code{EF} (the omnibus Ebrahim-Farrington test); \code{DEF.poly2/poly3/stukel}
-#' and \code{Stukel} (directed); plus the two ensemble rows
+#' and \code{Stukel} (directed); \code{Tsiatis}, \code{Xie}, and
+#' \code{Pulkstenis-Robinson} (covariate-space); plus the two ensemble rows
 #' (\code{Ensemble.Vote(3DEF)} and \code{Ensemble.Univ(3DEF+EF)}) from the Cauchy
-#' combination test. Further thesis tests (McCullagh, information matrix, Tsiatis,
-#' Xie, Pulkstenis-Robinson, le Cessie) are planned for a later build.
+#' combination test. Further thesis tests (McCullagh, information matrix,
+#' le Cessie, and opt-in bootstrap/GAM) are planned for a later build.
+#'
+#' Notes: \code{Tsiatis} and \code{Xie} cluster the covariate space with k-means
+#' (a fixed internal seed, so results are reproducible and the caller's RNG is
+#' left untouched). \code{Xie} uses the corrected degrees of freedom
+#' \eqn{G - k/2 - 1} with \eqn{k} the number of predictors. \code{Pulkstenis-Robinson}
+#' auto-detects the categorical covariate (any factor/character/logical, or a
+#' numeric with at most \code{getOption("ebrahim.gof.pr.maxlev", 6)} distinct
+#' values); it returns \code{NA} with a note when none is present.
 #'
 #' @param object A fitted binary logistic \code{\link[stats]{glm}}, or a binary
 #'   (0/1) response vector \code{y} (then supply \code{predicted_probs}).
@@ -46,7 +55,7 @@
 #' run.all.gof(y, fitted(fit))            # prediction-only tests
 #'
 #' @seealso \code{\link{ef.gof}}, \code{\link{def.gof}}, \code{\link{def.ensemble.gof}}.
-#' @importFrom stats fitted predict model.matrix model.frame coef deviance pchisq binomial glm.fit
+#' @importFrom stats fitted predict model.matrix model.frame coef deviance pchisq binomial glm.fit kmeans median
 #' @export
 run.all.gof <- function(object, predicted_probs = NULL, X = NULL,
                         tests = "all", G = 10, include_slow = FALSE,
@@ -258,6 +267,115 @@ gof_stukel <- function(ctx, opts = list()) {
   list(Statistic = LR, df = df, p_value = stats::pchisq(LR, df, lower.tail = FALSE), Note = "")
 }
 
+# Moore-Penrose pseudo-inverse via SVD (matches MASS::ginv; avoids a dependency).
+.gof_ginv <- function(M, tol = sqrt(.Machine$double.eps)) {
+  s <- svd(M)
+  pos <- s$d > max(tol * s$d[1], 0)
+  if (!any(pos)) return(matrix(0, ncol(M), nrow(M)))
+  s$v[, pos, drop = FALSE] %*% (t(s$u[, pos, drop = FALSE]) / s$d[pos])
+}
+
+# k-means with a fixed seed (123) that does not disturb the caller's RNG state.
+.gof_kmeans <- function(mat, centers, nstart = 1L) {
+  has <- exists(".Random.seed", envir = .GlobalEnv)
+  old <- if (has) get(".Random.seed", envir = .GlobalEnv) else NULL
+  set.seed(123)
+  cl <- stats::kmeans(mat, centers = centers, nstart = nstart)$cluster
+  if (has) assign(".Random.seed", old, envir = .GlobalEnv)
+  cl
+}
+
+# Tsiatis (1980) clustering score test: cluster the covariate space, then score-
+# test the cluster indicators added to the model. Ported from Tsiatis.R.
+gof_tsiatis <- function(ctx, opts = list()) {
+  if (is.null(ctx$X))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "needs the design matrix X"))
+  X <- ctx$X; ph <- ctx$ph; y <- ctx$y
+  cov_mat <- X[, -1, drop = FALSE]                       # drop intercept column
+  if (ncol(cov_mat) < 1)
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "no covariates to cluster"))
+  cl <- tryCatch(.gof_kmeans(cov_mat, ctx$G), error = function(e) NULL)
+  if (is.null(cl))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "clustering failed"))
+  Xc <- stats::model.matrix(~ factor(cl))[, -1, drop = FALSE]
+  if (ncol(Xc) < 1)
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "only one non-empty cluster"))
+  W   <- ph * (1 - ph)
+  U   <- colSums(Xc * (y - ph))
+  V11 <- crossprod(X, W * X)
+  V12 <- crossprod(X, W * Xc)
+  V22 <- crossprod(Xc, W * Xc)
+  V   <- V22 - t(V12) %*% .gof_ginv(V11) %*% V12
+  Tstat <- as.numeric(t(U) %*% .gof_ginv(V) %*% U)
+  rankV <- sum(eigen(V, symmetric = TRUE, only.values = TRUE)$values > 1e-8)
+  list(Statistic = Tstat, df = rankV,
+       p_value = stats::pchisq(Tstat, rankV, lower.tail = FALSE), Note = "")
+}
+
+# Xie covariate-space grouped chi-square (own group rule, fractional df). From Xie.R.
+gof_xie <- function(ctx, opts = list()) {
+  if (is.null(ctx$X))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "needs the design matrix X"))
+  X <- ctx$X; ph <- ctx$ph; y <- ctx$y
+  k <- ncol(X) - 1
+  cov_mat <- X[, -1, drop = FALSE]
+  if (ncol(cov_mat) < 1)
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "no covariates to cluster"))
+  G <- if (k < 5) 10 else k + 5
+  cl <- tryCatch(.gof_kmeans(cov_mat, G, nstart = 25L), error = function(e) NULL)
+  if (is.null(cl))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "clustering failed"))
+  stat <- 0
+  for (I in split(seq_along(y), cl)) {
+    ng <- length(I); pbar <- mean(ph[I])
+    if (pbar > 0 && pbar < 1)
+      stat <- stat + (sum(y[I]) - ng * pbar)^2 / (ng * pbar * (1 - pbar))
+  }
+  df <- G - k / 2 - 1
+  if (df <= 0) return(list(Statistic = stat, df = df, p_value = NA, Note = "df <= 0"))
+  list(Statistic = stat, df = df, p_value = stats::pchisq(stat, df, lower.tail = FALSE), Note = "")
+}
+
+# Pulkstenis-Robinson: covariate patterns from categorical vars, split by median
+# fitted prob, chi-square on the 2*M subgroups. Base-R port of PR_test_only.R.
+gof_pr <- function(ctx, opts = list()) {
+  if (!ctx$has_model || is.null(ctx$data))
+    return(list(Statistic = NA, df = NA, p_value = NA,
+                Note = "needs a glm model (for categorical covariates)"))
+  # model.frame stores the response in column 1; the rest are the model terms.
+  cand <- names(ctx$data)[-1]
+  maxlev <- getOption("ebrahim.gof.pr.maxlev", 6)
+  cat_vars <- if (!is.null(opts$cat_var)) opts$cat_var else
+    cand[vapply(cand, function(v) {
+      col <- ctx$data[[v]]
+      is.factor(col) || is.character(col) || is.logical(col) ||
+        (is.numeric(col) && length(unique(col)) <= maxlev)
+    }, logical(1))]
+  if (length(cat_vars) == 0)
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "no categorical covariate"))
+
+  y <- ctx$y; ph <- ctx$ph
+  patt <- do.call(paste, c(lapply(cat_vars, function(v) as.character(ctx$data[[v]])), sep = "_"))
+  M <- length(unique(patt))
+  lev <- character(length(y))
+  for (pp in unique(patt)) {
+    ix <- which(patt == pp)
+    lev[ix] <- ifelse(ph[ix] <= stats::median(ph[ix]), "low", "high")
+  }
+  idx <- split(seq_along(y), paste(patt, lev, sep = "::"))
+  os <- vapply(idx, function(I) sum(y[I] == 1), numeric(1))
+  of <- vapply(idx, function(I) sum(y[I] == 0), numeric(1))
+  es <- vapply(idx, function(I) sum(ph[I]), numeric(1))
+  ef <- vapply(idx, function(I) sum(1 - ph[I]), numeric(1))
+  keep <- es > 0 & ef > 0
+  chisq <- sum((os[keep] - es[keep])^2 / es[keep] + (of[keep] - ef[keep])^2 / ef[keep])
+  df <- 2 * M - length(cat_vars) - 2
+  if (df <= 0)
+    return(list(Statistic = chisq, df = df, p_value = NA, Note = "df <= 0 (too few patterns)"))
+  list(Statistic = chisq, df = df, p_value = stats::pchisq(chisq, df, lower.tail = FALSE),
+       Note = paste0("cat: ", paste(cat_vars, collapse = ",")))
+}
+
 # Registry of the bundled tests (test wrappers are internal, not exported).
 .GOF_REGISTRY <- list(
   "Pearson"       = list(fn = gof_pearson,  family = "Global",       needs_model = FALSE, slow = FALSE),
@@ -270,5 +388,8 @@ gof_stukel <- function(ctx, opts = list()) {
   "DEF.poly2"     = list(fn = function(ctx, opts) gof_def(ctx, list(basis = "poly2")),  family = "Directed", needs_model = TRUE, slow = FALSE),
   "DEF.poly3"     = list(fn = function(ctx, opts) gof_def(ctx, list(basis = "poly3")),  family = "Directed", needs_model = TRUE, slow = FALSE),
   "DEF.stukel"    = list(fn = function(ctx, opts) gof_def(ctx, list(basis = "stukel")), family = "Directed", needs_model = TRUE, slow = FALSE),
-  "Stukel"        = list(fn = gof_stukel,   family = "Directed",     needs_model = TRUE,  slow = FALSE)
+  "Stukel"        = list(fn = gof_stukel,   family = "Directed",     needs_model = TRUE,  slow = FALSE),
+  "Tsiatis"             = list(fn = gof_tsiatis, family = "Covariate-space", needs_model = TRUE, slow = FALSE),
+  "Xie"                 = list(fn = gof_xie,     family = "Covariate-space", needs_model = TRUE, slow = FALSE),
+  "Pulkstenis-Robinson" = list(fn = gof_pr,      family = "Covariate-space", needs_model = TRUE, slow = FALSE)
 )
