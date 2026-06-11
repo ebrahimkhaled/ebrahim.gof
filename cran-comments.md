@@ -13,16 +13,20 @@ NEWS.md and the function help.
 ## Test environments
 
 * local: Windows 11, R 4.4.1 (2024-06-14 ucrt)
-* (planned before submission) win-builder: R-devel and R-release
-* (planned before submission) GitHub Actions R-CMD-check: Windows / macOS / Ubuntu
+* win-builder: R-devel (R Under development, 2026-06-09 r90126 ucrt) -- Status: OK
+* R-hub: Linux (R-devel) and Windows (R-devel) -- Status: OK
+* GitHub Actions (R-CMD-check): Windows-release, macOS-release, and
+  Ubuntu (R-devel, R-release, R-oldrel-1) -- all passing
 
 ## R CMD check results
 
-0 errors | 0 warnings | 1 note
+0 errors | 0 warnings | 0 notes
 
-* The only NOTE is "checking for future file timestamps ... unable to verify
-  current time". This is a local environment issue (the check machine cannot
-  reach a time server) and does not occur on the CRAN/win-builder test machines.
+* win-builder (R-devel) and R-hub return Status: OK with no notes.
+* The local check shows one NOTE only -- "checking for future file timestamps
+  ... unable to verify current time" -- which is a local environment issue (the
+  machine cannot reach a time server). It does not appear on win-builder, R-hub,
+  or the CRAN test machines.
 
 ## Dependencies
 
