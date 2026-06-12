@@ -1,3 +1,21 @@
+# ebrahim.gof 2.1.0
+
+## New features
+
+* `cdef.gof()` - the Covariate-Space Directed Ebrahim-Farrington test. Like
+  `def.gof()` but the directed basis lives in covariate space (polynomials and
+  pairwise products, natural splines, or a `"combined"` basis that also includes
+  fitted-probability bends), with the same Farrington Omega-projection calibration.
+  It detects omitted interactions and local/oscillatory misfit that
+  fitted-probability grouping can miss; rank-deficient bases are reduced
+  automatically.
+* `gof.features()` - the goodness-of-fit evidence vector (one-sided z-scores from
+  a panel of tests plus the covariate-space directed tests), the input to a
+  learned-ensemble GOF test.
+* `deploy.gof()` - a deployable learned-ensemble test: given a pre-trained scorer,
+  it calibrates the p-value by a per-dataset parametric bootstrap from the fitted
+  model, so it is valid on any data set without knowing the truth.
+
 # ebrahim.gof 2.0.0
 
 ## New features
