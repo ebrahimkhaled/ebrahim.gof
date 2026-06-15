@@ -9,10 +9,13 @@
 #'
 #' @details
 #' The currently bundled tests are: \code{Pearson}, \code{Deviance},
-#' \code{Osius-Rojek}, \code{Copas-RSS}, and \code{Information-Matrix} (the
-#' White/Orme test) (global / standardized);
-#' \code{HL} (Hosmer-Lemeshow deciles), \code{HL-equalwidth}, and
-#' \code{Pigeon-Heyse} (partition); \code{EF} and \code{EF-normal} (the omnibus
+#' \code{Osius-Rojek}, \code{McCullagh}, \code{Copas-RSS}, and
+#' \code{Information-Matrix} (the White/Orme test) (global / standardized);
+#' \code{McCullagh} standardizes the Pearson statistic by its exact conditional
+#' moments (Kuss 2002 algorithm);
+#' \code{HL} (Hosmer-Lemeshow deciles), \code{HL-equalwidth},
+#' \code{Pigeon-Heyse}, and \code{F-test} (the modified Hosmer-Lemeshow
+#' F-test: deviance residuals ANOVA-F-tested across deciles) (partition); \code{EF} and \code{EF-normal} (the omnibus
 #' Ebrahim-Farrington test with the chi-square and normal references; the normal
 #' form reproduces the thesis simulation); \code{DEF.poly2/poly3/stukel}
 #' and \code{Stukel} (directed); \code{Tsiatis}, \code{Xie}, and
@@ -29,7 +32,12 @@
 #' & Liu's standardized-power procedure for the Hosmer-Lemeshow test, which has no
 #' p-value: it reports the standardized power as the statistic and a randomized
 #' accept/reject decision in the \code{Note}; target size via
-#' \code{control = list("Lai-Liu-HL" = list(n0 = ..., k = ...))}).
+#' \code{control = list("Lai-Liu-HL" = list(n0 = ..., k = ...))}), and
+#' \code{GiViTI} and \code{GiViTI-external} (the GiViTI polynomial calibration
+#' test with the internal and external development assumptions; wraps
+#' \pkg{givitiR}, run in an isolated \pkg{callr} subprocess so a failure in its
+#' compiled dependencies returns \code{NA} rather than aborting the session;
+#' set \code{control = list(GiViTI = list(devel = "internal"))}).
 #'
 #' Notes: \code{Tsiatis} and \code{Xie} cluster the covariate space with k-means
 #' (a fixed internal seed, so results are reproducible and the caller's RNG is
@@ -55,13 +63,22 @@
 #' @param tests Either \code{"all"} (default) or a character vector of test names
 #'   to run (e.g. \code{c("EF","DEF.poly3","HL")}).
 #' @param G Integer number of groups passed to the grouping tests (default 10).
-#' @param include_slow Logical; when \code{TRUE}, also run the opt-in slow tests
-#'   (currently the le Cessie-van Houwelingen smoothing test, which builds an
-#'   n-by-n kernel matrix and is O(n^2)-O(n^3)). Default \code{FALSE}.
-#' @param control Optional named list of per-test options (reserved).
+#' @param include_slow Logical; when \code{TRUE} (the default) the full battery
+#'   runs, including the slow tests: le Cessie-van Houwelingen smoothing
+#'   (O(n^2)-O(n^3)), the GAM tests, Stute-Zhu, eHL, BAGofT, and GiViTI. Set
+#'   \code{FALSE} for a quick run with the fast tests only. A one-time message
+#'   notes this whenever slow tests are included.
+#' @param calibration_plot Logical; when \code{TRUE} and \code{GiViTI} is among
+#'   the tests, also compute and draw the GiViTI calibration belt and store it on
+#'   the result (retrievable with \code{plot()}). Default \code{FALSE}.
+#' @param control Optional named list of per-test options (e.g.
+#'   \code{list(BAGofT = list(nsim = 100), GiViTI = list(devel = "internal"))}).
 #'
-#' @return A \code{data.frame} with columns \code{Test}, \code{Family},
-#'   \code{Statistic}, \code{df}, \code{p_value}, and \code{Note}.
+#' @return A \code{data.frame} (of class \code{gof_battery}) with columns
+#'   \code{Test}, \code{Family}, \code{Statistic}, \code{df}, \code{p_value},
+#'   and \code{Note}, one row per test. A dedicated \code{print} method shows the
+#'   rows grouped by family with formatted p-values and significance flags; the
+#'   underlying columns remain available for programmatic use.
 #'
 #' @author Ebrahim Khaled Ebrahim \email{ebrahimkhaled@@alexu.edu.eg}
 #'
@@ -71,20 +88,39 @@
 #' x <- runif(n, -3, 3)
 #' y <- rbinom(n, 1, 1 / (1 + exp(-(0.6 * x))))
 #' fit <- glm(y ~ x, family = binomial())
-#' run.all.gof(fit)                       # the whole battery + ensemble rows
-#' run.all.gof(fit, tests = c("EF", "DEF.poly3", "HL"))
-#' run.all.gof(y, fitted(fit))            # prediction-only tests
+#'
+#' ## quick run: the fast tests only
+#' run.all.gof(fit, include_slow = FALSE)
+#'
+#' ## pick specific tests
+#' run.all.gof(fit, tests = c("McCullagh", "Osius-Rojek", "HL"))
+#'
+#' \donttest{
+#' ## the full battery (default include_slow = TRUE); the slow tests may need the
+#' ## suggested packages mgcv, BAGofT, givitiR and callr
+#' run.all.gof(fit)
+#'
+#' ## also draw the GiViTI calibration belt
+#' res <- run.all.gof(fit, calibration_plot = TRUE)
+#' plot(res)   # redraw the stored belt
+#' }
 #'
 #' @seealso \code{\link{ef.gof}}, \code{\link{def.gof}}, \code{\link{def.ensemble.gof}}.
-#' @importFrom stats fitted predict model.matrix model.frame coef deviance pchisq binomial glm.fit kmeans median dist
+#' @importFrom stats fitted predict model.matrix model.frame coef deviance pchisq binomial glm.fit kmeans median dist anova lm pnorm
+#' @importFrom utils capture.output
 #' @export
 run.all.gof <- function(object, predicted_probs = NULL, X = NULL,
-                        tests = "all", G = 10, include_slow = FALSE,
-                        control = list()) {
+                        tests = "all", G = 10, include_slow = TRUE,
+                        calibration_plot = FALSE, control = list()) {
 
   ctx <- .gof_context(object, predicted_probs, X, G = G)
   sel <- if (identical(tests, "all")) names(.GOF_REGISTRY) else intersect(tests, names(.GOF_REGISTRY))
   if (length(sel) == 0) stop("run.all.gof: no known tests selected.")
+  if (isTRUE(include_slow) &&
+      any(vapply(sel, function(nm) isTRUE(.GOF_REGISTRY[[nm]]$slow), logical(1))))
+    message("run.all.gof: running the full battery, including the slow tests ",
+            "(le-Cessie, the GAM tests, Stute-Zhu, eHL, BAGofT, GiViTI). ",
+            "For a quick run with the fast tests only, set include_slow = FALSE.")
 
   rows <- list(); skipped_model <- FALSE
   for (nm in sel) {
@@ -94,7 +130,7 @@ run.all.gof <- function(object, predicted_probs = NULL, X = NULL,
       skipped_model <- TRUE
       rows[[nm]] <- data.frame(Test = nm, Family = e$family, Statistic = NA_real_,
                                df = NA_real_, p_value = NA_real_,
-                               Note = "needs a glm model", stringsAsFactors = FALSE)
+                               Note = "Not applicable: needs a fitted glm", stringsAsFactors = FALSE)
       next
     }
     res <- tryCatch(e$fn(ctx, control[[nm]]),
@@ -114,7 +150,8 @@ run.all.gof <- function(object, predicted_probs = NULL, X = NULL,
     vu <- tryCatch(def.ensemble.gof(ctx$model, add_ef = TRUE, G = G)$p_value, error = function(e) NA_real_)
     out <- rbind(out, data.frame(
       Test = c("Ensemble.Vote(3DEF)", "Ensemble.Univ(3DEF+EF)"), Family = "Ensemble",
-      Statistic = NA_real_, df = NA_real_, p_value = c(v3, vu), Note = "CCT",
+      Statistic = NA_real_, df = NA_real_, p_value = c(v3, vu),
+      Note = "Cauchy combination of the directed tests",
       stringsAsFactors = FALSE))
   }
 
@@ -122,7 +159,104 @@ run.all.gof <- function(object, predicted_probs = NULL, X = NULL,
     message("Only prediction-based tests were run. Pass the fitted glm (or X) ",
             "to also run the directed and refit-based tests.")
   rownames(out) <- NULL
+  class(out) <- c("gof_battery", "data.frame")
+
+  # Optional GiViTI calibration belt: compute it in an isolated subprocess,
+  # store it on the result, and draw it.
+  if (isTRUE(calibration_plot) && "GiViTI" %in% sel) {
+    belt <- .giviti_belt(ctx, control[["GiViTI"]])
+    if (is.null(belt)) {
+      message("run.all.gof: GiViTI calibration belt unavailable ",
+              "(needs the 'givitiR' and 'callr' packages).")
+    } else {
+      attr(out, "giviti_belt") <- belt
+      try(plot(belt), silent = TRUE)
+    }
+  }
   out
+}
+
+# Compute the GiViTI calibration belt object in an isolated callr subprocess
+# (same crash-safety as the GiViTI test). Returns NULL if unavailable.
+.giviti_belt <- function(ctx, opts = list()) {
+  if (!requireNamespace("givitiR", quietly = TRUE) ||
+      !requireNamespace("callr", quietly = TRUE))
+    return(NULL)
+  devel <- if (is.null(opts$devel)) "internal" else opts$devel
+  o <- as.numeric(ctx$y); e <- as.numeric(ctx$ph)
+  tryCatch(
+    callr::r(function(o, e, devel) {
+      givitiR::givitiCalibrationBelt(o = o, e = e, devel = devel)
+    }, args = list(o = o, e = e, devel = devel), timeout = 120),
+    error = function(err) NULL)
+}
+
+#' Plot the GiViTI calibration belt from a goodness-of-fit battery
+#'
+#' Draws the GiViTI calibration belt stored on a \code{\link{run.all.gof}} result
+#' that was produced with \code{calibration_plot = TRUE}. The belt shows the
+#' fitted calibration curve with a confidence region against the 45-degree line.
+#'
+#' @param x A \code{gof_battery} object from \code{\link{run.all.gof}}.
+#' @param ... Passed to the \pkg{givitiR} plot method.
+#' @return \code{x}, invisibly.
+#' @importFrom graphics plot
+#' @exportS3Method plot gof_battery
+plot.gof_battery <- function(x, ...) {
+  belt <- attr(x, "giviti_belt")
+  if (is.null(belt)) {
+    message("No GiViTI calibration belt is stored on this result. ",
+            "Re-run run.all.gof(..., calibration_plot = TRUE).")
+    return(invisible(NULL))
+  }
+  if (!requireNamespace("givitiR", quietly = TRUE)) {
+    message("Install the 'givitiR' package to draw the calibration belt.")
+    return(invisible(NULL))
+  }
+  plot(belt, ...)
+  invisible(x)
+}
+
+#' Print a goodness-of-fit battery
+#'
+#' Formats the \code{\link{run.all.gof}} result as a compact, readable table:
+#' rows grouped by test family, p-values shown to four decimals (or scientific
+#' for very small values, \code{"-"} when not available), and a significance
+#' flag. The object is still a plain \code{data.frame} underneath, so all the
+#' raw columns remain available for programmatic use.
+#'
+#' @param x A \code{gof_battery} object returned by \code{\link{run.all.gof}}.
+#' @param ... Ignored.
+#' @return \code{x}, invisibly.
+#' @exportS3Method print gof_battery
+print.gof_battery <- function(x, ...) {
+  d <- as.data.frame(x)
+  sig <- vapply(d$p_value, function(p)
+    if (is.na(p)) "" else if (p < .001) "***" else if (p < .01) "**"
+    else if (p < .05) "*" else if (p < .1) "." else "", character(1))
+  fp <- vapply(d$p_value, function(p)
+    if (is.na(p)) "-" else if (p < 1e-4) sprintf("%.1e", p)
+    else formatC(p, format = "f", digits = 4), character(1))
+  fnum <- function(v, dig) vapply(v, function(z)
+    if (is.na(z)) "" else formatC(z, format = "g", digits = dig), character(1))
+  disp <- data.frame(Test = d$Test, Family = d$Family,
+                     Statistic = fnum(d$Statistic, 4), df = fnum(d$df, 3),
+                     p_value = fp, signif = sig,
+                     Note = ifelse(is.na(d$Note), "", d$Note),
+                     check.names = FALSE, stringsAsFactors = FALSE)
+  fam_order <- c("Global", "Standardized", "Partition", "Covariate-space",
+                 "Directed", "Smoothing", "GAM", "Bootstrap", "Calibration", "Ensemble")
+  ord <- match(disp$Family, fam_order); ord[is.na(ord)] <- 99L
+  disp <- disp[order(ord, seq_len(nrow(disp))), , drop = FALSE]
+  cat(sprintf("\nGoodness-of-fit battery: %d tests\n", nrow(d)))
+  cat(strrep("=", 78), "\n", sep = "")
+  print.data.frame(disp, row.names = FALSE, right = FALSE)
+  cat(strrep("-", 78), "\n", sep = "")
+  cat("Signif.:  *** <.001   ** <.01   * <.05   . <.1     p '-' = not available\n")
+  nNA <- sum(is.na(d$p_value))
+  if (nNA > 0L)
+    cat(sprintf("%d test(s) not available - see the Note column for why.\n", nNA))
+  invisible(x)
 }
 
 # Coerce a possibly-NULL/empty scalar to a numeric (NA if missing).
@@ -198,7 +332,7 @@ gof_deviance <- function(ctx, opts = list()) {
 # and A1 = 2*(N - sum(1/n_i)) = 0 for one-trial (binary) data. Two-sided p-value.
 gof_osius <- function(ctx, opts = list()) {
   if (is.null(ctx$X))
-    return(list(Statistic = NA, df = NA, p_value = NA, Note = "needs the design matrix X"))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not applicable: needs the design matrix X (pass the fitted glm)"))
   X <- ctx$X; ph <- ctx$ph; y <- ctx$y; N <- length(ph); p <- ncol(X)
   V    <- ph * (1 - ph)
   PrG  <- sum((y - ph)^2 / V)
@@ -206,11 +340,11 @@ gof_osius <- function(ctx, opts = list()) {
   cvar <- (1 - 2 * ph) / V
   fit  <- tryCatch(stats::lm.wfit(X, cvar, V), error = function(e) NULL)
   if (is.null(fit))
-    return(list(Statistic = NA, df = NA, p_value = NA, Note = "WLS regression failed"))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: weighted least-squares step failed"))
   RSS1 <- sum(V * fit$residuals^2)
   varz <- A1 + RSS1
   if (!is.finite(varz) || varz <= 0)
-    return(list(Statistic = NA, df = NA, p_value = NA, Note = "non-positive variance"))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: non-positive variance"))
   z <- (PrG - (N - p)) / sqrt(varz)
   list(Statistic = z, df = NA_real_, p_value = 2 * stats::pnorm(abs(z), lower.tail = FALSE), Note = "")
 }
@@ -219,7 +353,7 @@ gof_osius <- function(ctx, opts = list()) {
 # trivial (one trial per observation). Ported from goflogit (7 tests.R).
 gof_copas <- function(ctx, opts = list()) {
   if (is.null(ctx$X))
-    return(list(Statistic = NA, df = NA, p_value = NA, Note = "needs the design matrix X"))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not applicable: needs the design matrix X (pass the fitted glm)"))
   X <- ctx$X; ph <- ctx$ph; y <- ctx$y
   V <- ph * (1 - ph)
   copas    <- sum((y - ph)^2)
@@ -229,10 +363,10 @@ gof_copas <- function(ctx, opts = list()) {
   M   <- tryCatch(diag(length(ph)) - W %*% X %*% solve(t(X) %*% W %*% X) %*% t(X),
                   error = function(e) NULL)
   if (is.null(M))
-    return(list(Statistic = NA, df = NA, p_value = NA, Note = "singular information matrix"))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: singular information matrix"))
   varcopas <- as.numeric(t(c12) %*% M %*% W %*% c12)
   if (!is.finite(varcopas) || varcopas <= 0)
-    return(list(Statistic = NA, df = NA, p_value = NA, Note = "non-positive variance"))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: non-positive variance"))
   z <- (copas - meacopas) / sqrt(varcopas)
   list(Statistic = z, df = 1, p_value = stats::pchisq(z^2, 1, lower.tail = FALSE), Note = "")
 }
@@ -243,16 +377,16 @@ gof_copas <- function(ctx, opts = list()) {
 # Matrix).R (IMtest_fast); matches the thesis simulation.
 gof_im <- function(ctx, opts = list()) {
   if (is.null(ctx$X))
-    return(list(Statistic = NA, df = NA, p_value = NA, Note = "needs the design matrix X"))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not applicable: needs the design matrix X (pass the fitted glm)"))
   X <- ctx$X; ph <- ctx$ph; y <- ctx$y
   if (any(ph < 1e-8) || any(ph > 1 - 1e-8))
-    return(list(Statistic = NA, df = NA, p_value = NA, Note = "fitted probabilities too extreme"))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: fitted probabilities too extreme (near 0 or 1)"))
   r       <- (y - ph) / sqrt(ph * (1 - ph))
   w_sqrt  <- sqrt(ph * (1 - ph))
   W_aux   <- cbind(w_sqrt * X, (w_sqrt * (1 - 2 * ph)) * (X^2))
   xtx_inv <- tryCatch(solve(crossprod(W_aux)), error = function(e) NULL)
   if (is.null(xtx_inv))
-    return(list(Statistic = NA, df = NA, p_value = NA, Note = "singular auxiliary matrix"))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: singular auxiliary matrix"))
   Wr <- crossprod(W_aux, r)
   im <- as.numeric(crossprod(Wr, xtx_inv %*% Wr))
   df <- ncol(X)
@@ -379,7 +513,7 @@ gof_stukel <- function(ctx, opts = list()) {
 # test the cluster indicators added to the model. Ported from Tsiatis.R.
 gof_tsiatis <- function(ctx, opts = list()) {
   if (is.null(ctx$X))
-    return(list(Statistic = NA, df = NA, p_value = NA, Note = "needs the design matrix X"))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not applicable: needs the design matrix X (pass the fitted glm)"))
   X <- ctx$X; ph <- ctx$ph; y <- ctx$y
   cov_mat <- X[, -1, drop = FALSE]                       # drop intercept column
   if (ncol(cov_mat) < 1)
@@ -405,7 +539,7 @@ gof_tsiatis <- function(ctx, opts = list()) {
 # Xie covariate-space grouped chi-square (own group rule, fractional df). From Xie.R.
 gof_xie <- function(ctx, opts = list()) {
   if (is.null(ctx$X))
-    return(list(Statistic = NA, df = NA, p_value = NA, Note = "needs the design matrix X"))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not applicable: needs the design matrix X (pass the fitted glm)"))
   X <- ctx$X; ph <- ctx$ph; y <- ctx$y
   k <- ncol(X) - 1
   cov_mat <- X[, -1, drop = FALSE]
@@ -442,7 +576,7 @@ gof_pr <- function(ctx, opts = list()) {
         (is.numeric(col) && length(unique(col)) <= maxlev)
     }, logical(1))]
   if (length(cat_vars) == 0)
-    return(list(Statistic = NA, df = NA, p_value = NA, Note = "no categorical covariate"))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not applicable: needs a categorical covariate"))
 
   y <- ctx$y; ph <- ctx$ph
   patt <- do.call(paste, c(lapply(cat_vars, function(v) as.character(ctx$data[[v]])), sep = "_"))
@@ -463,7 +597,7 @@ gof_pr <- function(ctx, opts = list()) {
   if (df <= 0)
     return(list(Statistic = chisq, df = df, p_value = NA, Note = "df <= 0 (too few patterns)"))
   list(Statistic = chisq, df = df, p_value = stats::pchisq(chisq, df, lower.tail = FALSE),
-       Note = paste0("cat: ", paste(cat_vars, collapse = ",")))
+       Note = paste0("split on categorical: ", paste(cat_vars, collapse = ", ")))
 }
 
 # le Cessie-van Houwelingen smoothed-residual GOF test (general, multivariate).
@@ -510,7 +644,7 @@ gof_lecessie <- function(ctx, opts = list()) {
   VarQ2 <- 2 * sum(diag(R.tmp %*% R.tmp))
   VarQ  <- VarQ1 + VarQ2
   if (!is.finite(VarQ) || VarQ <= 0)
-    return(list(Statistic = NA, df = NA, p_value = NA, Note = "non-positive variance"))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: non-positive variance"))
   Test <- Q.raw * 2 * E.Q / VarQ
   df   <- 2 * E.Q^2 / VarQ
   list(Statistic = Test, df = df, p_value = stats::pchisq(Test, df, lower.tail = FALSE), Note = "")
@@ -581,7 +715,7 @@ gof_gam_pr <- function(ctx, opts = list()) {
   gf <- .gof_gam_pi(ctx)
   if (is.null(gf)) return(list(Statistic = NA, df = NA, p_value = NA, Note = "install 'mgcv' / no covariates"))
   if (length(gf$cats) == 0)
-    return(list(Statistic = NA, df = NA, p_value = NA, Note = "no categorical covariate"))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not applicable: needs a categorical covariate"))
   patt <- do.call(paste, c(lapply(gf$cats, function(v) as.character(ctx$data[[v]])), sep = "_"))
   M <- length(unique(patt)); pig <- gf$pi
   lev <- character(length(ctx$y))
@@ -673,31 +807,100 @@ gof_ehl <- function(ctx, opts = list()) {
   boot <- if (is.null(opts$boot)) 10L else as.integer(opts$boot)
   HLe  <- tryCatch(.gof_ehl(ctx$y, ctx$ph, boot = boot, s = 0.5), error = function(e) NA_real_)
   if (!is.finite(HLe))
-    return(list(Statistic = NA, df = NA, p_value = NA, Note = "eHL failed"))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: e-value computation failed"))
   list(Statistic = HLe, df = NA_real_, p_value = min(1, 1 / HLe),
-       Note = "e-value test; p = min(1, 1/e)")
+       Note = "e-value test (reported as p = min(1, 1/e))")
 }
 
-# BAGofT (binary-adaptive GOF test) via the BAGofT package.
+# BAGofT (binary-adaptive GOF test) via the BAGofT package. The random-forest
+# partitioner needs at least two predictors; for a single-predictor model we add
+# a constant helper column to the data (not the formula), the workaround
+# documented in Kuss (2002) / the thesis, so the test runs instead of erroring.
 gof_bagoft <- function(ctx, opts = list()) {
   if (!ctx$has_model || is.null(ctx$data))
-    return(list(Statistic = NA, df = NA, p_value = NA, Note = "needs a glm model"))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not applicable: needs a fitted glm"))
   if (!requireNamespace("BAGofT", quietly = TRUE))
-    return(list(Statistic = NA, df = NA, p_value = NA, Note = "install the 'BAGofT' package"))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: install the 'BAGofT' package"))
   nsim  <- if (is.null(opts$nsim)) 100L else as.integer(opts$nsim)
   dat   <- ctx$data
   attr(dat, "terms") <- NULL                       # a model.frame's terms attr breaks BAGofT
   preds <- names(dat)[-1]
+  added_const <- FALSE
+  if (length(preds) < 2) {                          # single predictor: add a constant column
+    dat[[".bagoft_const"]] <- 1
+    preds <- c(preds, ".bagoft_const")
+    added_const <- TRUE
+  }
   link  <- ctx$model$family$link
-  r <- tryCatch(suppressWarnings(
-    BAGofT::BAGofT(testModel = BAGofT::testGlmBi(formula = stats::formula(ctx$model), link = link),
-                   parFun = BAGofT::parRF(parVar = preds),
-                   data = dat, nsim = nsim)),
-    error = function(e) NULL)
+  r <- NULL                                          # silence BAGofT's per-sim console chatter
+  invisible(suppressMessages(utils::capture.output(
+    r <- tryCatch(suppressWarnings(
+      BAGofT::BAGofT(testModel = BAGofT::testGlmBi(formula = stats::formula(ctx$model), link = link),
+                     parFun = BAGofT::parRF(parVar = preds),
+                     data = dat, nsim = nsim)),
+      error = function(e) NULL))))
   if (is.null(r) || is.null(r$p.value))
-    return(list(Statistic = NA, df = NA, p_value = NA, Note = "BAGofT failed"))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: BAGofT computation failed"))
   list(Statistic = NA_real_, df = NA_real_, p_value = as.numeric(r$p.value),
-       Note = paste0("nsim=", nsim))
+       Note = paste0("adaptive partition; nsim=", nsim,
+                     if (added_const) "; constant column added (single predictor)" else ""))
+}
+
+# McCullagh (1985) exact-conditional-moments standardization of the Pearson
+# statistic (SAS GOFLOGIT / Kuss 2002 algorithm, ungrouped binary case). The
+# Pearson X^2 is standardized by its conditional mean and variance given the
+# fitted coefficients, then Z is referred to the normal. Verified to reproduce
+# the thesis low-birth-weight result (p = 0.937) to machine precision.
+gof_mccullagh <- function(ctx, opts = list()) {
+  if (is.null(ctx$X))
+    return(list(Statistic = NA, df = NA, p_value = NA,
+                Note = "Not applicable: needs the design matrix X (pass the fitted glm)"))
+  X <- ctx$X; ph <- ctx$ph; y <- ctx$y; n <- length(y); p <- ncol(X)
+  V  <- ph * (1 - ph)
+  X2 <- sum((y - ph)^2 / V)
+  W  <- diag(V)
+  inv <- tryCatch(solve(t(X) %*% W %*% X), error = function(e) NULL)
+  if (is.null(inv))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: singular information matrix"))
+  H    <- X %*% inv %*% t(X)               # X (X'WX)^{-1} X'
+  h    <- diag(H)                          # leverages
+  u    <- (1 - 2 * ph) / V
+  uhat <- as.numeric(H %*% W %*% u)
+  k2   <- V; k3 <- V * (1 - 2 * ph)
+  k4   <- ph - 7 * ph^2 + 12 * ph^3 - 6 * ph^4
+  E    <- (n - p) - 0.5 * sum(k4 * h / k2) + 0.5 * sum(uhat * k3 * h)
+  RSSu <- as.numeric(t(u) %*% (W - W %*% H %*% W) %*% u)
+  Var  <- (1 - p / n) * RSSu               # ungrouped: 2*sum((m-1)/m) = 0
+  if (!is.finite(Var) || Var <= 0)
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: non-positive variance"))
+  Z <- (X2 - E) / sqrt(Var)
+  list(Statistic = Z, df = NA_real_, p_value = stats::pnorm(Z, lower.tail = FALSE), Note = "")
+}
+
+# GiViTI calibration test (Nattino, Finazzi & Bertolini): forward-selects a
+# polynomial calibration model and tests it against the identity, using a
+# selection-aware null distribution. Wraps givitiR::givitiCalibrationTest, run in
+# an isolated callr subprocess so a crash in givitiR's compiled dependencies
+# (alabama, rootSolve) returns NA instead of aborting the session. devel defaults
+# to "internal" (the model was fit on these data). Verified against the thesis
+# low-birth-weight result (internal p = 0.586).
+gof_giviti <- function(ctx, opts = list()) {
+  if (!requireNamespace("givitiR", quietly = TRUE))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: install the 'givitiR' package"))
+  if (!requireNamespace("callr", quietly = TRUE))
+    return(list(Statistic = NA, df = NA, p_value = NA,
+                Note = "Not run: install the 'callr' package (isolates givitiR)"))
+  devel <- if (is.null(opts$devel)) "internal" else opts$devel
+  o <- as.numeric(ctx$y); e <- as.numeric(ctx$ph)
+  pv <- tryCatch(
+    callr::r(function(o, e, devel) {
+      givitiR::givitiCalibrationTest(o = o, e = e, devel = devel)$p.value
+    }, args = list(o = o, e = e, devel = devel), timeout = 120),
+    error = function(err) NA_real_)
+  if (length(pv) != 1 || !is.finite(pv))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: givitiR calibration test failed"))
+  list(Statistic = NA_real_, df = NA_real_, p_value = pv,
+       Note = paste0("calibration belt; devel=", devel))
 }
 
 # Lai & Liu (2018) standardized-power procedure for the Hosmer-Lemeshow test.
@@ -748,16 +951,36 @@ gof_lailiu <- function(ctx, opts = list()) {
                      " (n0=", n0, "); decision: ", decision))
 }
 
+# Hosmer-Lemeshow F-test (the "modified H&L" of LogisticDx::gof.glm): sort by
+# fitted probability, cut into G equal-frequency groups, and ANOVA-F-test the
+# deviance residuals against the group factor. Matches the thesis F_test row.
+gof_ftest <- function(ctx, opts = list()) {
+  y <- ctx$y; ph <- ctx$ph
+  grp <- factor(.gof_groups_ef(ph, ctx$G))
+  if (nlevels(grp) < 2)
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: fewer than 2 groups"))
+  eps <- 1e-10
+  dr  <- sign(y - ph) * sqrt(pmax(0, -2 * (y * log(pmax(ph, eps)) +
+                                           (1 - y) * log(pmax(1 - ph, eps)))))
+  av <- tryCatch(stats::anova(stats::lm(dr ~ grp)), error = function(e) NULL)
+  if (is.null(av) || !("grp" %in% rownames(av)))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: ANOVA failed"))
+  list(Statistic = av["grp", "F value"], df = av["grp", "Df"],
+       p_value = av["grp", "Pr(>F)"], Note = "deviance residuals ~ groups (ANOVA F)")
+}
+
 # Registry of the bundled tests (test wrappers are internal, not exported).
 .GOF_REGISTRY <- list(
   "Pearson"       = list(fn = gof_pearson,  family = "Global",       needs_model = FALSE, slow = FALSE),
   "Deviance"      = list(fn = gof_deviance, family = "Global",       needs_model = FALSE, slow = FALSE),
   "Osius-Rojek"   = list(fn = gof_osius,    family = "Standardized", needs_model = TRUE,  slow = FALSE),
+  "McCullagh"     = list(fn = gof_mccullagh, family = "Standardized", needs_model = TRUE, slow = FALSE),
   "Copas-RSS"     = list(fn = gof_copas,    family = "Standardized", needs_model = TRUE,  slow = FALSE),
   "Information-Matrix" = list(fn = gof_im,  family = "Global",       needs_model = TRUE,  slow = FALSE),
   "HL"            = list(fn = gof_hl,       family = "Partition",    needs_model = FALSE, slow = FALSE),
   "HL-equalwidth" = list(fn = gof_hlw,      family = "Partition",    needs_model = FALSE, slow = FALSE),
   "Pigeon-Heyse"  = list(fn = gof_ph_test,  family = "Partition",    needs_model = FALSE, slow = FALSE),
+  "F-test"        = list(fn = gof_ftest,    family = "Partition",    needs_model = FALSE, slow = FALSE),
   "EF"            = list(fn = gof_ef,       family = "Standardized", needs_model = FALSE, slow = FALSE),
   "EF-normal"     = list(fn = gof_ef_normal, family = "Standardized", needs_model = FALSE, slow = FALSE),
   "DEF.poly2"     = list(fn = function(ctx, opts) gof_def(ctx, list(basis = "poly2")),  family = "Directed", needs_model = TRUE, slow = FALSE),
@@ -773,6 +996,9 @@ gof_lailiu <- function(ctx, opts = list()) {
   "Xie-GAM"             = list(fn = gof_gam_xie,   family = "GAM",            needs_model = TRUE, slow = TRUE),
   "Stute-Zhu"           = list(fn = gof_stutezhu,  family = "Bootstrap",      needs_model = TRUE,  slow = TRUE),
   "eHL"                 = list(fn = gof_ehl,        family = "Calibration",    needs_model = FALSE, slow = TRUE),
+  "GiViTI"              = list(fn = gof_giviti,      family = "Calibration",    needs_model = FALSE, slow = TRUE),
+  "GiViTI-external"     = list(fn = function(ctx, opts) gof_giviti(ctx, list(devel = "external")),
+                                                       family = "Calibration",  needs_model = FALSE, slow = TRUE),
   "BAGofT"              = list(fn = gof_bagoft,     family = "Bootstrap",      needs_model = TRUE,  slow = TRUE),
   "Lai-Liu-HL"          = list(fn = gof_lailiu,     family = "Bootstrap",      needs_model = TRUE,  slow = TRUE)
 )

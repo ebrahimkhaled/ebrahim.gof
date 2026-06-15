@@ -1,3 +1,55 @@
+# ebrahim.gof 2.1.0
+
+## New features
+
+* `cdef.gof()` - the Covariate-Space Directed Ebrahim-Farrington test. Like
+  `def.gof()` but the directed basis lives in covariate space (polynomials and
+  pairwise products, natural splines, or a `"combined"` basis that also includes
+  fitted-probability bends), with the same Farrington Omega-projection calibration.
+  It detects omitted interactions and local/oscillatory misfit that
+  fitted-probability grouping can miss; rank-deficient bases are reduced
+  automatically.
+* `gof.features()` - the goodness-of-fit evidence vector (one-sided z-scores from
+  a panel of tests plus the covariate-space directed tests), the input to a
+  learned-ensemble GOF test.
+* `deploy.gof()` - a deployable learned-ensemble test: given a pre-trained scorer,
+  it calibrates the p-value by a per-dataset parametric bootstrap from the fitted
+  model, so it is valid on any data set without knowing the truth.
+
+## `run.all.gof()` additions and improvements
+
+* `McCullagh` - the McCullagh (1985) exact-conditional-moments standardization of
+  the Pearson statistic (SAS GOFLOGIT / Kuss 2002 algorithm). Verified to
+  reproduce the thesis low-birth-weight result (p = 0.937) to machine precision.
+* `GiViTI` - the GiViTI polynomial calibration test (Nattino, Finazzi &
+  Bertolini), wrapping `givitiR` run inside an isolated `callr` subprocess so a
+  crash in givitiR's compiled dependencies returns `NA` instead of aborting the
+  session. Verified against the thesis result (internal p = 0.586). Opt-in slow;
+  `control = list(GiViTI = list(devel = "internal"))`. Adds `givitiR` and `callr`
+  to Suggests.
+* `BAGofT` now runs on single-predictor models: its random-forest partitioner
+  needs at least two predictors, so a constant helper column is added to the data
+  (not the formula) - the workaround documented in Kuss (2002) / the thesis -
+  instead of failing.
+* Reworked output: `run.all.gof()` returns an object of class `gof_battery` (still
+  a `data.frame`) with a dedicated `print` method - rows grouped by test family,
+  p-values formatted (four decimals or scientific, `-` when not available), and a
+  significance flag. All `Note` messages were rewritten to clear, human-readable
+  phrases.
+* `include_slow` now defaults to `TRUE`, so the full battery runs by default; a
+  one-time message notes which slow tests are included and that
+  `include_slow = FALSE` gives a quick fast-tests-only run.
+* New `calibration_plot` argument: with `calibration_plot = TRUE` (and `GiViTI`
+  among the tests) the GiViTI calibration belt is computed, stored on the result,
+  and drawn; a `plot()` method (`plot.gof_battery`) redraws the stored belt.
+* `F-test` - the modified Hosmer-Lemeshow F-test (deviance residuals
+  ANOVA-F-tested across deciles), following `LogisticDx::gof.glm`.
+* `GiViTI-external` - the GiViTI calibration test under the external development
+  assumption, so the internal and external forms now run side by side (matching
+  the thesis, which reported both).
+* BAGofT's per-simulation console output ("Calculating results from N th ...") is
+  now suppressed, so the printed battery stays clean.
+
 # ebrahim.gof 2.0.0
 
 ## New features
@@ -74,9 +126,7 @@
 * The remaining thesis tests are all slow / third-party and will be added as
   opt-in `include_slow = TRUE` tests in a later build: the GAM-based tests
   (HL-GAM, PR-GAM, Xie-GAM; need `mgcv`), the bootstrap tests (Hosmer bootstrap,
-  Stute-Zhu), the e-value HL (`eHL`; needs `isotone`), and `BAGofT`. (McCullagh
-  is not added: it appears only in the unused `goflogit` macro, not in the thesis
-  simulation.)
+  Stute-Zhu), the e-value HL (`eHL`; needs `isotone`), and `BAGofT`.
 
 # ebrahim.gof 1.0.0
 

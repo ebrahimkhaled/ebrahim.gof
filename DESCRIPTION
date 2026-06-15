@@ -1,8 +1,8 @@
 Package: ebrahim.gof
 Type: Package
 Title: Ebrahim-Farrington Goodness-of-Fit Test for Logistic Regression
-Version: 2.0.0
-Date: 2026-06-10
+Version: 2.1.0
+Date: 2026-06-15
 Authors@R: person("Ebrahim", "Khaled Ebrahim",
                   email = "ebrahimkhaled@alexu.edu.eg",
                   role = c("aut", "cre"),
@@ -18,7 +18,10 @@ Description: Implements the Ebrahim-Farrington goodness-of-fit test for logistic
     Ebrahim-Farrington test (for binary data with automatic grouping), the
     Directed Ebrahim-Farrington (DEF) test that targets calibration-shape
     departures, and an ensemble that combines the DEF bases via the Cauchy
-    combination test. For more details see Hosmer (1980) <doi:10.1080/03610928008827941> and Farrington (1996) <doi:10.1111/j.2517-6161.1996.tb02086.x>.
+    combination test. Also provides 'run.all.gof()', which runs a battery of
+    classical and modern goodness-of-fit and calibration tests (including
+    McCullagh, Osius-Rojek, le Cessie-van Houwelingen, Stute-Zhu, and the GiViTI
+    calibration test) in one call. For more details see Hosmer (1980) <doi:10.1080/03610928008827941> and Farrington (1996) <doi:10.1111/j.2517-6161.1996.tb02086.x>.
 License: GPL-3
 URL: https://github.com/ebrahimkhaled/ebrahim.gof
 BugReports: https://github.com/ebrahimkhaled/ebrahim.gof/issues
@@ -34,7 +37,9 @@ Suggests:
     CompQuadForm,
     statmod,
     mgcv,
-    BAGofT
+    BAGofT,
+    givitiR,
+    callr
 Encoding: UTF-8
 RoxygenNote: 7.3.2
 VignetteBuilder: knitr
