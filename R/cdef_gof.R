@@ -54,7 +54,7 @@
 #' cdef.gof(fit)                    # covariate-space directed test (poly basis)
 #' cdef.gof(fit, basis = "spline")  # for local / oscillatory misfit
 #'
-#' @importFrom stats fitted model.matrix qlogis sd qr quantile
+#' @importFrom stats fitted model.matrix qlogis sd quantile setNames
 #' @export
 cdef.gof <- function(object, predicted_probs = NULL, X = NULL,
                      basis  = c("poly", "spline", "combined"),

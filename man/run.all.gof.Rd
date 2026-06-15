@@ -10,7 +10,8 @@ run.all.gof(
   X = NULL,
   tests = "all",
   G = 10,
-  include_slow = FALSE,
+  include_slow = TRUE,
+  calibration_plot = FALSE,
   control = list()
 )
 }
@@ -29,15 +30,25 @@ to run (e.g. \code{c("EF","DEF.poly3","HL")}).}
 
 \item{G}{Integer number of groups passed to the grouping tests (default 10).}
 
-\item{include_slow}{Logical; when \code{TRUE}, also run the opt-in slow tests
-(currently the le Cessie-van Houwelingen smoothing test, which builds an
-n-by-n kernel matrix and is O(n^2)-O(n^3)). Default \code{FALSE}.}
+\item{include_slow}{Logical; when \code{TRUE} (the default) the full battery
+runs, including the slow tests: le Cessie-van Houwelingen smoothing
+(O(n^2)-O(n^3)), the GAM tests, Stute-Zhu, eHL, BAGofT, and GiViTI. Set
+\code{FALSE} for a quick run with the fast tests only. A one-time message
+notes this whenever slow tests are included.}
 
-\item{control}{Optional named list of per-test options (reserved).}
+\item{calibration_plot}{Logical; when \code{TRUE} and \code{GiViTI} is among
+the tests, also compute and draw the GiViTI calibration belt and store it on
+the result (retrievable with \code{plot()}). Default \code{FALSE}.}
+
+\item{control}{Optional named list of per-test options (e.g.
+\code{list(BAGofT = list(nsim = 100), GiViTI = list(devel = "internal"))}).}
 }
 \value{
-A \code{data.frame} with columns \code{Test}, \code{Family},
-  \code{Statistic}, \code{df}, \code{p_value}, and \code{Note}.
+A \code{data.frame} (of class \code{gof_battery}) with columns
+  \code{Test}, \code{Family}, \code{Statistic}, \code{df}, \code{p_value},
+  and \code{Note}, one row per test. A dedicated \code{print} method shows the
+  rows grouped by family with formatted p-values and significance flags; the
+  underlying columns remain available for programmatic use.
 }
 \description{
 Runs several goodness-of-fit tests for a binary logistic regression in one
@@ -48,10 +59,13 @@ one test never aborts the whole run.
 }
 \details{
 The currently bundled tests are: \code{Pearson}, \code{Deviance},
-\code{Osius-Rojek}, \code{Copas-RSS}, and \code{Information-Matrix} (the
-White/Orme test) (global / standardized);
-\code{HL} (Hosmer-Lemeshow deciles), \code{HL-equalwidth}, and
-\code{Pigeon-Heyse} (partition); \code{EF} and \code{EF-normal} (the omnibus
+\code{Osius-Rojek}, \code{McCullagh}, \code{Copas-RSS}, and
+\code{Information-Matrix} (the White/Orme test) (global / standardized);
+\code{McCullagh} standardizes the Pearson statistic by its exact conditional
+moments (Kuss 2002 algorithm);
+\code{HL} (Hosmer-Lemeshow deciles), \code{HL-equalwidth},
+\code{Pigeon-Heyse}, and \code{F-test} (the modified Hosmer-Lemeshow
+F-test: deviance residuals ANOVA-F-tested across deciles) (partition); \code{EF} and \code{EF-normal} (the omnibus
 Ebrahim-Farrington test with the chi-square and normal references; the normal
 form reproduces the thesis simulation); \code{DEF.poly2/poly3/stukel}
 and \code{Stukel} (directed); \code{Tsiatis}, \code{Xie}, and
@@ -68,7 +82,12 @@ number of reps with \code{control = list("Stute-Zhu" = list(B = ...))}),
 & Liu's standardized-power procedure for the Hosmer-Lemeshow test, which has no
 p-value: it reports the standardized power as the statistic and a randomized
 accept/reject decision in the \code{Note}; target size via
-\code{control = list("Lai-Liu-HL" = list(n0 = ..., k = ...))}).
+\code{control = list("Lai-Liu-HL" = list(n0 = ..., k = ...))}), and
+\code{GiViTI} and \code{GiViTI-external} (the GiViTI polynomial calibration
+test with the internal and external development assumptions; wraps
+\pkg{givitiR}, run in an isolated \pkg{callr} subprocess so a failure in its
+compiled dependencies returns \code{NA} rather than aborting the session;
+set \code{control = list(GiViTI = list(devel = "internal"))}).
 
 Notes: \code{Tsiatis} and \code{Xie} cluster the covariate space with k-means
 (a fixed internal seed, so results are reproducible and the caller's RNG is
@@ -91,9 +110,22 @@ n <- 500
 x <- runif(n, -3, 3)
 y <- rbinom(n, 1, 1 / (1 + exp(-(0.6 * x))))
 fit <- glm(y ~ x, family = binomial())
-run.all.gof(fit)                       # the whole battery + ensemble rows
-run.all.gof(fit, tests = c("EF", "DEF.poly3", "HL"))
-run.all.gof(y, fitted(fit))            # prediction-only tests
+
+## quick run: the fast tests only
+run.all.gof(fit, include_slow = FALSE)
+
+## pick specific tests
+run.all.gof(fit, tests = c("McCullagh", "Osius-Rojek", "HL"))
+
+\donttest{
+## the full battery (default include_slow = TRUE); the slow tests may need the
+## suggested packages mgcv, BAGofT, givitiR and callr
+run.all.gof(fit)
+
+## also draw the GiViTI calibration belt
+res <- run.all.gof(fit, calibration_plot = TRUE)
+plot(res)   # redraw the stored belt
+}
 
 }
 \seealso{
