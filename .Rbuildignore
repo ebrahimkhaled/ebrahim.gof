@@ -6,3 +6,8 @@
 ^\.Rproj\.user$
 ^\.Rhistory$
 ^CRAN-SUBMISSION$
+^CRAN_reply.*\.txt$
+^check_.*\.out$
+^check_elapsed\.txt$
+^ebrahim\.gof_.*\.tar\.gz$
+^ebrahim\.gof\.Rcheck$
