@@ -1,7 +1,7 @@
 ^\.github$
 ^\.git$
 ^cran-comments\.md$
-^_try_examples\.R$
+^_.*\.R$
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^\.Rhistory$
