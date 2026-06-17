@@ -1,3 +1,28 @@
+## Resubmission
+
+This is a resubmission of 2.1.0 after the automated incoming pretest. The
+pretest reported one NOTE per flavour, addressed as follows:
+
+* "Overall checktime ... > 10 min" (r-devel-windows). Fixed. The 2.1.0 default
+  `include_slow = TRUE` had caused the full slow battery (GiViTI in a `callr`
+  subprocess, the GAM tests, and the bootstrap tests) to run in the vignette,
+  in a `\donttest` example, and in one test. These now run the fast battery
+  (or a slim, GiViTI-only subset), and the slow test uses `skip_on_cran()`, so
+  the slow battery is no longer exercised during `R CMD check`. Local
+  `R CMD check --as-cran` checktime is now well under the limit.
+
+* "Possibly misspelled words in DESCRIPTION" (Cessie, GiViTI, Houwelingen,
+  McCullagh, Osius, Rojek, Stute, Zhu, le). These are all proper names of the
+  goodness-of-fit tests and their authors, spelled as in the cited literature;
+  they are not misspellings.
+
+* "Days since last update: 4." 2.1.0 follows 2.0.0 closely because it completes
+  the goodness-of-fit battery that 2.0.0 introduced -- it adds the McCullagh and
+  GiViTI calibration tests that round out the recommended core -- and an
+  accompanying methods paper, now under review, cites and reproduces its results
+  via this package. I would be grateful if you could accept the short interval
+  on that basis; I will otherwise space subsequent updates well apart.
+
 ## Submission
 
 This is a feature update of an existing CRAN package (2.0.0 -> 2.1.0). It adds:

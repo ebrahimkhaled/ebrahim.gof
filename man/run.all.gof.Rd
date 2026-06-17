@@ -120,10 +120,11 @@ run.all.gof(fit, tests = c("McCullagh", "Osius-Rojek", "HL"))
 \donttest{
 ## the full battery (default include_slow = TRUE); the slow tests may need the
 ## suggested packages mgcv, BAGofT, givitiR and callr
-run.all.gof(fit)
+run.all.gof(fit, control = list("Stute-Zhu" = list(B = 50)))
 
-## also draw the GiViTI calibration belt
-res <- run.all.gof(fit, calibration_plot = TRUE)
+## draw the GiViTI calibration belt (needs givitiR + callr)
+res <- run.all.gof(fit, tests = c("McCullagh", "GiViTI"),
+                   calibration_plot = TRUE)
 plot(res)   # redraw the stored belt
 }
 

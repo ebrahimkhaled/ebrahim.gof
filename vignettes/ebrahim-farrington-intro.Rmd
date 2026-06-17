@@ -139,10 +139,11 @@ def.ensemble.gof(model)
 def.ensemble.gof(model, add_ef = TRUE)   # add the omnibus EF
 ```
 
-`run.all.gof()` returns one tidy data frame, one row per test:
+`run.all.gof()` returns one tidy data frame, one row per test (here the fast
+battery; the slow tests are shown below):
 
 ```{r}
-run.all.gof(model)
+run.all.gof(model, include_slow = FALSE)
 ```
 
 Add `include_slow = TRUE` to also run the opt-in slow tests (le Cessie, the

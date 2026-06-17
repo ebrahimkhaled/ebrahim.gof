@@ -150,6 +150,7 @@ test_that("eHL internal reimplementation matches the source value", {
 })
 
 test_that("le Cessie is opt-in (slow) and matches its source", {
+  skip_on_cran()                 # include_slow = TRUE runs the full slow battery; keep CRAN fast
   set.seed(321)
   n <- 150
   x1 <- rnorm(n); x2 <- runif(n, -2, 2)
