@@ -3,7 +3,9 @@
 This is a small feature update of an existing CRAN package (2.1.0 -> 2.1.1). It adds:
 
 * `gof_install_suggests()`, a helper that installs the optional ("Suggests")
-  packages used by the slow tests in `run.all.gof()`.
+  packages used by the slow tests in `run.all.gof()` (only the missing ones; with
+  `update = TRUE` it also offers to update out-of-date ones via
+  `utils::old.packages()`).
 * an `install` argument to `run.all.gof()` that, when a selected test needs an
   optional package that is not installed, offers to install it.
 

@@ -32,46 +32,74 @@
 #' @param pkgs Optional character vector of package names to consider. Defaults
 #'   to the full optional set used by the battery.
 #' @param ask Logical; when \code{TRUE} (the default in interactive sessions)
-#'   you are shown the list of missing packages and asked to confirm before
-#'   anything is installed. Set \code{ask = FALSE} to install without a prompt
-#'   (e.g. in a setup script you control).
-#' @return Invisibly, the character vector of packages that were missing.
+#'   you are shown the list of packages to be installed/updated and asked to
+#'   confirm first. Set \code{ask = FALSE} to proceed without a prompt (e.g. in a
+#'   setup script you control).
+#' @param update Logical; when \code{FALSE} (the default) only the \emph{missing}
+#'   packages are installed and anything already present is left untouched. When
+#'   \code{TRUE} the function also checks (via \code{\link[utils]{old.packages}})
+#'   which of the present packages are out of date and offers to update those
+#'   too. The update check contacts your CRAN mirror, so it is a little slower.
+#' @return Invisibly, the character vector of packages that were installed or
+#'   updated (empty if nothing was needed).
 #' @examples
 #' \dontrun{
 #' # install whatever optional packages are missing, after confirming:
 #' gof_install_suggests()
+#'
+#' # also update any that are out of date:
+#' gof_install_suggests(update = TRUE)
 #'
 #' # just the GiViTI dependencies, no prompt:
 #' gof_install_suggests(c("givitiR", "callr"), ask = FALSE)
 #' }
 #' @seealso \code{\link{run.all.gof}}
 #' @export
-gof_install_suggests <- function(pkgs = NULL, ask = interactive()) {
+gof_install_suggests <- function(pkgs = NULL, ask = interactive(),
+                                 update = FALSE) {
   want    <- if (is.null(pkgs)) .GOF_ALL_SUGGESTS else pkgs
-  missing <- want[!vapply(want, requireNamespace, logical(1), quietly = TRUE)]
-  if (!length(missing)) {
-    message("All optional packages for run.all.gof() are already installed.")
+  present <- vapply(want, requireNamespace, logical(1), quietly = TRUE)
+  missing <- want[!present]
+
+  # installed-but-out-of-date ones, only when asked (old.packages() hits CRAN)
+  outdated <- character(0)
+  if (isTRUE(update)) {
+    old <- tryCatch(rownames(utils::old.packages()), error = function(e) NULL)
+    outdated <- intersect(want[present], old)
+  }
+
+  todo <- unique(c(missing, outdated))
+  if (!length(todo)) {
+    message("All optional packages for run.all.gof() are already installed",
+            if (isTRUE(update)) " and up to date." else ".")
     return(invisible(character(0)))
   }
+
   if (isTRUE(ask)) {
     if (!interactive()) {
-      message("Optional package(s) not installed: ", paste(missing, collapse = ", "),
-              ". Run gof_install_suggests() interactively, or with ask = FALSE, to install.")
-      return(invisible(missing))
+      message("Optional package(s) to install/update: ",
+              paste(todo, collapse = ", "),
+              ". Run gof_install_suggests() interactively, or with ask = FALSE.")
+      return(invisible(todo))
     }
-    ans <- readline(sprintf(
-      "Install %d optional package(s) for run.all.gof() now: %s? [y/N] ",
-      length(missing), paste(missing, collapse = ", ")))
+    parts <- character(0)
+    if (length(missing))
+      parts <- c(parts, sprintf("install %s", paste(missing, collapse = ", ")))
+    if (length(outdated))
+      parts <- c(parts, sprintf("update %s", paste(outdated, collapse = ", ")))
+    ans <- readline(sprintf("For run.all.gof(), %s? [y/N] ",
+                            paste(parts, collapse = "; ")))
     if (!tolower(trimws(ans)) %in% c("y", "yes")) {
       message("Skipped. You can install them later with gof_install_suggests().")
-      return(invisible(missing))
+      return(invisible(todo))
     }
   }
-  utils::install.packages(missing)
+
+  utils::install.packages(todo)
   still <- missing[!vapply(missing, requireNamespace, logical(1), quietly = TRUE)]
   if (length(still))
     warning("Could not install: ", paste(still, collapse = ", "))
-  invisible(missing)
+  invisible(todo)
 }
 
 # Called by run.all.gof(): when interactive and tests in the run need optional

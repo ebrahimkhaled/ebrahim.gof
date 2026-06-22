@@ -152,7 +152,8 @@ install any missing package it needs (the default `install = "ask"`), and you
 can install them all up front at any time:
 
 ```r
-gof_install_suggests()                 # asks, then installs the missing ones
+gof_install_suggests()                 # asks, then installs only the missing ones
+gof_install_suggests(update = TRUE)    # also update any that are out of date
 gof_install_suggests(ask = FALSE)      # install without a prompt (setup scripts)
 
 run.all.gof(fit, include_slow = TRUE)               # asks to install if needed

@@ -4,19 +4,26 @@
 \alias{gof_install_suggests}
 \title{Install the optional packages used by \code{run.all.gof()}}
 \usage{
-gof_install_suggests(pkgs = NULL, ask = interactive())
+gof_install_suggests(pkgs = NULL, ask = interactive(), update = FALSE)
 }
 \arguments{
 \item{pkgs}{Optional character vector of package names to consider. Defaults
 to the full optional set used by the battery.}
 
 \item{ask}{Logical; when \code{TRUE} (the default in interactive sessions)
-you are shown the list of missing packages and asked to confirm before
-anything is installed. Set \code{ask = FALSE} to install without a prompt
-(e.g. in a setup script you control).}
+you are shown the list of packages to be installed/updated and asked to
+confirm first. Set \code{ask = FALSE} to proceed without a prompt (e.g. in a
+setup script you control).}
+
+\item{update}{Logical; when \code{FALSE} (the default) only the \emph{missing}
+packages are installed and anything already present is left untouched. When
+\code{TRUE} the function also checks (via \code{\link[utils]{old.packages}})
+which of the present packages are out of date and offers to update those
+too. The update check contacts your CRAN mirror, so it is a little slower.}
 }
 \value{
-Invisibly, the character vector of packages that were missing.
+Invisibly, the character vector of packages that were installed or
+  updated (empty if nothing was needed).
 }
 \description{
 The slow tests in \code{\link{run.all.gof}} rely on optional packages that
@@ -30,6 +37,9 @@ for you, asking first.
 \dontrun{
 # install whatever optional packages are missing, after confirming:
 gof_install_suggests()
+
+# also update any that are out of date:
+gof_install_suggests(update = TRUE)
 
 # just the GiViTI dependencies, no prompt:
 gof_install_suggests(c("givitiR", "callr"), ask = FALSE)

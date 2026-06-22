@@ -4,9 +4,11 @@
 
 * `gof_install_suggests()` - installs the optional ("Suggests") packages that
   the slow tests in `run.all.gof()` rely on (`givitiR` + `callr` for GiViTI,
-  `mgcv` for the GAM tests, `BAGofT`, `ResourceSelection`). It asks for
-  confirmation first (in interactive sessions); pass `ask = FALSE` to skip the
-  prompt in a setup script.
+  `mgcv` for the GAM tests, `BAGofT`, `ResourceSelection`). It only installs the
+  ones that are missing (anything already present is left untouched), and asks
+  for confirmation first (in interactive sessions); pass `ask = FALSE` to skip
+  the prompt in a setup script. With `update = TRUE` it also checks
+  `old.packages()` and offers to update any that are out of date.
 * `run.all.gof()` gains an `install` argument (`"ask"` by default). When a test
   in the run needs an optional package that is not installed, an interactive
   session offers to install it (with `"ask"`) or installs it silently (with
