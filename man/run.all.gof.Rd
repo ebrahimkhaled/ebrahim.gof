@@ -12,6 +12,7 @@ run.all.gof(
   G = 10,
   include_slow = TRUE,
   calibration_plot = FALSE,
+  install = c("ask", "no", "yes"),
   control = list()
 )
 }
@@ -39,6 +40,15 @@ notes this whenever slow tests are included.}
 \item{calibration_plot}{Logical; when \code{TRUE} and \code{GiViTI} is among
 the tests, also compute and draw the GiViTI calibration belt and store it on
 the result (retrievable with \code{plot()}). Default \code{FALSE}.}
+
+\item{install}{One of \code{"ask"} (default), \code{"no"}, or \code{"yes"},
+controlling what happens when a test in the run needs an optional package
+that is not installed. In an \emph{interactive} session, \code{"ask"} lists
+the missing packages and asks before installing, and \code{"yes"} installs
+them without asking; \code{"no"} never installs (the test is just skipped
+with a note). In a non-interactive session (scripts, \code{R CMD check})
+nothing is ever installed, regardless of this setting. See
+\code{\link{gof_install_suggests}}.}
 
 \item{control}{Optional named list of per-test options (e.g.
 \code{list(BAGofT = list(nsim = 100), GiViTI = list(devel = "internal"))}).}
@@ -119,8 +129,10 @@ run.all.gof(fit, tests = c("McCullagh", "Osius-Rojek", "HL"))
 
 \donttest{
 ## the full battery (default include_slow = TRUE); the slow tests may need the
-## suggested packages mgcv, BAGofT, givitiR and callr
-run.all.gof(fit, control = list("Stute-Zhu" = list(B = 50)))
+## suggested packages mgcv, BAGofT, givitiR and callr. In an interactive
+## session run.all.gof() offers to install any that are missing (install =
+## "ask"); see also gof_install_suggests(). Use install = "no" to never ask.
+run.all.gof(fit, install = "no", control = list("Stute-Zhu" = list(B = 50)))
 
 ## draw the GiViTI calibration belt (needs givitiR + callr)
 res <- run.all.gof(fit, tests = c("McCullagh", "GiViTI"),
@@ -130,7 +142,8 @@ plot(res)   # redraw the stored belt
 
 }
 \seealso{
-\code{\link{ef.gof}}, \code{\link{def.gof}}, \code{\link{def.ensemble.gof}}.
+\code{\link{ef.gof}}, \code{\link{def.gof}}, \code{\link{def.ensemble.gof}},
+  \code{\link{gof_install_suggests}}.
 }
 \author{
 Ebrahim Khaled Ebrahim \email{ebrahimkhaled@alexu.edu.eg}

@@ -1,51 +1,34 @@
-## Resubmission
-
-This is a resubmission of 2.1.0 after the automated incoming pretest. The
-pretest reported one NOTE per flavour, addressed as follows:
-
-* "Overall checktime ... > 10 min" (r-devel-windows). Fixed. The 2.1.0 default
-  `include_slow = TRUE` had caused the full slow battery (GiViTI in a `callr`
-  subprocess, the GAM tests, and the bootstrap tests) to run in the vignette,
-  in a `\donttest` example, and in one test. These now run the fast battery
-  (or a slim, GiViTI-only subset), and the slow test uses `skip_on_cran()`, so
-  the slow battery is no longer exercised during `R CMD check`. Local
-  `R CMD check --as-cran` checktime is now well under the limit.
-
-* "Possibly misspelled words in DESCRIPTION" (Cessie, GiViTI, Houwelingen,
-  McCullagh, Osius, Rojek, Stute, Zhu, le). These are all proper names of the
-  goodness-of-fit tests and their authors, spelled as in the cited literature;
-  they are not misspellings.
-
-* "Days since last update: 4." 2.1.0 follows 2.0.0 closely because it completes
-  the goodness-of-fit battery that 2.0.0 introduced -- it adds the McCullagh and
-  GiViTI calibration tests that round out the recommended core -- and an
-  accompanying methods paper, now under review, cites and reproduces its results
-  via this package. I would be grateful if you could accept the short interval
-  on that basis; I will otherwise space subsequent updates well apart.
-
 ## Submission
 
-This is a feature update of an existing CRAN package (2.0.0 -> 2.1.0). It adds:
+This is a small feature update of an existing CRAN package (2.1.0 -> 2.1.1). It adds:
 
-* New exported functions: `cdef.gof()` (covariate-space directed test),
-  `gof.features()` (the GOF evidence vector), and `deploy.gof()` (a deployable
-  learned-ensemble test).
-* `run.all.gof()` gains the `McCullagh` test (exact conditional-moment
-  standardization of the Pearson statistic) and the `GiViTI` polynomial
-  calibration test, completing the recommended core. GiViTI wraps the suggested
-  `givitiR` package run inside an isolated `callr` subprocess, so a failure in
-  its compiled dependencies returns `NA` rather than aborting the session.
-* `run.all.gof()` now returns a `gof_battery` object with `print` and `plot`
-  methods (the plot draws the GiViTI calibration belt), `include_slow` defaults
-  to `TRUE`, and a new `calibration_plot` argument is available.
-* The `BAGofT` wrapper now also runs on single-predictor models, and all
-  diagnostic `Note` messages were rewritten to clear phrases.
+* `gof_install_suggests()`, a helper that installs the optional ("Suggests")
+  packages used by the slow tests in `run.all.gof()`.
+* an `install` argument to `run.all.gof()` that, when a selected test needs an
+  optional package that is not installed, offers to install it.
 
-There are no breaking changes in this release.
+There are no breaking changes.
+
+## Note on installing Suggests (use of utils::install.packages)
+
+`gof_install_suggests()` calls `utils::install.packages()`, but only with the
+user's explicit consent, and never during checks:
+
+* It is reached either by the user calling `gof_install_suggests()` directly, or
+  by `run.all.gof(..., install = "ask"/"yes")`.
+* It only installs after an interactive `readline()` confirmation (the default),
+  unless the user explicitly passes `ask = FALSE`.
+* Every install path is guarded by `interactive()`, so in a non-interactive
+  session (scripts, `R CMD check`, the CRAN machines) nothing is ever installed
+  and the library is never modified. The examples that would install are wrapped
+  in `\dontrun{}`.
+
+The library is therefore never modified without the user's explicit action, in
+keeping with the CRAN policy on writing to the user's filespace.
 
 ## Test environments
 
-* local: Windows 11, R 4.4.1 (2024-06-14 ucrt)
+* local: Windows 11, R 4.6.0 (ucrt)
 * win-builder: R-devel and R-release (to be confirmed on submission)
 * GitHub Actions (R-CMD-check): Windows-release, macOS-release, and
   Ubuntu (R-devel, R-release, R-oldrel-1)

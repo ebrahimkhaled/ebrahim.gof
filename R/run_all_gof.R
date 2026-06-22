@@ -71,6 +71,14 @@
 #' @param calibration_plot Logical; when \code{TRUE} and \code{GiViTI} is among
 #'   the tests, also compute and draw the GiViTI calibration belt and store it on
 #'   the result (retrievable with \code{plot()}). Default \code{FALSE}.
+#' @param install One of \code{"ask"} (default), \code{"no"}, or \code{"yes"},
+#'   controlling what happens when a test in the run needs an optional package
+#'   that is not installed. In an \emph{interactive} session, \code{"ask"} lists
+#'   the missing packages and asks before installing, and \code{"yes"} installs
+#'   them without asking; \code{"no"} never installs (the test is just skipped
+#'   with a note). In a non-interactive session (scripts, \code{R CMD check})
+#'   nothing is ever installed, regardless of this setting. See
+#'   \code{\link{gof_install_suggests}}.
 #' @param control Optional named list of per-test options (e.g.
 #'   \code{list(BAGofT = list(nsim = 100), GiViTI = list(devel = "internal"))}).
 #'
@@ -97,8 +105,10 @@
 #'
 #' \donttest{
 #' ## the full battery (default include_slow = TRUE); the slow tests may need the
-#' ## suggested packages mgcv, BAGofT, givitiR and callr
-#' run.all.gof(fit, control = list("Stute-Zhu" = list(B = 50)))
+#' ## suggested packages mgcv, BAGofT, givitiR and callr. In an interactive
+#' ## session run.all.gof() offers to install any that are missing (install =
+#' ## "ask"); see also gof_install_suggests(). Use install = "no" to never ask.
+#' run.all.gof(fit, install = "no", control = list("Stute-Zhu" = list(B = 50)))
 #'
 #' ## draw the GiViTI calibration belt (needs givitiR + callr)
 #' res <- run.all.gof(fit, tests = c("McCullagh", "GiViTI"),
@@ -106,17 +116,24 @@
 #' plot(res)   # redraw the stored belt
 #' }
 #'
-#' @seealso \code{\link{ef.gof}}, \code{\link{def.gof}}, \code{\link{def.ensemble.gof}}.
+#' @seealso \code{\link{ef.gof}}, \code{\link{def.gof}}, \code{\link{def.ensemble.gof}},
+#'   \code{\link{gof_install_suggests}}.
 #' @importFrom stats fitted predict model.matrix model.frame coef deviance pchisq binomial glm.fit kmeans median dist anova lm pnorm
 #' @importFrom utils capture.output
 #' @export
 run.all.gof <- function(object, predicted_probs = NULL, X = NULL,
                         tests = "all", G = 10, include_slow = TRUE,
-                        calibration_plot = FALSE, control = list()) {
+                        calibration_plot = FALSE, install = c("ask", "no", "yes"),
+                        control = list()) {
 
+  install <- match.arg(install)
   ctx <- .gof_context(object, predicted_probs, X, G = G)
   sel <- if (identical(tests, "all")) names(.GOF_REGISTRY) else intersect(tests, names(.GOF_REGISTRY))
   if (length(sel) == 0) stop("run.all.gof: no known tests selected.")
+  # If a test in this run needs an optional package that isn't installed, offer
+  # to install it (interactive sessions only, with confirmation -- see
+  # gof_install_suggests). Non-interactive runs are never touched.
+  .gof_maybe_install(sel, include_slow, install)
   if (isTRUE(include_slow) &&
       any(vapply(sel, function(nm) isTRUE(.GOF_REGISTRY[[nm]]$slow), logical(1))))
     message("run.all.gof: running the full battery, including the slow tests ",

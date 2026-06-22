@@ -140,6 +140,28 @@ le Cessie-van Houwelingen, the GAM-based tests (HL-GAM, PR-GAM, Xie-GAM; need
 `mgcv`), Stute-Zhu, eHL, BAGofT, and the Lai & Liu standardized-power HL test.
 Every test reproduces the implementation used in the original thesis simulation.
 
+### Optional packages for the slow tests
+
+The slow tests rely on a few optional packages (`givitiR` + `callr` for the
+GiViTI calibration test and belt, `mgcv` for the GAM tests, `BAGofT`,
+`ResourceSelection`). They are not required to install `ebrahim.gof`; a test
+whose package is missing is simply skipped with a note. CRAN policy forbids a
+package from installing anything on its own, so `ebrahim.gof` never does that
+silently. Instead, in an **interactive** session `run.all.gof()` offers to
+install any missing package it needs (the default `install = "ask"`), and you
+can install them all up front at any time:
+
+```r
+gof_install_suggests()                 # asks, then installs the missing ones
+gof_install_suggests(ask = FALSE)      # install without a prompt (setup scripts)
+
+run.all.gof(fit, include_slow = TRUE)               # asks to install if needed
+run.all.gof(fit, include_slow = TRUE, install = "no")  # never ask, just skip
+```
+
+In a non-interactive session (scripts, `R CMD check`) nothing is ever installed,
+regardless of the `install` setting.
+
 ## Power and size: the partition-based family
 
 Most goodness-of-fit tests for logistic regression are **partition-based**: they

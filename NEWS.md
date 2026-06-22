@@ -1,3 +1,20 @@
+# ebrahim.gof 2.1.1
+
+## New features
+
+* `gof_install_suggests()` - installs the optional ("Suggests") packages that
+  the slow tests in `run.all.gof()` rely on (`givitiR` + `callr` for GiViTI,
+  `mgcv` for the GAM tests, `BAGofT`, `ResourceSelection`). It asks for
+  confirmation first (in interactive sessions); pass `ask = FALSE` to skip the
+  prompt in a setup script.
+* `run.all.gof()` gains an `install` argument (`"ask"` by default). When a test
+  in the run needs an optional package that is not installed, an interactive
+  session offers to install it (with `"ask"`) or installs it silently (with
+  `"yes"`); `"no"` keeps the previous behaviour of just skipping the test with a
+  note. Per CRAN policy, a non-interactive session (scripts, `R CMD check`)
+  never installs anything, regardless of the setting -- the library is never
+  modified without the user's explicit consent.
+
 # ebrahim.gof 2.1.0
 
 ## New features
