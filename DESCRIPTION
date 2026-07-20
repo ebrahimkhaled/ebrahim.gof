@@ -1,8 +1,8 @@
 Package: ebrahim.gof
 Type: Package
 Title: Ebrahim-Farrington Goodness-of-Fit Test for Logistic Regression
-Version: 2.1.1
-Date: 2026-06-18
+Version: 2.2.0
+Date: 2026-07-20
 Authors@R: person("Ebrahim", "Khaled Ebrahim",
                   email = "ebrahimkhaled@alexu.edu.eg",
                   role = c("aut", "cre"),

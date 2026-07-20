@@ -116,6 +116,21 @@
 #' plot(res)   # redraw the stored belt
 #' }
 #'
+#' @note \strong{Grouped vs sparse forms.} \code{Pearson}, \code{Deviance} and
+#'   \code{McCullagh} are reported in two forms: the default (sparse / one-trial)
+#'   form and a \code{"(grouped)"} form computed on the distinct covariate
+#'   patterns (each a Binomial\eqn{(m_g, P_g)}). The two are identical when every
+#'   covariate pattern is unique (fully sparse data, as in the simulation) and
+#'   differ only when patterns repeat (\eqn{m_g > 1}); both rows are returned so
+#'   the user can compare. \code{Osius-Rojek} is always computed on covariate
+#'   patterns, matching its classical (LogisticDx) definition.
+#'
+#'   \strong{Farrington vs EF.} The \emph{original} Farrington (1996) test is a
+#'   grouped (covariate-pattern) test. The Ebrahim-Farrington (\code{EF}) test is
+#'   its \emph{sparse-data} counterpart: it does not group by covariate pattern
+#'   but forms \code{G} data-dependent bins of the predicted risk, so it applies
+#'   directly to fully sparse data. Use \code{EF} for sparse binary data; the
+#'   grouped Farrington form is appropriate only when covariate patterns repeat.
 #' @seealso \code{\link{ef.gof}}, \code{\link{def.gof}}, \code{\link{def.ensemble.gof}},
 #'   \code{\link{gof_install_suggests}}.
 #' @importFrom stats fitted predict model.matrix model.frame coef deviance pchisq binomial glm.fit kmeans median dist anova lm pnorm
@@ -344,27 +359,41 @@ gof_deviance <- function(ctx, opts = list()) {
        Note = if (ctx$has_model) "" else "df = n-1 (no model)")
 }
 
-# Osius-Rojek normal-approximation test. Matches the thesis simulation, which
-# uses LogisticDx::gof.glm: z = (Pearson - (N - p)) / sqrt(A1 + RSS1), where RSS1
-# is the residual SS of the WLS regression of (1-2p)/(p(1-p)) on X (weights V),
-# and A1 = 2*(N - sum(1/n_i)) = 0 for one-trial (binary) data. Two-sided p-value.
+# Osius-Rojek normal-approximation test, matching LogisticDx::gof.glm exactly.
+# The statistic is defined on the J DISTINCT COVARIATE PATTERNS, not the raw rows:
+# z = (PrG - (J - p)) / sqrt(A1 + RSS1), where PrG is the grouped Pearson statistic,
+# A1 = 2*(J - sum(1/n_g)) is the excess-variance correction over the pattern sizes
+# n_g, and RSS1 is the residual SS of the WLS regression of (1-2P_g)/(n_g P_g(1-P_g))
+# on the pattern design matrix with weights n_g P_g(1-P_g). For fully sparse data
+# (every pattern unique, n_g = 1) this reduces to A1 = 0 and J = N, so simulation
+# results are unchanged; only data with repeated covariate patterns differ.
 gof_osius <- function(ctx, opts = list()) {
   if (is.null(ctx$X))
     return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not applicable: needs the design matrix X (pass the fitted glm)"))
-  X <- ctx$X; ph <- ctx$ph; y <- ctx$y; N <- length(ph); p <- ncol(X)
-  V    <- ph * (1 - ph)
-  PrG  <- sum((y - ph)^2 / V)
-  A1   <- 2 * (N - sum(1 / rep(1, N)))            # binary: n_i = 1 -> A1 = 0
-  cvar <- (1 - 2 * ph) / V
-  fit  <- tryCatch(stats::lm.wfit(X, cvar, V), error = function(e) NULL)
+  X <- ctx$X; ph <- ctx$ph; y <- ctx$y; p <- ncol(X)
+  # aggregate observations sharing an identical covariate pattern (row of X)
+  key  <- apply(round(X, 10), 1L, paste, collapse = "\r")
+  ug   <- !duplicated(key)
+  nm   <- key[ug]
+  ng   <- as.numeric(tapply(rep(1, length(y)), key, sum)[nm])   # trials per pattern
+  ysum <- as.numeric(tapply(y,  key, sum)[nm])                  # events per pattern
+  Pg   <- as.numeric(tapply(ph, key, `[`, 1L)[nm])              # fitted prob per pattern
+  Xu   <- X[ug, , drop = FALSE]                                 # one row per pattern
+  J    <- length(ng)
+  Vg   <- ng * Pg * (1 - Pg)
+  PrG  <- sum((ysum - ng * Pg)^2 / Vg)                          # grouped Pearson
+  A1   <- 2 * (J - sum(1 / ng))                                 # = 0 only if all n_g = 1
+  cvar <- (1 - 2 * Pg) / Vg
+  fit  <- tryCatch(stats::lm.wfit(Xu, cvar, Vg), error = function(e) NULL)
   if (is.null(fit))
     return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: weighted least-squares step failed"))
-  RSS1 <- sum(V * fit$residuals^2)
+  RSS1 <- sum(Vg * fit$residuals^2)
   varz <- A1 + RSS1
   if (!is.finite(varz) || varz <= 0)
     return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: non-positive variance"))
-  z <- (PrG - (N - p)) / sqrt(varz)
-  list(Statistic = z, df = NA_real_, p_value = 2 * stats::pnorm(abs(z), lower.tail = FALSE), Note = "")
+  z <- (PrG - (J - p)) / sqrt(varz)
+  list(Statistic = z, df = NA_real_, p_value = 2 * stats::pnorm(abs(z), lower.tail = FALSE),
+       Note = if (J < length(y)) sprintf("grouped to %d covariate patterns", J) else "")
 }
 
 # Copas (1989) unweighted residual-sum-of-squares test. Binary expansion is
@@ -895,6 +924,78 @@ gof_mccullagh <- function(ctx, opts = list()) {
   list(Statistic = Z, df = NA_real_, p_value = stats::pnorm(Z, lower.tail = FALSE), Note = "")
 }
 
+# ---------------------------------------------------------------------------
+# GROUPED (covariate-pattern) variants of the global / standardized tests.
+#
+# Pearson, deviance and McCullagh are classically defined on the J distinct
+# COVARIATE PATTERNS, each a Binomial(m_g, P_g). The default rows above use the
+# sparse / one-trial form (m_g = 1), which is what the sparse-data simulation
+# needs and is identical to the grouped form when every pattern is unique. On
+# data with REPEATED covariate patterns (m_g > 1) the two differ, so these
+# "(grouped)" variants are reported alongside the ungrouped ones. For fully
+# sparse data they coincide with the rows above.
+#
+# NOTE on Farrington vs EF: the *original* Farrington (1996) test is a GROUPED
+# (covariate-pattern, m_g > 1) test. The Ebrahim-Farrington (EF) test in this
+# package is deliberately its SPARSE-data counterpart: it does NOT group by
+# covariate pattern but forms G data-dependent bins of the predicted risk, so it
+# applies directly to fully sparse (one-observation-per-pattern) data. EF and the
+# grouped Farrington therefore answer the same question by different partitions.
+# ---------------------------------------------------------------------------
+.gof_patterns <- function(X, ph, y) {
+  key <- apply(round(X, 10), 1L, paste, collapse = "\r")
+  ug  <- !duplicated(key); nm <- key[ug]
+  list(m  = as.numeric(tapply(rep(1, length(y)), key, sum)[nm]),
+       yg = as.numeric(tapply(y,  key, sum)[nm]),
+       Pg = as.numeric(tapply(ph, key, `[`, 1L)[nm]),
+       Xu = X[ug, , drop = FALSE], J = sum(ug))
+}
+
+gof_pearson_grouped <- function(ctx, opts = list()) {
+  if (is.null(ctx$X))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not applicable: needs the design matrix X"))
+  g <- .gof_patterns(ctx$X, ctx$ph, ctx$y); p <- ncol(ctx$X)
+  Vg <- g$m * g$Pg * (1 - g$Pg)
+  X2 <- sum((g$yg - g$m * g$Pg)^2 / Vg); df <- g$J - p
+  list(Statistic = X2, df = df, p_value = stats::pchisq(X2, df, lower.tail = FALSE),
+       Note = sprintf("grouped to %d covariate patterns", g$J))
+}
+
+gof_deviance_grouped <- function(ctx, opts = list()) {
+  if (is.null(ctx$X))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not applicable: needs the design matrix X"))
+  g <- .gof_patterns(ctx$X, ctx$ph, ctx$y); p <- ncol(ctx$X)
+  ys <- pmax(g$yg, 1e-10); ms <- pmax(g$m - g$yg, 1e-10)
+  D  <- 2 * sum(g$yg * log(ys / (g$m * g$Pg)) + (g$m - g$yg) * log(ms / (g$m * (1 - g$Pg))))
+  df <- g$J - p
+  list(Statistic = D, df = df, p_value = stats::pchisq(D, df, lower.tail = FALSE),
+       Note = sprintf("grouped to %d covariate patterns", g$J))
+}
+
+gof_mccullagh_grouped <- function(ctx, opts = list()) {
+  if (is.null(ctx$X))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not applicable: needs the design matrix X"))
+  g <- .gof_patterns(ctx$X, ctx$ph, ctx$y); p <- ncol(ctx$X)
+  m <- g$m; P <- g$Pg; yg <- g$yg; Xu <- g$Xu; J <- g$J; Ntot <- sum(m)
+  V  <- m * P * (1 - P)
+  X2 <- sum((yg - m * P)^2 / V)
+  W  <- diag(V)
+  inv <- tryCatch(solve(t(Xu) %*% W %*% Xu), error = function(e) NULL)
+  if (is.null(inv))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: singular information matrix"))
+  H <- Xu %*% inv %*% t(Xu); h <- diag(H)
+  u <- (1 - 2 * P) / V; uhat <- as.numeric(H %*% W %*% u)
+  k2 <- V; k3 <- V * (1 - 2 * P); k4 <- m * P * (1 - P) * (1 - 6 * P * (1 - P))
+  E    <- (J - p) - 0.5 * sum(k4 * h / k2) + 0.5 * sum(uhat * k3 * h)
+  RSSu <- as.numeric(t(u) %*% (W - W %*% H %*% W) %*% u)
+  Var  <- 2 * sum((m - 1) / m) + (1 - p / Ntot) * RSSu   # grouped: 2*sum((m-1)/m) is nonzero
+  if (!is.finite(Var) || Var <= 0)
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: non-positive variance"))
+  Z <- (X2 - E) / sqrt(Var)
+  list(Statistic = Z, df = NA_real_, p_value = stats::pnorm(Z, lower.tail = FALSE),
+       Note = sprintf("grouped to %d covariate patterns", J))
+}
+
 # GiViTI calibration test (Nattino, Finazzi & Bertolini): forward-selects a
 # polynomial calibration model and tests it against the identity, using a
 # selection-aware null distribution. Wraps givitiR::givitiCalibrationTest, run in
@@ -989,11 +1090,14 @@ gof_ftest <- function(ctx, opts = list()) {
 
 # Registry of the bundled tests (test wrappers are internal, not exported).
 .GOF_REGISTRY <- list(
-  "Pearson"       = list(fn = gof_pearson,  family = "Global",       needs_model = FALSE, slow = FALSE),
-  "Deviance"      = list(fn = gof_deviance, family = "Global",       needs_model = FALSE, slow = FALSE),
-  "Osius-Rojek"   = list(fn = gof_osius,    family = "Standardized", needs_model = TRUE,  slow = FALSE),
-  "McCullagh"     = list(fn = gof_mccullagh, family = "Standardized", needs_model = TRUE, slow = FALSE),
-  "Copas-RSS"     = list(fn = gof_copas,    family = "Standardized", needs_model = TRUE,  slow = FALSE),
+  "Pearson"             = list(fn = gof_pearson,          family = "Global",       needs_model = FALSE, slow = FALSE),
+  "Pearson (grouped)"   = list(fn = gof_pearson_grouped,  family = "Global",       needs_model = TRUE,  slow = FALSE),
+  "Deviance"            = list(fn = gof_deviance,         family = "Global",       needs_model = FALSE, slow = FALSE),
+  "Deviance (grouped)"  = list(fn = gof_deviance_grouped, family = "Global",       needs_model = TRUE,  slow = FALSE),
+  "Osius-Rojek"         = list(fn = gof_osius,            family = "Standardized", needs_model = TRUE,  slow = FALSE),
+  "McCullagh"           = list(fn = gof_mccullagh,        family = "Standardized", needs_model = TRUE,  slow = FALSE),
+  "McCullagh (grouped)" = list(fn = gof_mccullagh_grouped, family = "Standardized", needs_model = TRUE, slow = FALSE),
+  "Copas-RSS"           = list(fn = gof_copas,            family = "Standardized", needs_model = TRUE,  slow = FALSE),
   "Information-Matrix" = list(fn = gof_im,  family = "Global",       needs_model = TRUE,  slow = FALSE),
   "HL"            = list(fn = gof_hl,       family = "Partition",    needs_model = FALSE, slow = FALSE),
   "HL-equalwidth" = list(fn = gof_hlw,      family = "Partition",    needs_model = FALSE, slow = FALSE),

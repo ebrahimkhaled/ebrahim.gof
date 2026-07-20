@@ -1,3 +1,17 @@
+# ebrahim.gof 2.2.0
+
+## New features
+
+* `edge.gof()` — the new primary interface to the directed test, matching the
+  method's published name **EDGE** (Ebrahim Directed Goodness-of-fit
+  Evaluation). It computes exactly the same statistic as `def.gof()` and
+  returns `Test = "EDGE"` in the result row. `def.gof()` is retained,
+  unchanged, as a fully supported legacy name — existing code keeps working.
+* Includes the grouped-form additions developed since 2.1.0 (see 2.1.1 notes
+  below): grouped (covariate-pattern) forms of Pearson / Deviance / McCullagh
+  reported alongside the sparse forms, and the Osius-Rojek test computed on
+  covariate patterns per its classical definition.
+
 # ebrahim.gof 2.1.1
 
 ## New features

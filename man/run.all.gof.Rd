@@ -114,6 +114,23 @@ installed), \code{Copas-RSS} follows \pkg{rms}'s gof residual, \code{HL} follows
 \code{ResourceSelection::hoslem.test}, and the others match their standalone
 reference functions; all were checked to agree numerically.
 }
+\note{
+\strong{Grouped vs sparse forms.} \code{Pearson}, \code{Deviance} and
+  \code{McCullagh} are reported in two forms: the default (sparse / one-trial)
+  form and a \code{"(grouped)"} form computed on the distinct covariate
+  patterns (each a Binomial\eqn{(m_g, P_g)}). The two are identical when every
+  covariate pattern is unique (fully sparse data, as in the simulation) and
+  differ only when patterns repeat (\eqn{m_g > 1}); both rows are returned so
+  the user can compare. \code{Osius-Rojek} is always computed on covariate
+  patterns, matching its classical (LogisticDx) definition.
+
+  \strong{Farrington vs EF.} The \emph{original} Farrington (1996) test is a
+  grouped (covariate-pattern) test. The Ebrahim-Farrington (\code{EF}) test is
+  its \emph{sparse-data} counterpart: it does not group by covariate pattern
+  but forms \code{G} data-dependent bins of the predicted risk, so it applies
+  directly to fully sparse data. Use \code{EF} for sparse binary data; the
+  grouped Farrington form is appropriate only when covariate patterns repeat.
+}
 \examples{
 set.seed(1)
 n <- 500
