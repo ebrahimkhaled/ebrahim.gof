@@ -436,3 +436,10 @@ Email: ebrahimkhaled@alexu.edu.eg
 - Prof. Osama Abd ElAziz Hussien (Alexandria University) for supervision
 - Dr. Ahmed El-Kotory (Alexandria University) for  guidance and supervision
 - The R community for continuous support and feedback 
+## Reproducing published results
+
+The EDGE paper's benchmarks were run against version 2.2.0. To install that exact version later:
+
+```r
+remotes::install_version("ebrahim.gof", version = "2.2.0")
+```
