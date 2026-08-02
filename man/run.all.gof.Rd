@@ -11,6 +11,8 @@ run.all.gof(
   tests = "all",
   G = 10,
   include_slow = TRUE,
+  parallel = FALSE,
+  ncores = NULL,
   calibration_plot = FALSE,
   install = c("ask", "no", "yes"),
   control = list()
@@ -37,6 +39,17 @@ runs, including the slow tests: le Cessie-van Houwelingen smoothing
 \code{FALSE} for a quick run with the fast tests only. A one-time message
 notes this whenever slow tests are included.}
 
+\item{parallel}{Logical; when \code{TRUE}, the resampling loops of the slow
+bootstrap tests (\code{Stute-Zhu} and \code{Lai-Liu-HL}) are run on a local
+PSOCK cluster via \code{\link[parallel]{parLapply}} (works on all
+platforms, including Windows). All other tests are unaffected. The default
+\code{FALSE} keeps every loop sequential, exactly as in previous versions.}
+
+\item{ncores}{Integer; the number of worker processes used when
+\code{parallel = TRUE}. The default \code{NULL} uses
+\code{max(1, parallel::detectCores() - 1)}. Values below 2 fall back to
+the sequential path.}
+
 \item{calibration_plot}{Logical; when \code{TRUE} and \code{GiViTI} is among
 the tests, also compute and draw the GiViTI calibration belt and store it on
 the result (retrievable with \code{plot()}). Default \code{FALSE}.}
@@ -50,8 +63,16 @@ with a note). In a non-interactive session (scripts, \code{R CMD check})
 nothing is ever installed, regardless of this setting. See
 \code{\link{gof_install_suggests}}.}
 
-\item{control}{Optional named list of per-test options (e.g.
-\code{list(BAGofT = list(nsim = 100), GiViTI = list(devel = "internal"))}).}
+\item{control}{Optional named list of per-test options. Recognized entries:
+\code{"Stute-Zhu" = list(B = ...)} (bootstrap replicates);
+\code{GiViTI = list(devel = "internal"/"external")};
+\code{"Lai-Liu-HL" = list(n0 = ..., k = ..., alpha = ...)}; and
+\code{BAGofT = list(...)} which forwards to the binary adaptive test --
+\code{nsim} (resampling iterations; default 100), \code{nsplits}, \code{ne}
+(the estimation-split size), and the random-forest partitioner's tuning
+\code{Kmax} (maximum number of adaptive partition cells), \code{ntree},
+\code{nmin}, \code{mtry}, \code{maxnodes}. Example:
+\code{list(BAGofT = list(nsim = 200, Kmax = 8, ntree = 500))}.}
 }
 \value{
 A \code{data.frame} (of class \code{gof_battery}) with columns
@@ -120,8 +141,10 @@ reference functions; all were checked to agree numerically.
   form and a \code{"(grouped)"} form computed on the distinct covariate
   patterns (each a Binomial\eqn{(m_g, P_g)}). The two are identical when every
   covariate pattern is unique (fully sparse data, as in the simulation) and
-  differ only when patterns repeat (\eqn{m_g > 1}); both rows are returned so
-  the user can compare. \code{Osius-Rojek} is always computed on covariate
+  differ only when patterns repeat (\eqn{m_g > 1}). To avoid clutter, the
+  \code{"(grouped)"} row is shown \emph{only} when it actually differs from the
+  sparse form (i.e., when some pattern repeats); on fully sparse data it is a
+  duplicate and is omitted. \code{Osius-Rojek} is always computed on covariate
   patterns, matching its classical (LogisticDx) definition.
 
   \strong{Farrington vs EF.} The \emph{original} Farrington (1996) test is a
@@ -130,6 +153,17 @@ reference functions; all were checked to agree numerically.
   but forms \code{G} data-dependent bins of the predicted risk, so it applies
   directly to fully sparse data. Use \code{EF} for sparse binary data; the
   grouped Farrington form is appropriate only when covariate patterns repeat.
+
+  \strong{Reproducibility of the parallel path.} With \code{parallel = TRUE}
+  the cluster's random-number streams are initialized with
+  \code{\link[parallel]{clusterSetRNGStream}}, seeded deterministically from
+  the session's current RNG state. Two runs from the same
+  \code{\link{set.seed}} state (and the same \code{ncores}) therefore give
+  identical bootstrap p-values. Note that the parallel L'Ecuyer-CMRG streams
+  necessarily differ from the serial RNG stream, so \code{parallel = TRUE}
+  results differ (within Monte-Carlo error) from \code{parallel = FALSE}
+  results at the same seed; this is standard and both are valid. Results also
+  depend on \code{ncores}, because the replicates are split across workers.
 }
 \examples{
 set.seed(1)
@@ -155,8 +189,68 @@ run.all.gof(fit, install = "no", control = list("Stute-Zhu" = list(B = 50)))
 res <- run.all.gof(fit, tests = c("McCullagh", "GiViTI"),
                    calibration_plot = TRUE)
 plot(res)   # redraw the stored belt
+
+## run the slow bootstrap loops (Stute-Zhu, Lai-Liu-HL) on a PSOCK cluster
+set.seed(1)
+run.all.gof(fit, tests = "Stute-Zhu", parallel = TRUE, ncores = 2,
+            control = list("Stute-Zhu" = list(B = 50)))
 }
 
+}
+\references{
+The aggregated tests are due to their original authors; they are provided
+here for comparison and credited as follows.
+
+Farrington CP (1996). "On Assessing Goodness of Fit of Generalized Linear
+Models to Sparse Data." \emph{Journal of the Royal Statistical Society B},
+\strong{58}(2), 349--360. \doi{10.1111/j.2517-6161.1996.tb02086.x}
+
+Hosmer DW, Lemeshow S (1980). "Goodness of Fit Tests for the Multiple
+Logistic Regression Model." \emph{Communications in Statistics -- Theory and
+Methods}, \strong{9}(10), 1043--1069. \doi{10.1080/03610928008827941}
+
+McCullagh P (1985). "On the Asymptotic Distribution of Pearson's Statistic in
+Linear Exponential Family Models." \emph{International Statistical Review},
+\strong{53}(1), 61--67. \doi{10.2307/1402880}
+
+Osius G, Rojek D (1992). "Normal Goodness-of-Fit Tests for Multinomial Models
+with Large Degrees of Freedom." \emph{Journal of the American Statistical
+Association}, \strong{87}(420), 1145--1152.
+\doi{10.1080/01621459.1992.10476271}
+
+le Cessie S, van Houwelingen JC (1991). "A Goodness-of-Fit Test for Binary
+Regression Models, Based on Smoothing Methods." \emph{Biometrics},
+\strong{47}(4), 1267--1282. \doi{10.2307/2532385}
+
+Stukel TA (1988). "Generalized Logistic Models." \emph{Journal of the
+American Statistical Association}, \strong{83}(402), 426--431.
+\doi{10.1080/01621459.1988.10478613}
+
+Stute W, Zhu LX (2002). "Model Checks for Generalized Linear Models."
+\emph{Scandinavian Journal of Statistics}, \strong{29}(3), 535--545.
+\doi{10.1111/1467-9469.00304}
+
+Tsiatis AA (1980). "A Note on a Goodness-of-Fit Test for the Logistic
+Regression Model." \emph{Biometrika}, \strong{67}(1), 250--251.
+\doi{10.1093/biomet/67.1.250}
+
+Xie XJ, Pendergast J, Clarke W (2008). "Increasing the Power: A Practical
+Approach to Goodness-of-Fit Test for Logistic Regression Models with
+Continuous Predictors." \emph{Computational Statistics & Data Analysis},
+\strong{52}(5), 2703--2713. \doi{10.1016/j.csda.2007.09.027}
+
+Pulkstenis E, Robinson TJ (2002). "Two Goodness-of-Fit Tests for Logistic
+Regression Models with Continuous Covariates." \emph{Statistics in Medicine},
+\strong{21}(1), 79--93. \doi{10.1002/sim.943}
+
+Nattino G, Finazzi S, Bertolini G (2014). "A New Calibration Test and a
+Reappraisal of the Calibration Belt for the Assessment of Prediction Models
+Based on Dichotomous Outcomes." \emph{Statistics in Medicine}, \strong{33}(14),
+2390--2407. \doi{10.1002/sim.6100}
+
+Zhang J, Ding J, Yang Y (2021). "Is a Classification Procedure Good Enough? A
+Goodness-of-Fit Assessment Tool for Classification Learning." \emph{Journal of
+the American Statistical Association}. \doi{10.1080/01621459.2021.1979010}
 }
 \seealso{
 \code{\link{ef.gof}}, \code{\link{def.gof}}, \code{\link{def.ensemble.gof}},

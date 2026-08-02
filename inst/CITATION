@@ -5,12 +5,12 @@ bibentry(
   title    = "{EDGE}: A Closed-Form Directed Goodness-of-Fit Test for Sparse Logistic Regression",
   author   = c(person("Ebrahim Khaled", "Ebrahim"), person("Ahmed", "El-Kotory")),
   year     = "2026",
-  note     = "Manuscript; R package ebrahim.gof version 2.2.0",
+  note     = "Manuscript; R package ebrahim.gof version 2.4.0",
   url      = "https://CRAN.R-project.org/package=ebrahim.gof",
   textVersion = paste(
     "Ebrahim, E. K. and El-Kotory, A. (2026).",
     "EDGE: A Closed-Form Directed Goodness-of-Fit Test for Sparse Logistic Regression.",
-    "R package ebrahim.gof version 2.2.0.",
+    "R package ebrahim.gof version 2.4.0.",
     "https://CRAN.R-project.org/package=ebrahim.gof"
   )
 )
@@ -26,5 +26,19 @@ bibentry(
     "Ebrahim, E. K. and El-Kotory, A. (2026).",
     "A directional Hosmer-Lemeshow goodness-of-fit test for sparse logistic regression.",
     "arXiv:2607.15454."
+  )
+)
+
+bibentry(
+  bibtype  = "Misc",
+  title    = "Benchmarking goodness-of-fit and calibration algorithms for logistic regression",
+  author   = c(person("Ebrahim Khaled", "Ebrahim"), person("Ahmed", "El-Kotory")),
+  year     = "2026",
+  note     = "arXiv:2607.16344 [stat.ME]; empirical comparison of the tests aggregated by this package",
+  url      = "https://arxiv.org/abs/2607.16344",
+  textVersion = paste(
+    "Ebrahim, E. K. and El-Kotory, A. (2026).",
+    "Benchmarking goodness-of-fit and calibration algorithms for logistic regression.",
+    "arXiv:2607.16344."
   )
 )

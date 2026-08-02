@@ -97,6 +97,35 @@ def.ensemble.gof <- function(object, predicted_probs = NULL, X = NULL,
   )
 }
 
+#' EDGES: Cauchy-Combination Ensemble of Directed GOF Tests (Alias)
+#'
+#' @description
+#' Alias for \code{\link{def.ensemble.gof}()}; see the EDGES paper. \code{edges.gof()}
+#' is the brand name (EDGES = the Cauchy-combination ensemble of the EDGE directed
+#' bases) used in the manuscript. It takes exactly the same arguments as
+#' \code{\link{def.ensemble.gof}} and returns exactly the same value; the legacy
+#' name \code{def.ensemble.gof()} is retained unchanged for back-compatibility.
+#'
+#' @param ... Arguments passed on to \code{\link{def.ensemble.gof}} (e.g.
+#'   \code{object}, \code{predicted_probs}, \code{X}, \code{components},
+#'   \code{add_ef}, \code{combine}, \code{G}, \code{extra_pvalues}).
+#'
+#' @inherit def.ensemble.gof return references
+#'
+#' @author Ebrahim Khaled Ebrahim \email{ebrahimkhaled@@alexu.edu.eg}
+#'
+#' @examples
+#' set.seed(1)
+#' x <- runif(500, -3, 3)
+#' y <- rbinom(500, 1, plogis(0.6 * x))
+#' fit <- glm(y ~ x, family = binomial())
+#' edges.gof(fit)                 # identical to def.ensemble.gof(fit)
+#'
+#' @seealso \code{\link{def.ensemble.gof}} (legacy name), \code{\link{edge.gof}},
+#'   \code{\link{def.gof}}.
+#' @export
+edges.gof <- function(...) def.ensemble.gof(...)
+
 # Internal: combine a vector of p-values by the chosen rule.
 .combine_pvalues <- function(pv, combine) {
   pv <- pv[is.finite(pv)]

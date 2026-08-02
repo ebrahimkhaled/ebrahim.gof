@@ -1,0 +1,136 @@
+---
+title: "A goodness-of-fit and calibration toolbox for logistic regression"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{A goodness-of-fit and calibration toolbox for logistic regression}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 6, fig.height = 4)
+library(ebrahim.gof)
+```
+
+## Why a toolbox
+
+Before the inferences or predictions of a logistic regression model can be trusted, its
+*goodness of fit* has to be checked. Many tests exist for this, but in practice they are
+**scattered across different packages with different interfaces**, base R ships only the
+Hosmer--Lemeshow idea, and most of the classical tests **lose power on sparse data** --- the
+common situation where continuous covariates give almost every observation its own covariate
+pattern.
+
+`ebrahim.gof` addresses this in one place. It:
+
+* **introduces the author's own sparse-data tests** --- the omnibus Ebrahim--Farrington (EF)
+  test, the *directed* EF / **EDGE** test that targets smooth calibration-shape departures, and a
+  Cauchy-combination ensemble; and
+* **aggregates a wide range of classical and modern tests** (Hosmer--Lemeshow, McCullagh,
+  Osius--Rojek, le Cessie--van Houwelingen, Stute--Zhu, the binary-adaptive `BAGofT` test, and
+  the `givitiR` calibration test) behind **one call**, `run.all.gof()`, so they can be compared
+  head to head. Each aggregated test is obtained from its own package and is credited to its
+  authors; they are provided for comparison, not claimed as original here.
+
+## The example data
+
+The bundled `gof_demo` dataset was generated from a model whose true linear predictor is
+**quadratic in age**. If we fit a model that treats age *linearly*, it is therefore subtly
+misspecified through a smooth, low-dimensional calibration distortion --- exactly the misfit a
+*directed* test is built to detect and an *omnibus* test tends to miss.
+
+```{r data}
+data("gof_demo", package = "ebrahim.gof")
+str(gof_demo)
+
+fit <- glm(outcome ~ age + bmi + sex + treatment,
+           data = gof_demo, family = binomial)
+```
+
+## One call: the whole battery
+
+`run.all.gof()` runs the battery and returns a tidy `gof_battery` table. Here we use the fast
+subset (`include_slow = FALSE`) and `install = "no"` so nothing is installed or resampled while
+the vignette builds; tests whose optional package is not present are simply skipped.
+
+```{r battery}
+set.seed(1)
+battery <- run.all.gof(fit, include_slow = FALSE, install = "no")
+battery
+```
+
+Read the table by *family*. The **global omnibus** statistics (Pearson, deviance) spread their
+power over hundreds of covariate patterns and tend to **miss** this smooth misfit. The
+**directed** tests --- `DEF.poly2`, `DEF.poly3` (EDGE), `DEF.stukel`, and Stukel's score test ---
+concentrate their few degrees of freedom on the calibration-curve shape and **detect** it, as do
+the EF test and the ensemble. That contrast is the whole point of a directed test.
+
+## Sparse or grouped? Let the package show you both
+
+Three of the battery's tests are *pattern-sensitive*: `Pearson`, `Deviance`, and `McCullagh`
+have a reference distribution that depends on whether they are computed per
+observation (the "sparse" form) or per distinct *covariate pattern* (the "grouped" form). With
+all-continuous covariates, as in `gof_demo`, every observation is its own pattern (800 patterns
+for 800 observations), so the two forms **coincide**; the package recognises this degenerate
+case and omits the redundant `(grouped)` rows, showing only the sparse form in the table above.
+(This is also the regime where the per-observation Pearson and deviance statistics lose their
+chi-squared reference entirely.) The paired `(grouped)` rows appear only when covariate
+patterns actually repeat --- as they do next.
+
+The bundled `gof_demo_grouped` dataset makes the distinction real. It uses the *same*
+data-generating process, but `age` is recorded in 10-year bins and `bmi` as integers, so the 800
+observations share only 328 covariate patterns. The battery detects this automatically and the
+two forms now disagree --- on this data the sparse deviance says "fine" (p about 0.17) while the
+grouped deviance rejects (p about 0.04), with the degrees of freedom dropping from 795 to 323:
+
+```{r grouped}
+data("gof_demo_grouped", package = "ebrahim.gof")
+fit_g <- glm(outcome ~ age + bmi + sex + treatment,
+             data = gof_demo_grouped, family = binomial)
+set.seed(1)
+run.all.gof(fit_g, include_slow = FALSE, install = "no")
+```
+
+Same model formula, same test family, opposite verdicts --- so handling the grouping wrong
+silently changes conclusions. The package's answer is to never make that choice for you
+invisibly: both forms are printed side by side whenever they differ, and in truly sparse data
+(where no grouped "correction" can rescue Pearson or the deviance) the partition and directed
+families below are the tools that remain valid.
+
+## The directed tests on their own
+
+Each test is also callable directly. The EDGE test projects the grouped standardized residuals
+onto a small basis of smooth calibration shapes:
+
+```{r directed}
+edge.gof(fit)                 # directed EDGE test (poly3 basis)
+def.gof(fit, basis = "poly2") # a lower-order directed basis
+ef.gof(fit)                   # the omnibus EF test
+```
+
+The Cauchy-combination ensemble pools the directed bases into a single p-value:
+
+```{r ensemble}
+def.ensemble.gof(fit)
+```
+
+## Going further
+
+* **The full battery.** Set `include_slow = TRUE` to add the resampling/refit-based tests
+  (le Cessie--van Houwelingen, Stute--Zhu, `BAGofT`, GAM-smooth tests) and
+  `calibration_plot = TRUE` for the `givitiR` calibration test and belt. These need their
+  respective optional packages; `gof_install_suggests()` installs them.
+* **Speed.** The EDGE test is calibrated in closed form (no bootstrap, no refit), so it costs a
+  few milliseconds even at large `n`. An optional GPU backend for the heavier O(n^2)/O(n^3)
+  aggregated tests (le Cessie, projection) is available in the package's replication materials.
+* **Choosing a test.** For the structured misfit that dominates practice --- a wrong link or an
+  omitted smooth term --- prefer a directed test (EDGE) over an omnibus one; keep an omnibus test
+  in reserve for rough, high-frequency departures.
+
+## References
+
+Farrington CP (1996). "On Assessing Goodness of Fit of Generalized Linear Models to Sparse Data."
+*Journal of the Royal Statistical Society B*, **58**(2), 349--360.
+
+Hosmer DW, Lemeshow S (1980). "Goodness of Fit Tests for the Multiple Logistic Regression Model."
+*Communications in Statistics -- Theory and Methods*, **9**(10), 1043--1069.

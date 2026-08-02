@@ -1,3 +1,92 @@
+# ebrahim.gof 2.4.1
+
+## Bug fix
+
+* `le-Cessie` (the le Cessie--van Houwelingen smoothed-residual test) computed its
+  moment reference as `(I - H) R (I - H)`, where the residual expansion requires
+  `(I - H)' R (I - H)`. In a weighted fit `H = VX(X'VX)^{-1}X'` is idempotent but
+  **not symmetric**, so the transpose matters; the inherited implementation came from
+  the unweighted linear-model setting, where the two forms coincide. Only the
+  reference moments (`E[Q]`, `Var[Q]`, and hence the matched degrees of freedom and
+  the p-value) were affected -- the statistic `Q` itself was always correct.
+  The consequence was a mildly liberal test: at `n = 1000` with the default bandwidth
+  the empirical null size was about 0.063 instead of the exact-moment value 0.054.
+  Users comparing results across versions should expect slightly larger p-values
+  (hence slightly lower power) from `le-Cessie` after this fix.
+
+# ebrahim.gof 2.4.0
+
+## Print method
+
+* `print.gof_battery()` redesigned for readability and width-robustness: tests are
+  grouped under `--- Family ---` separators, per-test notes moved to compact `[a]`
+  footnotes (so the table no longer wraps on narrow terminals), numbers are
+  right-aligned, and the header reports how many tests reject at 0.05.
+
+## Battery behaviour
+
+* `run.all.gof()` now omits a `"(grouped)"` row (Pearson / deviance / McCullagh)
+  when it is identical to the sparse form -- i.e., when no covariate pattern
+  repeats -- so fully sparse data no longer shows duplicate rows. The grouped row
+  is still reported when patterns repeat and the two forms differ.
+* The `BAGofT` control entry now forwards the test's key tuning parameters:
+  `nsim`, `nsplits`, `ne`, and the random-forest partitioner's `Kmax` (maximum
+  number of adaptive partition cells), `ntree`, `nmin`, `mtry`, `maxnodes`.
+
+
+## New features
+
+* `run.all.gof()` gains `parallel = FALSE` and `ncores = NULL` arguments. With
+  `parallel = TRUE`, the resampling loops of the two slow bootstrap tests --
+  **Stute-Zhu** (parametric bootstrap) and **Lai-Liu-HL** (stratified
+  resampling) -- run on a local PSOCK cluster via base
+  `parallel::parLapply()`, which works on every platform including Windows.
+  `ncores` defaults to `max(1, parallel::detectCores() - 1)`. Everything else
+  in the battery is untouched, and the sequential default reproduces previous
+  versions exactly.
+* Parallel runs are reproducible: the workers' RNG streams are initialized
+  with `parallel::clusterSetRNGStream()`, seeded deterministically from the
+  session RNG, so two runs from the same `set.seed()` state (and the same
+  `ncores`) give identical bootstrap p-values. The parallel L'Ecuyer-CMRG
+  streams necessarily differ from the serial stream, so `parallel = TRUE`
+  and `parallel = FALSE` results differ within Monte-Carlo error at the same
+  seed (standard behaviour, documented in `?run.all.gof`).
+* Base `parallel` added to `Imports` (no new external dependencies).
+* `edges.gof()` — a brand-name alias for `def.ensemble.gof()`, matching the
+  ensemble's published name **EDGES** (the Cauchy-combination ensemble of the
+  EDGE directed bases). It takes the same arguments and returns the same value;
+  `def.ensemble.gof()` is retained unchanged for backward compatibility.
+
+## New data
+
+* New bundled dataset **`gof_demo_grouped`** — a companion to `gof_demo` built
+  from the same data-generating process, but with `age` recorded in 10-year
+  bins and `bmi` as integers *before* the outcome is generated, so the 800
+  observations share only 328 covariate patterns. It demonstrates the
+  sparse-versus-grouped distinction that `run.all.gof()` reports side by side:
+  on this data the per-observation ("sparse") deviance and the
+  covariate-pattern ("grouped") deviance reach *opposite* verdicts at the 5%
+  level, while on the all-continuous `gof_demo` the two forms coincide (the
+  degenerate case). Generated reproducibly in `data-raw/make_gof_demo.R`.
+* New vignette subsection "Sparse or grouped? Let the package show you both"
+  walking through the demo.
+
+# ebrahim.gof 2.3.0
+
+## Documentation and data (toolbox reframe)
+
+* The package is reframed as a **goodness-of-fit and calibration toolbox** for
+  logistic regression (Title/Description/README updated), foregrounding the
+  one-call `run.all.gof()` battery and the author's own sparse-data tests
+  (EF / DEF / EDGE / ensemble), with the aggregated classical and modern tests
+  credited to their authors.
+* New bundled dataset **`gof_demo`** — a small synthetic dataset with a
+  documented, reproducible smooth (quadratic-in-age) misfit, for illustrating
+  the battery (see `data-raw/make_gof_demo.R`).
+* New vignette **"A goodness-of-fit and calibration toolbox for logistic
+  regression"** walking through the battery on `gof_demo`.
+* Added a package-level help page (`?ebrahim.gof`).
+
 # ebrahim.gof 2.2.0
 
 ## New features

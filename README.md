@@ -1,24 +1,48 @@
-# Ebrahim-Farrington Goodness of Fit test
+# ebrahim.gof — Goodness-of-Fit and Calibration Tests for Logistic Regression
 
 
 
 ## Overview
 
-The **ebrahim.gof** package implements the Ebrahim-Farrington goodness-of-fit test for logistic regression models. This test is particularly effective for binary data and sparse datasets, providing an improved alternative to the traditional Hosmer-Lemeshow test.
+**ebrahim.gof** is a unified **toolbox** of goodness-of-fit and calibration tests for binary logistic
+regression, callable in a single line via **`run.all.gof()`**. It is particularly suited to **sparse data**,
+where the traditional Hosmer-Lemeshow test loses power.
 
-**New in version 2.0.0:** the package is now a full goodness-of-fit toolkit. Alongside the omnibus Ebrahim-Farrington (EF) test it adds the **Directed EF (DEF)** test (`def.gof()`), a **Cauchy-combination ensemble** (`def.ensemble.gof()`), and **`run.all.gof()`** — a one-call battery of ~19 goodness-of-fit tests (plus opt-in slow tests), each verified against the implementation used in the thesis simulation.
+The package **introduces the author's own sparse-data tests** — the omnibus **Ebrahim-Farrington (EF)** test
+(`ef.gof()`), the **Directed EF / EDGE** test (`def.gof()` / `edge.gof()`) that targets smooth
+calibration-shape departures, and a **Cauchy-combination ensemble** (`def.ensemble.gof()`) — and **aggregates
+a wide range of classical and modern tests for comparison** (Hosmer-Lemeshow, McCullagh, Osius-Rojek,
+le Cessie-van Houwelingen, Stute-Zhu, the binary-adaptive `BAGofT` test, and the `GiViTI` calibration test),
+each obtained from its own package where installed and attributed to its authors.
+
+See the vignette *"A goodness-of-fit and calibration toolbox for logistic regression"*
+(`vignette("ebrahim-gof-toolbox", package = "ebrahim.gof")`) for a full walkthrough on the bundled
+`gof_demo` dataset.
 
 ## Key Features
 
 - **Ebrahim-Farrington Test** (`ef.gof()`): omnibus test for binary data with automatic grouping (chi-square or normal reference)
 - **Directed EF Test** (`def.gof()`): targets calibration-shape departures (poly2/poly3/stukel bases or their ensemble)
 - **Ensemble** (`def.ensemble.gof()`): combines the DEF bases via the Cauchy combination test
-- **One-shot battery** (`run.all.gof()`): runs ~19 GOF tests (plus opt-in slow ones) and returns a tidy data frame
+- **One-shot battery** (`run.all.gof()`): runs ~20+ GOF & calibration tests (plus opt-in slow ones) and returns a tidy data frame
 - **Original Farrington Test**: Full implementation for grouped data
 - **Robust Performance**: Particularly effective with sparse data and binary outcomes
 - **Well Documented**: Comprehensive documentation with examples
 
 ## Installation
+
+> **New here? Start with these two lines.**
+> ```r
+> install.packages("ebrahim.gof")   # core battery — nothing else needed
+> library(ebrahim.gof)              # on load, it tells you if any optional
+>                                   # packages are missing and how to add them
+> ```
+> The **core battery runs out of the box** (only `parallel` + `stats` are required).
+> A few *slow* tests (GAM, `BAGofT`, `GiViTI`, Lai–Liu–HL) need optional packages —
+> when they are missing, `library(ebrahim.gof)` prints a one-time hint, and you can
+> install them all at once with **`gof_install_suggests()`**. Missing packages are
+> never installed silently, and any test whose package is absent is simply skipped
+> with a note (nothing errors).
 
 ### From GitHub (Development Version) 
 Copy and paste this in R or R-studio.
@@ -35,12 +59,13 @@ devtools::install_github("ebrahimkhaled/ebrahim.gof")
 
 ### From CRAN (Stable Version)
 
-The released version is on CRAN (currently **1.0.0**):
+The released version is on CRAN:
 ```r
 install.packages("ebrahim.gof")
 ```
-Version **2.0.0** — this version, with the directed test, the ensemble, and the
-one-call battery — is available from GitHub now and is being submitted to CRAN.
+Version **2.4.0** — with the directed EDGE test, the Cauchy-combination ensemble,
+the one-call battery, and forwarded `BAGofT` partition controls — is available
+from GitHub now and is being submitted to CRAN.
 
 ## Quick Start
 
@@ -399,6 +424,55 @@ These results demonstrate that the Ebrahim-Farrington test maintains the correct
 ![Farrington CDF Comparison (U-3_3)](vignettes/farrington_cdf_comparison_u_3_3.png)
 ![Farrington CDF Comparison (multi_indep)](vignettes/farrington_cdf_comparison_multi_indep.png)
 
+## Performance: parallel and GPU
+
+The battery is fast by default — the author's own tests (`ef.gof()`, `edge.gof()`,
+`def.ensemble.gof()`) are closed-form and run in **milliseconds**. The cost comes from
+a few classical resampling/quadratic-form tests when they are included.
+
+### Parallel bootstrap tests (built in)
+
+Two of the slow tests — **Stute–Zhu** and **Lai–Liu–HL** — are bootstrap tests. Their
+resampling loops can be spread across CPU cores with a single flag:
+
+```r
+# run just the bootstrap test on 4 workers
+run.all.gof(fit, tests = "Stute-Zhu", parallel = TRUE, ncores = 4,
+            control = list("Stute-Zhu" = list(B = 2000)))
+```
+
+- Uses a local **PSOCK cluster** from base R's `parallel` package — works on **all
+  platforms, including Windows** (not just fork-based Unix).
+- `ncores = NULL` (default) uses `detectCores() - 1`; values below 2 fall back to the
+  sequential path.
+- **Reproducible:** with `parallel::clusterSetRNGStream`, the same `set.seed()` and the
+  same `ncores` give **identical** bootstrap *p*-values.
+- Default is `parallel = FALSE`, so nothing changes unless you opt in. The gain is
+  moderate (it targets the resampling loops only, and cluster setup has fixed overhead),
+  so it pays off mainly at large `B`.
+
+### Optional GPU path (replication scripts, not part of the package)
+
+The most expensive **aggregated** tests — **le Cessie–van Houwelingen** and
+**McCullagh** (dense O(n²)–O(n³) quadratic forms), plus the projection/RMEP bootstrap —
+have GPU implementations (CuPy accessed via `reticulate`). These are **not shipped in the
+package**: they need a CUDA + CuPy environment and would make the package non-portable, so
+they live in the paper's replication scripts. Every GPU statistic is checked against the
+CPU value to a relative tolerance of 1e-6 (identical, correct statistic — only faster):
+
+| Test | n | CPU (s) | GPU (s) | Speed-up |
+|---|---:|---:|---:|---:|
+| le Cessie | 2000 | 14.81 | 0.20 | 74× |
+| le Cessie | 5000 | 225.22 | 2.95 | 76× |
+| McCullagh | 2000 | 14.54 | 0.03 | 485× |
+| McCullagh | 5000 | 224.32 | 0.08 | **2804×** |
+| projection (RMEP) | 1000 | 28.75 | 1.22 | 24× |
+
+These accelerate the *classical rival* tests so they stay usable for large-*n*
+comparisons; the package's own directed tests are already fast on one CPU core. Full
+benchmark: `paper_JSS/replication/gpu_bench.R` and `gpu_bench.csv` (see the JSS
+companion paper, §5).
+
 ## References
 
 1. Farrington, C. P. (1996). On Assessing Goodness of Fit of Generalized Linear Models to Sparse Data. *Journal of the Royal Statistical Society. Series B (Methodological)*, 58(2), 349-360.
@@ -409,13 +483,32 @@ These results demonstrate that the Ebrahim-Farrington test maintains the correct
 
 ## Citation
 
-If you use this package in your research, please cite:
+If you use this package in your research, please cite it (run `citation("ebrahim.gof")`
+in R for the up-to-date entries):
 
 ```
-Ebrahim, K. E. (2025). ebrahim.gof: Ebrahim-Farrington Goodness-of-Fit Test 
-for Logistic Regression. R package version 2.0.0. 
+Ebrahim, E. K. (2026). ebrahim.gof: Goodness-of-Fit and Calibration Tests
+for Logistic Regression. R package version 2.4.0.
 https://github.com/ebrahimkhaled/ebrahim.gof
 ```
+
+### Related papers
+
+The methods in this package are described in the following papers by the author
+(please cite the relevant one alongside the package):
+
+- **EDGE — the directed test** (`edge.gof()` / `def.gof()`): Ebrahim, E. K. & El-Kotory, A. (2026).
+  *EDGE: A Closed-Form Directed Goodness-of-Fit Test for Sparse Logistic Regression.* Manuscript.
+- **EF — the omnibus test** (`ef.gof()`): Ebrahim, E. K. & El-Kotory, A. (2026).
+  *A directional Hosmer–Lemeshow goodness-of-fit test for sparse logistic regression.*
+  arXiv:2607.15454 · Zenodo [10.5281/zenodo.21184547](https://doi.org/10.5281/zenodo.21184547)
+- **Benchmark — how the battery performs**: Ebrahim, E. K. & El-Kotory, A. (2026).
+  *Benchmarking goodness-of-fit and calibration algorithms for logistic regression.*
+  arXiv:2607.16344 · Zenodo [10.5281/zenodo.21286172](https://doi.org/10.5281/zenodo.21286172) —
+  an empirical comparison of the tests aggregated here (no single test wins across all alternatives).
+- **EDGES — the Cauchy-combination ensemble** (`edges.gof()` / `def.ensemble.gof()`):
+  Ebrahim, E. K. & El-Kotory, A. (2026). *A Cauchy-combination ensemble of directed
+  goodness-of-fit tests.* In preparation.
 
 ## Contributing
 
@@ -438,8 +531,10 @@ Email: ebrahimkhaled@alexu.edu.eg
 - The R community for continuous support and feedback 
 ## Reproducing published results
 
-The EDGE paper's benchmarks were run against version 2.2.0. To install that exact version later:
+The EDGE paper's benchmarks correspond to version 2.4.0 (the CRAN release accompanying
+the papers). To install that exact version later, so the published examples reproduce
+even after newer releases:
 
 ```r
-remotes::install_version("ebrahim.gof", version = "2.2.0")
+remotes::install_version("ebrahim.gof", version = "2.4.0")
 ```

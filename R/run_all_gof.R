@@ -68,6 +68,15 @@
 #'   (O(n^2)-O(n^3)), the GAM tests, Stute-Zhu, eHL, BAGofT, and GiViTI. Set
 #'   \code{FALSE} for a quick run with the fast tests only. A one-time message
 #'   notes this whenever slow tests are included.
+#' @param parallel Logical; when \code{TRUE}, the resampling loops of the slow
+#'   bootstrap tests (\code{Stute-Zhu} and \code{Lai-Liu-HL}) are run on a local
+#'   PSOCK cluster via \code{\link[parallel]{parLapply}} (works on all
+#'   platforms, including Windows). All other tests are unaffected. The default
+#'   \code{FALSE} keeps every loop sequential, exactly as in previous versions.
+#' @param ncores Integer; the number of worker processes used when
+#'   \code{parallel = TRUE}. The default \code{NULL} uses
+#'   \code{max(1, parallel::detectCores() - 1)}. Values below 2 fall back to
+#'   the sequential path.
 #' @param calibration_plot Logical; when \code{TRUE} and \code{GiViTI} is among
 #'   the tests, also compute and draw the GiViTI calibration belt and store it on
 #'   the result (retrievable with \code{plot()}). Default \code{FALSE}.
@@ -79,8 +88,16 @@
 #'   with a note). In a non-interactive session (scripts, \code{R CMD check})
 #'   nothing is ever installed, regardless of this setting. See
 #'   \code{\link{gof_install_suggests}}.
-#' @param control Optional named list of per-test options (e.g.
-#'   \code{list(BAGofT = list(nsim = 100), GiViTI = list(devel = "internal"))}).
+#' @param control Optional named list of per-test options. Recognized entries:
+#'   \code{"Stute-Zhu" = list(B = ...)} (bootstrap replicates);
+#'   \code{GiViTI = list(devel = "internal"/"external")};
+#'   \code{"Lai-Liu-HL" = list(n0 = ..., k = ..., alpha = ...)}; and
+#'   \code{BAGofT = list(...)} which forwards to the binary adaptive test --
+#'   \code{nsim} (resampling iterations; default 100), \code{nsplits}, \code{ne}
+#'   (the estimation-split size), and the random-forest partitioner's tuning
+#'   \code{Kmax} (maximum number of adaptive partition cells), \code{ntree},
+#'   \code{nmin}, \code{mtry}, \code{maxnodes}. Example:
+#'   \code{list(BAGofT = list(nsim = 200, Kmax = 8, ntree = 500))}.
 #'
 #' @return A \code{data.frame} (of class \code{gof_battery}) with columns
 #'   \code{Test}, \code{Family}, \code{Statistic}, \code{df}, \code{p_value},
@@ -114,6 +131,11 @@
 #' res <- run.all.gof(fit, tests = c("McCullagh", "GiViTI"),
 #'                    calibration_plot = TRUE)
 #' plot(res)   # redraw the stored belt
+#'
+#' ## run the slow bootstrap loops (Stute-Zhu, Lai-Liu-HL) on a PSOCK cluster
+#' set.seed(1)
+#' run.all.gof(fit, tests = "Stute-Zhu", parallel = TRUE, ncores = 2,
+#'             control = list("Stute-Zhu" = list(B = 50)))
 #' }
 #'
 #' @note \strong{Grouped vs sparse forms.} \code{Pearson}, \code{Deviance} and
@@ -121,8 +143,10 @@
 #'   form and a \code{"(grouped)"} form computed on the distinct covariate
 #'   patterns (each a Binomial\eqn{(m_g, P_g)}). The two are identical when every
 #'   covariate pattern is unique (fully sparse data, as in the simulation) and
-#'   differ only when patterns repeat (\eqn{m_g > 1}); both rows are returned so
-#'   the user can compare. \code{Osius-Rojek} is always computed on covariate
+#'   differ only when patterns repeat (\eqn{m_g > 1}). To avoid clutter, the
+#'   \code{"(grouped)"} row is shown \emph{only} when it actually differs from the
+#'   sparse form (i.e., when some pattern repeats); on fully sparse data it is a
+#'   duplicate and is omitted. \code{Osius-Rojek} is always computed on covariate
 #'   patterns, matching its classical (LogisticDx) definition.
 #'
 #'   \strong{Farrington vs EF.} The \emph{original} Farrington (1996) test is a
@@ -131,13 +155,81 @@
 #'   but forms \code{G} data-dependent bins of the predicted risk, so it applies
 #'   directly to fully sparse data. Use \code{EF} for sparse binary data; the
 #'   grouped Farrington form is appropriate only when covariate patterns repeat.
+#'
+#'   \strong{Reproducibility of the parallel path.} With \code{parallel = TRUE}
+#'   the cluster's random-number streams are initialized with
+#'   \code{\link[parallel]{clusterSetRNGStream}}, seeded deterministically from
+#'   the session's current RNG state. Two runs from the same
+#'   \code{\link{set.seed}} state (and the same \code{ncores}) therefore give
+#'   identical bootstrap p-values. Note that the parallel L'Ecuyer-CMRG streams
+#'   necessarily differ from the serial RNG stream, so \code{parallel = TRUE}
+#'   results differ (within Monte-Carlo error) from \code{parallel = FALSE}
+#'   results at the same seed; this is standard and both are valid. Results also
+#'   depend on \code{ncores}, because the replicates are split across workers.
 #' @seealso \code{\link{ef.gof}}, \code{\link{def.gof}}, \code{\link{def.ensemble.gof}},
 #'   \code{\link{gof_install_suggests}}.
+#'
+#' @references
+#' The aggregated tests are due to their original authors; they are provided
+#' here for comparison and credited as follows.
+#'
+#' Farrington CP (1996). "On Assessing Goodness of Fit of Generalized Linear
+#' Models to Sparse Data." \emph{Journal of the Royal Statistical Society B},
+#' \strong{58}(2), 349--360. \doi{10.1111/j.2517-6161.1996.tb02086.x}
+#'
+#' Hosmer DW, Lemeshow S (1980). "Goodness of Fit Tests for the Multiple
+#' Logistic Regression Model." \emph{Communications in Statistics -- Theory and
+#' Methods}, \strong{9}(10), 1043--1069. \doi{10.1080/03610928008827941}
+#'
+#' McCullagh P (1985). "On the Asymptotic Distribution of Pearson's Statistic in
+#' Linear Exponential Family Models." \emph{International Statistical Review},
+#' \strong{53}(1), 61--67. \doi{10.2307/1402880}
+#'
+#' Osius G, Rojek D (1992). "Normal Goodness-of-Fit Tests for Multinomial Models
+#' with Large Degrees of Freedom." \emph{Journal of the American Statistical
+#' Association}, \strong{87}(420), 1145--1152.
+#' \doi{10.1080/01621459.1992.10476271}
+#'
+#' le Cessie S, van Houwelingen JC (1991). "A Goodness-of-Fit Test for Binary
+#' Regression Models, Based on Smoothing Methods." \emph{Biometrics},
+#' \strong{47}(4), 1267--1282. \doi{10.2307/2532385}
+#'
+#' Stukel TA (1988). "Generalized Logistic Models." \emph{Journal of the
+#' American Statistical Association}, \strong{83}(402), 426--431.
+#' \doi{10.1080/01621459.1988.10478613}
+#'
+#' Stute W, Zhu LX (2002). "Model Checks for Generalized Linear Models."
+#' \emph{Scandinavian Journal of Statistics}, \strong{29}(3), 535--545.
+#' \doi{10.1111/1467-9469.00304}
+#'
+#' Tsiatis AA (1980). "A Note on a Goodness-of-Fit Test for the Logistic
+#' Regression Model." \emph{Biometrika}, \strong{67}(1), 250--251.
+#' \doi{10.1093/biomet/67.1.250}
+#'
+#' Xie XJ, Pendergast J, Clarke W (2008). "Increasing the Power: A Practical
+#' Approach to Goodness-of-Fit Test for Logistic Regression Models with
+#' Continuous Predictors." \emph{Computational Statistics & Data Analysis},
+#' \strong{52}(5), 2703--2713. \doi{10.1016/j.csda.2007.09.027}
+#'
+#' Pulkstenis E, Robinson TJ (2002). "Two Goodness-of-Fit Tests for Logistic
+#' Regression Models with Continuous Covariates." \emph{Statistics in Medicine},
+#' \strong{21}(1), 79--93. \doi{10.1002/sim.943}
+#'
+#' Nattino G, Finazzi S, Bertolini G (2014). "A New Calibration Test and a
+#' Reappraisal of the Calibration Belt for the Assessment of Prediction Models
+#' Based on Dichotomous Outcomes." \emph{Statistics in Medicine}, \strong{33}(14),
+#' 2390--2407. \doi{10.1002/sim.6100}
+#'
+#' Zhang J, Ding J, Yang Y (2021). "Is a Classification Procedure Good Enough? A
+#' Goodness-of-Fit Assessment Tool for Classification Learning." \emph{Journal of
+#' the American Statistical Association}. \doi{10.1080/01621459.2021.1979010}
+#'
 #' @importFrom stats fitted predict model.matrix model.frame coef deviance pchisq binomial glm.fit kmeans median dist anova lm pnorm
 #' @importFrom utils capture.output
 #' @export
 run.all.gof <- function(object, predicted_probs = NULL, X = NULL,
                         tests = "all", G = 10, include_slow = TRUE,
+                        parallel = FALSE, ncores = NULL,
                         calibration_plot = FALSE, install = c("ask", "no", "yes"),
                         control = list()) {
 
@@ -145,6 +237,30 @@ run.all.gof <- function(object, predicted_probs = NULL, X = NULL,
   ctx <- .gof_context(object, predicted_probs, X, G = G)
   sel <- if (identical(tests, "all")) names(.GOF_REGISTRY) else intersect(tests, names(.GOF_REGISTRY))
   if (length(sel) == 0) stop("run.all.gof: no known tests selected.")
+
+  # Optional PSOCK cluster for the slow bootstrap loops (Stute-Zhu, Lai-Liu-HL).
+  # Reproducible: clusterSetRNGStream is seeded deterministically from the
+  # session RNG, so same set.seed() + same ncores => identical results. The
+  # sequential default path is completely untouched.
+  if (isTRUE(parallel) && isTRUE(include_slow) && ctx$has_model &&
+      length(intersect(sel, c("Stute-Zhu", "Lai-Liu-HL"))) > 0) {
+    nc <- if (!is.null(ncores)) max(1L, as.integer(ncores)[1]) else {
+      dc <- parallel::detectCores()
+      if (is.na(dc)) 2L else max(1L, dc - 1L)
+    }
+    if (nc >= 2L) {
+      cl <- tryCatch(parallel::makePSOCKcluster(nc), error = function(e) NULL)
+      if (is.null(cl)) {
+        message("run.all.gof: could not start a PSOCK cluster; ",
+                "running sequentially.")
+      } else {
+        on.exit(parallel::stopCluster(cl), add = TRUE)
+        parallel::clusterCall(cl, function(lp) { .libPaths(lp); NULL }, .libPaths())
+        parallel::clusterSetRNGStream(cl, iseed = sample.int(.Machine$integer.max, 1L))
+        ctx$cl <- cl
+      }
+    }
+  }
   # If a test in this run needs an optional package that isn't installed, offer
   # to install it (interactive sessions only, with confirmation -- see
   # gof_install_suggests). Non-interactive runs are never touched.
@@ -176,6 +292,24 @@ run.all.gof <- function(object, predicted_probs = NULL, X = NULL,
                              stringsAsFactors = FALSE)
   }
   out <- do.call(rbind, rows)
+
+  # Drop redundant "(grouped)" rows when covariate patterns do not repeat. On
+  # fully sparse data (every observation its own pattern) the grouped and
+  # per-observation forms of Pearson / deviance / McCullagh coincide exactly, so
+  # the "(grouped)" row is an identical duplicate. Keep it only when the two
+  # genuinely differ (i.e., some pattern has m_g > 1).
+  .eq_gof <- function(x, y) (is.na(x) && is.na(y)) ||
+    (!is.na(x) && !is.na(y) && isTRUE(all.equal(x, y, tolerance = 1e-8)))
+  gi <- grep(" \\(grouped\\)$", out$Test)
+  drop_rows <- integer(0)
+  for (k in gi) {
+    base <- sub(" \\(grouped\\)$", "", out$Test[k])
+    bi <- which(out$Test == base)
+    if (length(bi) == 1L && .eq_gof(out$Statistic[k], out$Statistic[bi]) &&
+        .eq_gof(out$p_value[k], out$p_value[bi]))
+      drop_rows <- c(drop_rows, k)
+  }
+  if (length(drop_rows)) out <- out[-drop_rows, , drop = FALSE]
 
   # ensemble rows (only when a model is available and running the full set)
   if (ctx$has_model && identical(tests, "all")) {
@@ -264,31 +398,60 @@ plot.gof_battery <- function(x, ...) {
 #' @exportS3Method print gof_battery
 print.gof_battery <- function(x, ...) {
   d <- as.data.frame(x)
-  sig <- vapply(d$p_value, function(p)
-    if (is.na(p)) "" else if (p < .001) "***" else if (p < .01) "**"
-    else if (p < .05) "*" else if (p < .1) "." else "", character(1))
+  fam_order <- c("Global", "Standardized", "Partition", "Covariate-space",
+                 "Directed", "Smoothing", "GAM", "Bootstrap", "Calibration", "Ensemble")
+  ord <- match(d$Family, fam_order); ord[is.na(ord)] <- 99L
+  d <- d[order(ord, seq_len(nrow(d))), , drop = FALSE]
+
+  ## distinct notes -> footnote markers [a], [b], ... (keeps the table narrow)
+  notes <- ifelse(is.na(d$Note), "", d$Note)
+  uniq  <- unique(notes[notes != ""])
+  marks <- letters[seq_along(uniq)]; names(marks) <- uniq
+  mk    <- ifelse(notes == "", "", paste0(" [", marks[notes], "]"))
+
   fp <- vapply(d$p_value, function(p)
     if (is.na(p)) "-" else if (p < 1e-4) sprintf("%.1e", p)
     else formatC(p, format = "f", digits = 4), character(1))
+  sig <- vapply(d$p_value, function(p)
+    if (is.na(p)) "" else if (p < .001) "***" else if (p < .01) "**"
+    else if (p < .05) "*" else if (p < .1) "." else "", character(1))
   fnum <- function(v, dig) vapply(v, function(z)
     if (is.na(z)) "" else formatC(z, format = "g", digits = dig), character(1))
-  disp <- data.frame(Test = d$Test, Family = d$Family,
-                     Statistic = fnum(d$Statistic, 4), df = fnum(d$df, 3),
-                     p_value = fp, signif = sig,
-                     Note = ifelse(is.na(d$Note), "", d$Note),
-                     check.names = FALSE, stringsAsFactors = FALSE)
-  fam_order <- c("Global", "Standardized", "Partition", "Covariate-space",
-                 "Directed", "Smoothing", "GAM", "Bootstrap", "Calibration", "Ensemble")
-  ord <- match(disp$Family, fam_order); ord[is.na(ord)] <- 99L
-  disp <- disp[order(ord, seq_len(nrow(disp))), , drop = FALSE]
-  cat(sprintf("\nGoodness-of-fit battery: %d tests\n", nrow(d)))
-  cat(strrep("=", 78), "\n", sep = "")
-  print.data.frame(disp, row.names = FALSE, right = FALSE)
-  cat(strrep("-", 78), "\n", sep = "")
-  cat("Signif.:  *** <.001   ** <.01   * <.05   . <.1     p '-' = not available\n")
-  nNA <- sum(is.na(d$p_value))
-  if (nNA > 0L)
-    cat(sprintf("%d test(s) not available - see the Note column for why.\n", nNA))
+  st <- fnum(d$Statistic, 4); df <- fnum(d$df, 3)
+
+  tname <- paste0(d$Test, mk)
+  wT <- max(nchar(tname), nchar("Test"))
+  wS <- max(nchar(st), nchar("Statistic"))
+  wD <- max(nchar(df), 2L)
+  wP <- max(nchar(fp), nchar("p-value")); wG <- 3L
+  tw <- 1L + wT + 2L + wS + 1L + wD + 2L + wP + 1L + wG   # table width
+
+  padL <- function(s, w) formatC(s, width = -w, flag = " ")  # left-justified
+  padR <- function(s, w) formatC(s, width = w)               # right-justified
+  row  <- function(t, s, dd, p, g, tag = "")
+    cat(" ", padL(t, wT), "  ", padR(s, wS), " ", padR(dd, wD), "  ",
+        padR(p, wP), " ", padL(g, wG), tag, "\n", sep = "")
+
+  nrej <- sum(!is.na(d$p_value) & d$p_value < .05)
+  cat(sprintf("\nGoodness-of-fit battery: %d tests  (%d reject at 0.05)\n",
+              nrow(d), nrej))
+  cat(strrep("=", tw), "\n", sep = "")
+  row("Test", "Statistic", "df", "p-value", "")
+  fam_now <- ""
+  for (i in seq_len(nrow(d))) {
+    if (!identical(d$Family[i], fam_now)) {
+      fam_now <- d$Family[i]
+      lab <- paste0("--- ", fam_now, " ")
+      cat(" ", lab, strrep("-", max(0L, tw - nchar(lab) - 1L)), "\n", sep = "")
+    }
+    row(tname[i], st[i], df[i], fp[i], sig[i])
+  }
+  cat(strrep("-", tw), "\n", sep = "")
+  cat(" Signif.:  *** <.001   ** <.01   * <.05   . <.1\n")
+  if (length(uniq)) {
+    cat(" Notes:\n")
+    for (u in uniq) cat("   [", marks[u], "] ", u, "\n", sep = "")
+  }
   invisible(x)
 }
 
@@ -682,8 +845,13 @@ gof_lecessie <- function(ctx, opts = list()) {
   X   <- ctx$X
   mu2 <- fits * (1 - fits)
   hat <- (mu2 * X) %*% solve(crossprod(X, mu2 * X)) %*% t(X)   # V X (X'VX)^{-1} X'
-  R.cor <- diag(N) - hat
-  R.cor <- R.cor %*% R.raw %*% R.cor
+  ## Moment reference for Q = r'Rr with r ~ (I-H)(y-mu):  M = (I-H)' R (I-H).
+  ## FIX (2026-07-29): this previously computed (I-H) R (I-H).  In WEIGHTED logistic
+  ## regression H = VX(X'VX)^{-1}X' is NOT symmetric (it is in OLS, where the
+  ## smwrStats original lives), so the transpose matters: the old form inflated the
+  ## null size of the reference (empirical 0.063 vs 0.054 exact-moment at n=1000).
+  IH    <- diag(N) - hat
+  R.cor <- crossprod(IH, R.raw %*% IH)                         # (I-H)' R (I-H)
   E.Q   <- sum(diag(R.cor) * mu2)
   mu4   <- mu2 * (1 - 3 * mu2)
   VarQ1 <- sum(diag(R.cor)^2 * (mu4 - 3 * mu2^2))
@@ -790,23 +958,37 @@ gof_gam_xie <- function(ctx, opts = list()) {
   (1 / n^2) * sum(cumsum(resid[order(eta)])^2)
 }
 
-# Stute-Zhu GOF test via parametric (model-based) bootstrap. From Stute-Zhu(Bootstrap).R
-# (sequential; no parallelism). opts$B sets the number of bootstrap reps (default 200).
+# Stute-Zhu GOF test via parametric (model-based) bootstrap. From Stute-Zhu(Bootstrap).R.
+# Sequential by default; when run.all.gof(parallel = TRUE) put a PSOCK cluster on
+# ctx$cl, the bootstrap replicates run via parallel::parLapply (reproducible via
+# clusterSetRNGStream). opts$B sets the number of bootstrap reps (default 200).
 gof_stutezhu <- function(ctx, opts = list()) {
   if (!ctx$has_model) return(list(Statistic = NA, df = NA, p_value = NA, Note = "needs a glm model"))
   B   <- if (is.null(opts$B)) 200L else as.integer(opts$B)
   y   <- ctx$y; ph <- ctx$ph; X <- ctx$X
   eta <- as.numeric(stats::predict(ctx$model, type = "link"))
   Tobs <- .gof_tsz_stat(y - ph, eta)
-  Tb <- replicate(B, {
-    yb <- stats::rbinom(length(y), 1, ph)
-    fb <- tryCatch(suppressWarnings(stats::glm.fit(X, yb, family = stats::binomial())),
+  # One bootstrap replicate, self-contained (base-only closure so PSOCK workers
+  # need neither this package's namespace nor any serialized surroundings).
+  one_rep <- function(i, probs, Xmat) {
+    yb <- stats::rbinom(nrow(Xmat), 1, probs)
+    fb <- tryCatch(suppressWarnings(stats::glm.fit(Xmat, yb, family = stats::binomial())),
                    error = function(e) NULL)
     if (is.null(fb) || !isTRUE(fb$converged)) return(NA_real_)
-    .gof_tsz_stat(yb - fb$fitted.values, as.numeric(X %*% fb$coefficients))
-  })
+    r <- yb - fb$fitted.values
+    e <- as.numeric(Xmat %*% fb$coefficients)
+    (1 / length(r)^2) * sum(cumsum(r[order(e)])^2)
+  }
+  environment(one_rep) <- baseenv()
+  Tb <- if (!is.null(ctx$cl)) {
+    unlist(parallel::parLapply(ctx$cl, seq_len(B), one_rep, probs = ph, Xmat = X))
+  } else {
+    vapply(seq_len(B), one_rep, numeric(1), probs = ph, Xmat = X)
+  }
   list(Statistic = Tobs, df = NA_real_, p_value = mean(Tb >= Tobs, na.rm = TRUE),
-       Note = paste0(B, " bootstrap reps"))
+       Note = paste0(B, " bootstrap reps",
+                     if (!is.null(ctx$cl))
+                       paste0(" (parallel, ", length(ctx$cl), " workers)") else ""))
 }
 
 # --- eHL: e-value Hosmer-Lemeshow (Henzi et al. 2024) ---
@@ -879,17 +1061,29 @@ gof_bagoft <- function(ctx, opts = list()) {
     added_const <- TRUE
   }
   link  <- ctx$model$family$link
+  # Adaptive random-forest partitioner: pass through any tuning the caller sets
+  # via control = list(BAGofT = list(...)). parRF knobs: Kmax (max number of
+  # partition cells - the granularity of the adaptive split), ntree, nmin, mtry,
+  # maxnodes. BAGofT() knobs: nsim (resampling iterations), nsplits, ne (size of
+  # the estimation split).
+  rf_args <- list(parVar = preds)
+  for (a in c("Kmax", "nmin", "ntree", "mtry", "maxnodes"))
+    if (!is.null(opts[[a]])) rf_args[[a]] <- opts[[a]]
+  parFun <- do.call(BAGofT::parRF, rf_args)
+  bag_args <- list(testModel = BAGofT::testGlmBi(formula = stats::formula(ctx$model), link = link),
+                   parFun = parFun, data = dat, nsim = nsim)
+  if (!is.null(opts$nsplits)) bag_args$nsplits <- as.integer(opts$nsplits)
+  if (!is.null(opts$ne))      bag_args$ne      <- opts$ne
   r <- NULL                                          # silence BAGofT's per-sim console chatter
   invisible(suppressMessages(utils::capture.output(
-    r <- tryCatch(suppressWarnings(
-      BAGofT::BAGofT(testModel = BAGofT::testGlmBi(formula = stats::formula(ctx$model), link = link),
-                     parFun = BAGofT::parRF(parVar = preds),
-                     data = dat, nsim = nsim)),
-      error = function(e) NULL))))
+    r <- tryCatch(suppressWarnings(do.call(BAGofT::BAGofT, bag_args)),
+                  error = function(e) NULL))))
   if (is.null(r) || is.null(r$p.value))
     return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: BAGofT computation failed"))
+  extra <- paste0(if (!is.null(opts$Kmax)) paste0(", Kmax=", opts$Kmax) else "",
+                  if (!is.null(opts$nsplits)) paste0(", nsplits=", opts$nsplits) else "")
   list(Statistic = NA_real_, df = NA_real_, p_value = as.numeric(r$p.value),
-       Note = paste0("adaptive partition; nsim=", nsim,
+       Note = paste0("adaptive RF partition; nsim=", nsim, extra,
                      if (added_const) "; constant column added (single predictor)" else ""))
 }
 
@@ -1050,7 +1244,10 @@ gof_lailiu <- function(ctx, opts = list()) {
   m0  <- max(1, min(round(n0 * (m / n)), m))
   n0e <- max(1, min(n0 - m0, nn))
   crit <- stats::qchisq(1 - alpha, df = G - 2)
-  hl <- replicate(k, {
+  # One resample, self-contained (base + ResourceSelection only) so it can run
+  # either sequentially or on the PSOCK cluster run.all.gof(parallel = TRUE)
+  # puts on ctx$cl (reproducible via clusterSetRNGStream).
+  one_rep <- function(i, ev_grp, ne_grp, m, nn, m0, n0e, fml, G) {
     rs <- rbind(ev_grp[sample(seq_len(m),  m0,  replace = TRUE), , drop = FALSE],
                 ne_grp[sample(seq_len(nn), n0e, replace = TRUE), , drop = FALSE])
     mb <- tryCatch(suppressWarnings(stats::glm(fml, data = rs, family = stats::binomial())),
@@ -1059,7 +1256,16 @@ gof_lailiu <- function(ctx, opts = list()) {
     tryCatch(suppressWarnings(as.numeric(
       ResourceSelection::hoslem.test(mb$y, stats::fitted(mb), g = G)$statistic)),
       error = function(e) NA_real_)
-  })
+  }
+  environment(one_rep) <- baseenv()
+  hl <- if (!is.null(ctx$cl)) {
+    unlist(parallel::parLapply(ctx$cl, seq_len(k), one_rep, ev_grp = ev_grp,
+                               ne_grp = ne_grp, m = m, nn = nn, m0 = m0,
+                               n0e = n0e, fml = fml, G = G))
+  } else {
+    vapply(seq_len(k), one_rep, numeric(1), ev_grp = ev_grp, ne_grp = ne_grp,
+           m = m, nn = nn, m0 = m0, n0e = n0e, fml = fml, G = G)
+  }
   valid <- hl[!is.na(hl)]
   if (length(valid) == 0)
     return(list(Statistic = NA, df = NA, p_value = NA, Note = "no valid resamples"))

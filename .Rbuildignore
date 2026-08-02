@@ -11,3 +11,4 @@
 ^check_elapsed\.txt$
 ^ebrahim\.gof_.*\.tar\.gz$
 ^ebrahim\.gof\.Rcheck$
+^data-raw$
