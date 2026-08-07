@@ -46,3 +46,7 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/ 
+# R CMD check scratch output (local only)
+/check_*.out
+/check_*.txt
+/CRAN_reply_*.txt
