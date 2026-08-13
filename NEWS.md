@@ -1,3 +1,62 @@
+# ebrahim.gof 2.5.0
+
+## New features
+
+* `legoft()` -- a pretrained goodness-of-fit test for binary logistic regression. It
+  combines eleven classical and directed statistics with weights that were fixed offline
+  and ship frozen, and calibrates the combination by a parametric bootstrap at the fitted
+  parameters. Nothing is retrained when you call it, so two analysts running it on the
+  same data obtain the same p-value.
+
+  On twelve held-out misspecification families the rule attained higher mean power than
+  each of the fourteen individual tests in the study, at n = 500 and n = 1000. It does
+  **not** dominate them family by family: against the two covariate-space directed tests
+  the advantage is in the mean rather than in per-family consistency, which is the
+  dilution a combination pays for having no catastrophic blind spot.
+
+  It does **not** beat an equal-weight Cauchy combination of the same eleven members
+  (Liu and Xie, 2020). The difference is +0.0045 at n = 500 (sign test p = 0.23) and
+  -0.0005 at n = 1000. Users who want the simpler rule lose nothing measurable; `legoft()`
+  reduces to it exactly at the boundary of its weight family, so it cannot do worse.
+
+* `shrink.gof()` -- goodness of fit for **penalized (ridge) logistic regression**. The
+  Hosmer--Lemeshow test is not valid when the coefficients are shrunk: penalization biases
+  the fitted probabilities, the grouped residuals acquire a non-centrality, and the usual
+  chi-squared reference is wrong. This removes the estimated non-centrality and refers the
+  corrected statistic to a bootstrap built from the debiased generator (Beran prepivoting),
+  on either the decile or the EDGE basis.
+
+  Note the scale: `lambda` is on the theory scale, `lambda = n * lambda_glmnet`. Passing a
+  \pkg{glmnet} lambda unchanged is the commonest way to misuse this function.
+
+  The implementation is vendored byte-identical from the source of Ebrahim (2026),
+  "Shrinkage invalidates the Hosmer--Lemeshow test", so the paper and the package compute
+  the same numbers. It depends only on base R and stats.
+
+* `legoft.localize()` -- reports which of two domains of evidence carries the misfit,
+  using closed testing, so the probability of implicating any collection of domains whose
+  pooled evidence is jointly exchangeable with the reference draws' is at most `alpha`.
+
+  The domains are defined by what the members can see rather than by taxonomy. `INDEX`
+  holds the seven statistics that read the linear predictor -- the grouping tests, which
+  stratify on fitted risk, and the directed tests, which examine bends in that same index.
+  `COV` holds the four that read directions orthogonal to it. Calibration and link
+  readings are pooled deliberately: they are **not separately identifiable**, because
+  fitted risk is a monotone transform of the index, so both read one axis.
+
+  A verdict locates the evidence. It does not name the repair: a departure of one kind
+  can move members assigned to the other domain, and an unimplicated domain is not
+  thereby certified correct.
+
+## Notes on what is *not* here
+
+* A ridge rule shrunk toward the equal-weight combination ("shrink-to-CCT") was one of
+  six candidates evaluated during development and was **not selected**: it ties the
+  equal-weight rule on most training folds and loses on oscillating departures (0.820
+  against 0.990). Its appeal was that it reduces exactly to the equal-weight rule in the
+  limit; `legoft()` has that same property at the boundary of its own weight family, so
+  nothing is lost by omitting it. The candidate results are archived with the manuscript.
+
 # ebrahim.gof 2.4.1
 
 ## Bug fix

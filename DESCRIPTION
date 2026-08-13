@@ -1,8 +1,8 @@
 Package: ebrahim.gof
 Type: Package
 Title: Goodness-of-Fit and Calibration Tests for Logistic Regression
-Version: 2.4.1
-Date: 2026-07-22
+Version: 2.5.0
+Date: 2026-08-13
 Authors@R: person("Ebrahim", "Khaled Ebrahim",
                   email = "ebrahimkhaled@alexu.edu.eg",
                   role = c("aut", "cre"),
