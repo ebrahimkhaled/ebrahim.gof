@@ -149,7 +149,7 @@ test_that("eHL internal reimplementation matches the source value", {
   expect_equal(ebrahim.gof:::.gof_ehl(y, P, boot = 10, s = 0.5), 0.068584, tolerance = 1e-3)
 })
 
-test_that("le Cessie is opt-in (slow) and matches its source", {
+test_that("le Cessie is opt-in (slow) and uses the CORRECTED moment reference", {
   skip_on_cran()                 # include_slow = TRUE runs the full slow battery; keep CRAN fast
   set.seed(321)
   n <- 150
@@ -159,8 +159,16 @@ test_that("le Cessie is opt-in (slow) and matches its source", {
   expect_false("le-Cessie" %in% run.all.gof(fit, include_slow = FALSE)$Test)         # not in the default battery
   res <- run.all.gof(fit, include_slow = TRUE)
   lc <- res[res$Test == "le-Cessie", ]
-  expect_equal(lc$Statistic, 16.794627, tolerance = 1e-4)      # verified vs lecessie1995.r
-  expect_equal(lc$p_value,   0.149928, tolerance = 1e-4)
+  ## These are the values AFTER the 2.4.1 transpose fix, and they deliberately do NOT
+  ## match the inherited lecessie1995.r source: that implementation formed the moment
+  ## reference as (I-H) R (I-H), and in a weighted fit H is not symmetric, so the correct
+  ## form is (I-H)' R (I-H). Disagreeing with the source here is the point of the fix.
+  ## The pre-fix values were Statistic 16.794627, p 0.149928.
+  ## Note the reported Statistic is Q rescaled by the matched moments (Q * 2E[Q]/Var[Q]),
+  ## so it moves with the correction even though the raw quadratic form Q does not.
+  expect_equal(lc$Statistic, 15.895427, tolerance = 1e-4)
+  expect_equal(lc$df,        11.648746, tolerance = 1e-4)
+  expect_equal(lc$p_value,    0.177213, tolerance = 1e-4)
 })
 
 test_that("run.all.gof flags a cloglog link misfit", {

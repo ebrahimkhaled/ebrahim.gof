@@ -67,7 +67,16 @@
   **not symmetric**, so the transpose matters; the inherited implementation came from
   the unweighted linear-model setting, where the two forms coincide. Only the
   reference moments (`E[Q]`, `Var[Q]`, and hence the matched degrees of freedom and
-  the p-value) were affected -- the statistic `Q` itself was always correct.
+  the p-value) were affected -- the raw quadratic form `Q` was always correct.
+
+  **Wording corrected in 2.5.0.** The 2.4.1 note said "the statistic was always correct".
+  That is true of the raw `Q` and misleading about the `Statistic` column users actually
+  see: that column reports `Q` rescaled by the matched moments, `Q * 2E[Q]/Var[Q]`, so it
+  moves with the correction exactly as the degrees of freedom and the p-value do. On the
+  package's own regression example the reported statistic goes from 16.794627 to
+  15.895427 and the p-value from 0.149928 to 0.177213 (the matched degrees of freedom
+  are 11.648746 after the fix). Expect the printed statistic and degrees of freedom to
+  change too, not only the p-value.
   The consequence was a mildly liberal test: at `n = 1000` with the default bandwidth
   the empirical null size was about 0.063 instead of the exact-moment value 0.054.
   Users comparing results across versions should expect slightly larger p-values

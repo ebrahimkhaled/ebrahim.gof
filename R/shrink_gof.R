@@ -135,6 +135,7 @@
 #' application to glaucoma diagnosis."
 #'
 #' Depends only on base \R and \pkg{stats}, so results do not move with package versions.
+#' @importFrom stats rnorm rbinom pchisq quantile
 #' @seealso \code{\link{run.all.gof}} for the unpenalized battery.
 #' @examples
 #' \donttest{
