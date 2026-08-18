@@ -89,51 +89,192 @@ the tests that need only predictions. Each test is wrapped so that a failure of
 one test never aborts the whole run.
 }
 \details{
-The currently bundled tests are: \code{Pearson}, \code{Deviance},
-\code{Osius-Rojek}, \code{McCullagh}, \code{Copas-RSS}, and
-\code{Information-Matrix} (the White/Orme test) (global / standardized);
-\code{McCullagh} standardizes the Pearson statistic by its exact conditional
-moments (Kuss 2002 algorithm);
-\code{HL} (Hosmer-Lemeshow deciles), \code{HL-equalwidth},
-\code{Pigeon-Heyse}, and \code{F-test} (the modified Hosmer-Lemeshow
-F-test: deviance residuals ANOVA-F-tested across deciles) (partition); \code{EF} and \code{EF-normal} (the omnibus
-Ebrahim-Farrington test with the chi-square and normal references; the normal
-form reproduces the thesis simulation); \code{DEF.poly2/poly3/stukel}
-and \code{Stukel} (directed); \code{Tsiatis}, \code{Xie}, and
-\code{Pulkstenis-Robinson} (covariate-space); the two ensemble rows
-(\code{Ensemble.Vote(3DEF)} and \code{Ensemble.Univ(3DEF+EF)}) from the Cauchy
-combination test; and, when \code{include_slow = TRUE}, the opt-in slow tests:
-\code{le-Cessie}-van Houwelingen smoothing, the GAM-based tests \code{HL-GAM},
-\code{PR-GAM}, \code{Xie-GAM} (need \pkg{mgcv}; fit an overfit GAM for grouping),
-\code{Stute-Zhu} (a cumulative-residual parametric-bootstrap test; set the
-number of reps with \code{control = list("Stute-Zhu" = list(B = ...))}),
-\code{eHL} (the e-value Hosmer-Lemeshow test, reported as p = min(1, 1/e)), and
-\code{BAGofT} (the binary-adaptive GOF test; needs the \pkg{BAGofT} package,
-\code{control = list(BAGofT = list(nsim = ...))}), and \code{Lai-Liu-HL} (Lai
-& Liu's standardized-power procedure for the Hosmer-Lemeshow test, which has no
-p-value: it reports the standardized power as the statistic and a randomized
-accept/reject decision in the \code{Note}; target size via
-\code{control = list("Lai-Liu-HL" = list(n0 = ..., k = ...))}), and
-\code{GiViTI} and \code{GiViTI-external} (the GiViTI polynomial calibration
-test with the internal and external development assumptions; wraps
-\pkg{givitiR}, run in an isolated \pkg{callr} subprocess so a failure in its
-compiled dependencies returns \code{NA} rather than aborting the session;
-set \code{control = list(GiViTI = list(devel = "internal"))}).
+\strong{How to read the battery.} Every test here answers the same question --
+does the fitted model describe the data it was fitted to -- but they differ in
+the departure each is built to notice. That is why the panel is more
+informative than any single p-value: agreement across families is evidence of
+fit, and disagreement tells you \emph{what kind} of misfit is present. A test
+that rejects points at the departure its own construction is sensitive to.
 
-Notes: \code{Tsiatis} and \code{Xie} cluster the covariate space with k-means
-(a fixed internal seed, so results are reproducible and the caller's RNG is
-left untouched). \code{Xie} uses the corrected degrees of freedom
-\eqn{G - k/2 - 1} with \eqn{k} the number of predictors. \code{Pulkstenis-Robinson}
-auto-detects the categorical covariate (any factor/character/logical, or a
-numeric with at most \code{getOption("ebrahim.gof.pr.maxlev", 6)} distinct
-values); it returns \code{NA} with a note when none is present.
+The one thing the panel cannot do is rescue an invalid reference
+distribution. Under sparse data -- almost every covariate pattern unique --
+the classical chi-square references fail, which is the situation this package
+was written for.
 
-Every bundled test reproduces the implementation used in the original thesis
-simulation: \code{Osius-Rojek} and \code{Stukel} follow \pkg{LogisticDx}'s
+\strong{Global and standardized statistics.} These compare observed and
+fitted responses over the whole sample without grouping.
+\itemize{
+  \item \code{Pearson} -- the sum of squared Pearson residuals. Its
+    chi-square reference assumes many observations per covariate pattern. On
+    sparse data that assumption fails and the test is unreliable in both
+    directions; it is reported for completeness and comparison, not for use.
+  \item \code{Deviance} -- the likelihood-ratio statistic against the
+    saturated model. It carries the same sparse-data problem as
+    \code{Pearson}, and in practice is the more conservative of the two.
+  \item \code{Osius-Rojek} -- rescues the Pearson statistic by standardizing
+    it with its asymptotic mean and variance computed under increasing sample
+    size rather than increasing cell counts, giving a normal reference that
+    stays valid when patterns are unique. Fast, parameter-free, and a
+    sensible default. It can be anti-conservative at small samples and
+    conservative under a strongly skewed covariate.
+  \item \code{McCullagh} -- standardizes the Pearson statistic by its
+    \emph{exact} conditional moments rather than asymptotic ones (computed by
+    the Kuss 2002 algorithm). Typically the most powerful of the global
+    statistics, at a cost that grows steeply with sample size.
+  \item \code{Copas-RSS} -- the unweighted sum of squares of the raw
+    residuals, referred to its own moments. Weighting each residual equally
+    rather than by its variance makes it comparatively sensitive to misfit in
+    the middle of the risk range.
+  \item \code{Information-Matrix} -- the White/Orme test. It compares two
+    estimators of the information matrix that agree only if the model is
+    correctly specified, so it is an omnibus check on the whole
+    specification rather than on calibration alone.
+}
+
+\strong{Partition tests.} These sort observations by fitted risk, group them,
+and compare observed with expected counts group by group.
+\itemize{
+  \item \code{HL} -- the Hosmer-Lemeshow test, the field's default: G groups
+    cut at percentiles of fitted risk (the "deciles of risk" when
+    \code{G = 10}), referred to chi-square on \eqn{G - 2} degrees of freedom.
+    Note that this reference was established by simulation, not derivation.
+    Familiar and cheap, but modest in power, and its result depends on the
+    grouping.
+  \item \code{HL-equalwidth} -- the same statistic with groups cut at fixed
+    probability intervals instead of percentiles. When fitted risks are
+    concentrated in a narrow range, intervals can come out empty and the test
+    may not be computable at all, which is why percentile grouping is usually
+    preferred.
+  \item \code{Pigeon-Heyse} -- a variance-corrected Hosmer-Lemeshow statistic
+    that accounts for the variability of fitted probabilities within each
+    group. The correction is conservative in sparse designs, so a
+    non-rejection carries less weight than the nominal level suggests.
+  \item \code{F-test} -- deviance residuals compared across the risk groups by
+    a one-way analysis of variance. It is markedly liberal under sparsity and
+    grows more so with sample size; it is included for comparison.
+  \item \code{Lai-Liu-HL} -- Lai and Liu's procedure for using the
+    Hosmer-Lemeshow test in large samples, where any test eventually rejects.
+    It standardizes power to a reference sample size \code{n0} and so returns
+    no p-value: the statistic is the standardized power and the accept/reject
+    decision appears in the \code{Note} column. Tune with
+    \code{control = list("Lai-Liu-HL" = list(n0 = ..., k = ...))}.
+}
+
+\strong{Directed tests.} Rather than asking whether anything is wrong, these
+ask whether a \emph{particular} shape of departure is present, which buys
+power when the guess is right.
+\itemize{
+  \item \code{EF}, \code{EF-normal} -- the omnibus Ebrahim-Farrington test,
+    with the chi-square and normal references respectively. Built for sparse
+    data, where the classical grouped statistics lose their reference.
+  \item \code{DEF.poly2}, \code{DEF.poly3}, \code{DEF.stukel} -- the directed
+    forms, each aiming the test at a smooth departure in the shape of the
+    calibration curve: a quadratic or cubic drift in the linear predictor, or
+    Stukel's asymmetry-and-tail family. Powerful when the misfit resembles the
+    chosen basis, weaker when it does not.
+  \item \code{Stukel} -- a two-degree-of-freedom score test against Stukel's
+    generalized logistic link, which nests the logit and lets the two tails
+    bend independently. It is aimed squarely at link misspecification. Note
+    that the combined two-parameter form does not always hold its nominal
+    level in sparse designs; the one-sided components are better behaved.
+}
+
+\strong{Covariate-space tests.} These partition the covariates themselves
+rather than the fitted risk, so they can see structure that risk-ordering
+averages away -- an omitted interaction, for instance, need not disturb the
+marginal calibration at all.
+\itemize{
+  \item \code{Tsiatis} -- a score test that adds indicator variables for
+    regions of the covariate space and asks whether they improve the fit.
+  \item \code{Xie} -- clusters the covariate space and compares observed with
+    expected counts per cluster, using the corrected degrees of freedom
+    \eqn{G - k/2 - 1} with \eqn{k} the number of predictors.
+  \item \code{Pulkstenis-Robinson} -- crosses a categorical covariate with
+    risk groups, so it needs at least one categorical predictor. The package
+    auto-detects one (any factor, character or logical, or a numeric with few
+    distinct values, controlled by
+    \code{getOption("ebrahim.gof.pr.maxlev", 6)}) and returns \code{NA} with a
+    note when there is none.
+}
+
+\strong{Smoothing tests.} These replace grouping with a smoother, so nothing
+is lost to an arbitrary choice of bin edges.
+\itemize{
+  \item \code{le-Cessie} -- the le Cessie-van Houwelingen score test, which
+    smooths the residuals over the covariate space with a kernel and asks
+    whether the smoothed surface is further from zero than chance allows.
+    Sensitive to local structure that omnibus statistics average away, and one
+    of the most expensive tests here, with cost growing sharply in the sample
+    size.
+  \item \code{HL-GAM}, \code{PR-GAM}, \code{Xie-GAM} -- variants that fit a
+    deliberately overfitted generalized additive model and use it to define
+    the grouping, letting the data rather than the analyst choose where the
+    boundaries fall. These need \pkg{mgcv}.
+}
+
+\strong{Resampling tests.} When a statistic has no usable closed-form
+reference, these build one by simulation.
+\itemize{
+  \item \code{Stute-Zhu} -- a cumulative-residual test: residuals are
+    accumulated along the fitted linear predictor and the largest excursion of
+    that path is compared with a parametric bootstrap. It needs no binning and
+    no bandwidth, and in practice it is the best-behaved test in the battery
+    on size. Set the number of resamples with
+    \code{control = list("Stute-Zhu" = list(B = ...))}.
+  \item \code{BAGofT} -- the binary adaptive test, which splits the data, uses
+    one part to learn a partition that separates fitted from observed, and
+    tests on the other. Its behaviour depends strongly on how many splits and
+    resamples it is given; set them with
+    \code{control = list(BAGofT = list(nsim = ...))} and be aware that the
+    published default is far more expensive than a single split. Needs the
+    \pkg{BAGofT} package.
+}
+
+\strong{Calibration tests.} These come from clinical prediction, and ask
+directly whether predicted risks match observed frequencies.
+\itemize{
+  \item \code{GiViTI}, \code{GiViTI-external} -- the GiViTI polynomial
+    calibration test, which fits a polynomial of the fitted risk and tests
+    whether it departs from the identity, under the internal and external
+    development assumptions respectively. The two are \emph{not}
+    interchangeable: on data used to fit the model the internal form is the
+    appropriate one. It also produces the calibration belt, which shows
+    \emph{where} on the risk scale a model drifts; see
+    \code{calibration_plot}. Wraps \pkg{givitiR} in an isolated \pkg{callr}
+    subprocess, so a failure inside its compiled dependencies returns
+    \code{NA} instead of ending your session. Select with
+    \code{control = list(GiViTI = list(devel = "internal"))}.
+  \item \code{eHL} -- an e-value form of the Hosmer-Lemeshow test, reported as
+    \eqn{p = \min(1, 1/e)}. E-values are safe under optional stopping, which
+    conventional p-values are not, but the conversion shown here is
+    conservative.
+}
+
+\strong{Combinations.} Rather than choosing one test, these pool several.
+\itemize{
+  \item \code{Ensemble.Vote(3DEF)} and \code{Ensemble.Univ(3DEF+EF)} -- Cauchy
+    combinations of the directed tests, and of those plus the omnibus EF. The
+    Cauchy combination is valid without knowing how the members correlate,
+    which is what makes pooling dependent tests possible at all. The point is
+    to avoid having to guess the departure in advance, at the cost of being
+    slightly less powerful than the single best member would have been.
+  \item See also \code{\link{legoft}}, a pretrained combination whose weights
+    are fixed offline and ship frozen, so two analysts running it on the same
+    data obtain the same p-value.
+}
+
+\strong{Implementation notes.} \code{Tsiatis} and \code{Xie} cluster the
+covariate space with k-means using a fixed internal seed, so results are
+reproducible and your own random stream is left untouched. Every bundled test
+reproduces the implementation used in the original simulation study:
+\code{Osius-Rojek} and \code{Stukel} follow \pkg{LogisticDx}'s
 \code{gof.glm} (Stukel via \code{statmod::glm.scoretest} when \pkg{statmod} is
-installed), \code{Copas-RSS} follows \pkg{rms}'s gof residual, \code{HL} follows
-\code{ResourceSelection::hoslem.test}, and the others match their standalone
-reference functions; all were checked to agree numerically.
+installed), \code{Copas-RSS} follows the \pkg{rms} gof residual, and
+\code{HL} follows \code{ResourceSelection::hoslem.test}.
+
+For goodness of fit after \emph{penalized} fitting, where none of the above
+references are valid because the coefficients are shrunk, see
+\code{\link{shrink.gof}}.
 }
 \note{
 \strong{Grouped vs sparse forms.} \code{Pearson}, \code{Deviance} and
@@ -172,25 +313,49 @@ x <- runif(n, -3, 3)
 y <- rbinom(n, 1, 1 / (1 + exp(-(0.6 * x))))
 fit <- glm(y ~ x, family = binomial())
 
-## quick run: the fast tests only
-run.all.gof(fit, include_slow = FALSE)
+## The fast tests. Every covariate pattern here is unique, so this is the
+## sparse case the package is written for.
+res <- run.all.gof(fit, include_slow = FALSE)
+res
 
-## pick specific tests
-run.all.gof(fit, tests = c("McCullagh", "Osius-Rojek", "HL"))
+## The return value is a plain data.frame, so the panel can be read
+## programmatically as well as printed.
+res[res$p_value < 0.05, c("Test", "Family", "p_value")]   # what rejected
+table(res$Family)                                        # coverage by family
+
+## A correctly specified model: the panel should mostly agree, and any
+## isolated rejection is the false positive you expect at the 5 percent level.
+mean(res$p_value < 0.05, na.rm = TRUE)
+
+## Now a model that is genuinely wrong -- the quadratic term is omitted.
+y2  <- rbinom(n, 1, 1 / (1 + exp(-(0.6 * x + 0.5 * x^2))))
+bad <- glm(y2 ~ x, family = binomial())
+run.all.gof(bad, include_slow = FALSE)
+
+## Pick specific tests, for instance one per family, which is the pairing the
+## package recommends over relying on any single statistic.
+run.all.gof(fit, tests = c("McCullagh", "HL", "Stukel", "Tsiatis"))
+
+## Grouping tests take the number of groups; the choice is a convention
+## rather than a derived optimum, so it is worth varying.
+for (g in c(5, 10, 20))
+  print(run.all.gof(fit, tests = "HL", G = g))
 
 \donttest{
-## the full battery (default include_slow = TRUE); the slow tests may need the
-## suggested packages mgcv, BAGofT, givitiR and callr. In an interactive
-## session run.all.gof() offers to install any that are missing (install =
-## "ask"); see also gof_install_suggests(). Use install = "no" to never ask.
+## The full battery (include_slow = TRUE by default). The slow tests need the
+## suggested packages mgcv, BAGofT, givitiR and callr; in an interactive
+## session run.all.gof() offers to install any that are missing
+## (install = "ask"). See also gof_install_suggests().
 run.all.gof(fit, install = "no", control = list("Stute-Zhu" = list(B = 50)))
 
-## draw the GiViTI calibration belt (needs givitiR + callr)
-res <- run.all.gof(fit, tests = c("McCullagh", "GiViTI"),
-                   calibration_plot = TRUE)
-plot(res)   # redraw the stored belt
+## The GiViTI calibration belt shows WHERE on the risk scale a model drifts,
+## which a single p-value cannot.
+res2 <- run.all.gof(fit, tests = c("McCullagh", "GiViTI"),
+                    calibration_plot = TRUE)
+plot(res2)   # redraw the stored belt
 
-## run the slow bootstrap loops (Stute-Zhu, Lai-Liu-HL) on a PSOCK cluster
+## Run the bootstrap loops on a PSOCK cluster. Seeds are handled internally,
+## so a parallel run reproduces a serial one.
 set.seed(1)
 run.all.gof(fit, tests = "Stute-Zhu", parallel = TRUE, ncores = 2,
             control = list("Stute-Zhu" = list(B = 50)))
@@ -251,6 +416,83 @@ Based on Dichotomous Outcomes." \emph{Statistics in Medicine}, \strong{33}(14),
 Zhang J, Ding J, Yang Y (2021). "Is a Classification Procedure Good Enough? A
 Goodness-of-Fit Assessment Tool for Classification Learning." \emph{Journal of
 the American Statistical Association}. \doi{10.1080/01621459.2021.1979010}
+
+
+Pigeon JG, Heyse JF (1999). "An Improved Goodness of Fit Statistic for
+Probability Prediction Models." \emph{Biometrical Journal}, \strong{41}(1),
+71--82. \doi{10.1002/(SICI)1521-4036(199903)41:1<71::AID-BIMJ71>3.0.CO;2-O}
+
+Copas JB (1989). "Unweighted Sum of Squares Test for Proportions."
+\emph{Journal of the Royal Statistical Society C}, \strong{38}(1), 71--80.
+\doi{10.2307/2347682}
+
+White H (1982). "Maximum Likelihood Estimation of Misspecified Models."
+\emph{Econometrica}, \strong{50}(1), 1--25. \doi{10.2307/1912526}
+
+Orme C (1988). "The Calculation of the Information Matrix Test for Binary
+Data Models." \emph{The Manchester School}, \strong{56}(4), 370--376.
+\doi{10.1111/j.1467-9957.1988.tb01339.x}
+
+Kuss O (2002). "Global Goodness-of-Fit Tests in Logistic Regression with
+Sparse Data." \emph{Statistics in Medicine}, \strong{21}(24), 3789--3801.
+\doi{10.1002/sim.1421}
+
+Lai X, Liu L (2018). "A Simple Test Procedure in Standardizing the Power of
+Hosmer-Lemeshow Test in Large Data Sets." \emph{Journal of Statistical
+Computation and Simulation}, \strong{88}(13), 2463--2472.
+\doi{10.1080/00949655.2018.1467912}
+
+Nattino G, Finazzi S, Bertolini G (2014). "A New Calibration Test and a
+Reappraisal of the Calibration Belt for the Assessment of Prediction Models
+Based on Dichotomous Outcomes." \emph{Statistics in Medicine}, \strong{33}(14),
+2390--2407. \doi{10.1002/sim.6100}
+
+Zhang J, Ding J, Yang Y (2021). "Is a Classification Procedure Good Enough?
+A Goodness-of-Fit Assessment Tool for Classification Learning."
+\emph{Journal of the American Statistical Association}, \strong{118}(541),
+194--206. \doi{10.1080/01621459.2021.1979010}
+
+Liu Y, Xie J (2020). "Cauchy Combination Test: A Powerful Test with Analytic
+p-Value Calculation under Arbitrary Dependency Structures." \emph{Journal of
+the American Statistical Association}, \strong{115}(529), 393--402.
+\doi{10.1080/01621459.2018.1554485}
+
+Hosmer DW, Hosmer T, le Cessie S, Lemeshow S (1997). "A Comparison of
+Goodness-of-Fit Tests for the Logistic Regression Model." \emph{Statistics in
+Medicine}, \strong{16}(9), 965--980.
+\doi{10.1002/(sici)1097-0258(19970515)16:9<965::aid-sim509>3.0.co;2-o}
+
+The methods introduced by this package, and the studies that evaluate them,
+are reported in the following. Reproduction materials for each are archived
+and citable.
+
+Ebrahim EK, El-Kotory A (2026). "A Directional Hosmer-Lemeshow
+Goodness-of-Fit Test for Sparse Logistic Regression." arXiv:2607.15454
+[stat.ME]. \doi{10.48550/arXiv.2607.15454}
+
+Ebrahim EK, El-Kotory A (2026). "Benchmarking Goodness-of-Fit and Calibration
+Algorithms for Logistic Regression Classifiers: A Large-Scale Simulation
+Study under Sparse Data." arXiv:2607.16344 [stat.ME].
+\doi{10.48550/arXiv.2607.16344} Reproduction materials:
+\doi{10.5281/zenodo.21286171}
+
+Ebrahim EK (2026). "Goodness-of-Fit Tests and Calibration Machine-Learning
+Algorithms for Logistic Regression with Sparse Data." M.Sc. thesis,
+Alexandria University. arXiv:2608.11140 [stat.ME].
+\doi{10.48550/arXiv.2608.11140}
+
+Ebrahim EK (2026). "EDGE: a directed goodness-of-fit test for sparse logistic
+regression." Reproduction materials. \doi{10.5281/zenodo.21247541}
+
+Ebrahim EK (2026). "EDGES: A Selection-Free Ensemble Goodness-of-Fit Test."
+Reproduction materials. \doi{10.5281/zenodo.21320865}
+
+Ebrahim EK (2026). "Detection Subspaces: A Theory of Goodness-of-Fit Tests."
+Reproduction materials. \doi{10.5281/zenodo.21687498}
+
+Ebrahim EK (2026). "Shrinkage Invalidates the Hosmer-Lemeshow Test."
+Reproduction materials for \code{\link{shrink.gof}}.
+\doi{10.5281/zenodo.21900114}
 }
 \seealso{
 \code{\link{ef.gof}}, \code{\link{def.gof}}, \code{\link{def.ensemble.gof}},

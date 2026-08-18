@@ -55,7 +55,7 @@ The shrinkage-corrected Hosmer-Lemeshow test
 }
 \details{
 The correction subtracts the estimated shrinkage non-centrality and prepivots against
-\eqn{\pi(	ildeeta)} rather than \eqn{\pi(\hateta)} (Beran prepivoting), so the
+\eqn{\pi(\tilde\beta)} rather than \eqn{\pi(\hat\beta)} (Beran prepivoting), so the
 reference world matches the null being tested.
 
 Reference implementation for: Ebrahim, E. K. (2026), "Shrinkage invalidates the
