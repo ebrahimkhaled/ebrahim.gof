@@ -48,6 +48,39 @@
   can move members assigned to the other domain, and an unimplicated domain is not
   thereby certified correct.
 
+## Documentation
+
+* The help for `run.all.gof()` now describes each test individually. It previously named
+  around twenty-five tests in a single paragraph with a parenthetical each, which was
+  enough to tell you a test existed but not enough to decide whether to run it or what a
+  rejection from it meant. Entries are now grouped by the mechanism the test uses --
+  global and standardized, partition, directed, covariate-space, smoothing, resampling,
+  calibration, combinations -- and each says what the test computes, which departure it
+  is built to notice, and where it fails.
+
+  The failure modes are stated because they are the part users get wrong. Pigeon--Heyse is
+  conservative in sparse designs; Stukel's two-parameter form does not always hold its
+  nominal level; `HL-equalwidth` is frequently not computable when fitted risks are
+  concentrated in a narrow band; GiViTI's internal and external forms are not
+  interchangeable; and the chi-squared reference with `G - 2` degrees of freedom was
+  established by simulation rather than derived, so `G = 10` is a convention and worth
+  varying.
+
+* Ten classical tests were implemented but never cited. Pigeon--Heyse, Copas, White,
+  Orme, Kuss, Lai--Liu, Nattino (GiViTI), Zhang (BAGofT), Liu--Xie (Cauchy combination)
+  and Hosmer et al. (1997) now appear in the references with resolved DOIs.
+
+* The package's own methods now point somewhere a reader can follow: the arXiv preprints
+  for the Ebrahim--Farrington test, the benchmark study and the thesis, and the archived
+  reproduction materials for the EDGE test, the EDGES ensemble, the detection-subspaces
+  framework and `shrink.gof()`.
+
+* The examples show how to *read* the returned panel -- subsetting by p-value, counting
+  by family, contrasting a correctly specified model against one with an omitted quadratic
+  term, varying `G` -- rather than only how to call the function.
+
+* The `Description` field predated `legoft()` and `shrink.gof()` and mentioned neither.
+
 ## Notes on what is *not* here
 
 * A ridge rule shrunk toward the equal-weight combination ("shrink-to-CCT") was one of

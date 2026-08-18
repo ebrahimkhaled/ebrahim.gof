@@ -40,6 +40,11 @@ for `legoft()`, both what it does and what it does not do -- it attains higher m
 than each individual test studied but does not dominate them family by family, and it does
 not improve on an equal-weight Cauchy combination of the same members.
 
+**Documentation.** The help for `run.all.gof()` was rewritten to describe each of the
+tests individually, grouped by mechanism, with the failure mode of each stated; ten
+classical tests that were implemented but uncited now carry references. This is why the
+generated `run.all.gof.Rd` is substantially larger than in 2.4.1.
+
 ## Reverse dependencies
 
 None. This package has no reverse dependencies on CRAN.
