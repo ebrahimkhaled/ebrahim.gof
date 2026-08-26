@@ -1,8 +1,8 @@
 Package: ebrahim.gof
 Type: Package
 Title: Goodness-of-Fit and Calibration Tests for Logistic Regression
-Version: 2.5.0
-Date: 2026-08-13
+Version: 2.6.0
+Date: 2026-08-26
 Authors@R: person("Ebrahim", "Khaled Ebrahim",
                   email = "ebrahimkhaled@alexu.edu.eg",
                   role = c("aut", "cre"),
@@ -17,7 +17,9 @@ Description: Provides a unified battery of goodness-of-fit and calibration
     tests. Each is obtained from its own package where installed and
     attributed to its authors. The package also implements the author's own
     procedures for sparse data, where the Hosmer-Lemeshow test loses power:
-    the omnibus Ebrahim-Farrington test, the directed 'EDGE' test, a
+    the omnibus Ebrahim-Farrington test, the directed 'EDGE' test,
+    'DeepGOF-1' (a pretrained convolutional statistic whose level comes from the
+    analyst's own parametric bootstrap rather than from the network), a
     Cauchy-combination ensemble, 'legoft()' (a pretrained combination whose
     weights are fixed offline and ship frozen, so two analysts obtain the same
     p-value), and 'shrink.gof()' for penalized (ridge) logistic regression,

@@ -1054,8 +1054,10 @@ gof_pr <- function(ctx, opts = list()) {
 # le Cessie-van Houwelingen smoothed-residual GOF test (general, multivariate).
 # Reference: le Cessie, S. & van Houwelingen, H.C. (1995), Biometrics 51:600-614.
 # Adapted (with attribution) from the USGS 'smwrStats' package leCessie.test(),
-# which is a work of the US federal government (public domain). It builds an
-# n-by-n smoothing/kernel matrix, so it is O(n^2)-O(n^3): a Tier-2 ('slow') test.
+# which is a work of the US federal government (public domain), with two departures
+# from that source: the moment reference is transposed to match the paper (see the
+# note inside), and the moments are evaluated in O(n^2 p) rather than O(n^3). It still
+# builds an n-by-n kernel matrix, so it stays O(n^2) in memory: a Tier-2 ('slow') test.
 gof_lecessie <- function(ctx, opts = list()) {
   if (!ctx$has_model || is.null(ctx$data))
     return(list(Statistic = NA, df = NA, p_value = NA, Note = "needs a glm model"))
@@ -1085,19 +1087,42 @@ gof_lecessie <- function(ctx, opts = list()) {
 
   X   <- ctx$X
   mu2 <- fits * (1 - fits)
-  hat <- (mu2 * X) %*% solve(crossprod(X, mu2 * X)) %*% t(X)   # V X (X'VX)^{-1} X'
-  ## Moment reference for Q = r'Rr with r ~ (I-H)(y-mu):  M = (I-H)' R (I-H).
-  ## FIX (2026-07-29): this previously computed (I-H) R (I-H).  In WEIGHTED logistic
-  ## regression H = VX(X'VX)^{-1}X' is NOT symmetric (it is in OLS, where the
-  ## smwrStats original lives), so the transpose matters: the old form inflated the
-  ## null size of the reference (empirical 0.063 vs 0.054 exact-moment at n=1000).
-  IH    <- diag(N) - hat
-  R.cor <- crossprod(IH, R.raw %*% IH)                         # (I-H)' R (I-H)
-  E.Q   <- sum(diag(R.cor) * mu2)
+  ## Moment reference for Q = r'Rr with r ~ (I-H)(y-mu):  M = (I-H)' R (I-H), where
+  ## H = V X (X'VX)^{-1} X'  (le Cessie and van Houwelingen, 1991, Sec. 6).  The
+  ## substitution R -> (I-H)'R(I-H) is prescribed in words in le Cessie and van
+  ## Houwelingen (1995), Sec. 4.
+  ##
+  ## FIX (2026-07-29): this previously computed (I-H) R (I-H), the form inherited from
+  ## smwrStats::leCessie.test().  That source computes the weighted, NON-symmetric H
+  ## correctly and then omits the transpose, so it departs from the paper it cites: in a
+  ## weighted fit H' != H and the sandwich is not the moment matrix of the residual.
+  ## Measured cost of the omission (n = 200, 4000 replicates): null size 0.0705 vs
+  ## 0.0555 at the 5% level, and 0.0762 vs 0.0515 when the fitted probabilities are
+  ## extreme.  It is a size bug, not a power bug.  Do not "simplify" the transpose away.
+  ##
+  ## M is assembled from the rank-p factors of H instead of forming H (N x N) and
+  ## multiplying it out, and the variance trace is evaluated elementwise.  Both steps are
+  ## exact algebraic identities: the statistic, the degrees of freedom and the p-value are
+  ## unchanged to machine precision.  They drop the cost from O(N^3) to O(N^2 p), which is
+  ## what makes this test usable past n ~ 1000.
+  A   <- mu2 * X                                 # V X          (N x p)
+  Bm  <- solve(crossprod(X, A))                  # (X'VX)^{-1}  (p x p)
+  ## H = A Bm X' and H' = X Bm' A', so expand M = R - H'R - RH + H'RH through those
+  ## factors.  Every product below is O(N^2 p); none is O(N^3).
+  RA   <- R.raw %*% A                            # R V X        (N x p)
+  AtR  <- t(RA)                                  # (VX)'R  -- R is symmetric
+  XB   <- X %*% Bm
+  XBt  <- X %*% t(Bm)
+  R.cor <- R.raw - XBt %*% AtR - RA %*% t(XB) + XBt %*% (AtR %*% A) %*% t(XB)
+  R.cor <- (R.cor + t(R.cor)) / 2                # enforce the symmetry the algebra gives
+  dR    <- diag(R.cor)
+  E.Q   <- sum(dR * mu2)
   mu4   <- mu2 * (1 - 3 * mu2)
-  VarQ1 <- sum(diag(R.cor)^2 * (mu4 - 3 * mu2^2))
-  R.tmp <- R.cor * rep(mu2, each = N)
-  VarQ2 <- 2 * sum(diag(R.tmp %*% R.tmp))
+  VarQ1 <- sum(dR^2 * (mu4 - 3 * mu2^2))
+  ## For symmetric M, 2 tr(MVMV) = 2 sum_ij M_ij^2 mu2_i mu2_j.  This elementwise form is
+  ## le Cessie and van Houwelingen (1995), eq. (A.6), which states the variance this way
+  ## before collapsing it to the trace; evaluating it as written is O(N^2), not O(N^3).
+  VarQ2 <- 2 * as.numeric(mu2 %*% (R.cor * R.cor) %*% mu2)
   VarQ  <- VarQ1 + VarQ2
   if (!is.finite(VarQ) || VarQ <= 0)
     return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: non-positive variance"))

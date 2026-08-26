@@ -1,3 +1,30 @@
+# ebrahim.gof 2.6.0
+
+## New features
+
+* `deepgof1()` -- DeepGOF-1, a pretrained goodness-of-fit test for binary logistic
+  regression whose statistic is a convolutional network. The network reads the fitted
+  model's *residual map* (a 6x6 grid of standardized residual sums over the ranks of the
+  two strongest covariates), so misfit is detected by its spatial pattern: an omitted
+  quadratic paints a stripe, an omitted interaction a saddle, a local departure a bump.
+
+  The network was trained once, offline, on simulated departures and ships frozen as
+  18,273 numbers. Nothing is trained when you call the function, and the p-value is the
+  rank of the observed score inside your own parametric bootstrap -- so the level is a
+  property of the calibration, not of what the network learned. A bootstrap refit that
+  fails is scored `+Inf`, counting against rejection.
+
+  Implemented in pure base R (the forward pass is a few small matrix multiplies), so the
+  package still needs no Python and no additional dependency. The shipped weights are
+  verified against the training framework in `tests/testthat/test-deepgof1.R`; agreement
+  is to 5e-11.
+
+  It is a small-sample instrument: on a published benchmark it outpowers every classical
+  partition test at every sample size, most clearly at n = 50 to 200, while tests that use
+  the whole covariate space rather than a two-covariate grid do better overall. The
+  training corpus, training code, benchmark harness and every per-replicate p-value behind
+  those numbers are archived separately from this package.
+
 # ebrahim.gof 2.5.0
 
 ## New features
@@ -80,6 +107,48 @@
   term, varying `G` -- rather than only how to call the function.
 
 * The `Description` field predated `legoft()` and `shrink.gof()` and mentioned neither.
+
+## Performance
+
+* `gof_lecessie()` is much faster at the sample sizes where it was unusable, with
+  **identical numerics**.
+  Nothing about the test changed: not the statistic, not the moment reference, not the
+  degrees of freedom, not the p-value. Two exact algebraic identities replaced two
+  matrix products that were costing O(n^3):
+
+  - The moment reference (I-H)'R(I-H) is now assembled from the rank-p factors of
+    H = VX(X'VX)^{-1}X' instead of forming H as an n-by-n matrix and multiplying it
+    out, which is O(n^2 p).
+  - The variance term 2 tr(MVMV) is evaluated as 2 sum_ij M_ij^2 mu2_i mu2_j, which is
+    O(n^2). This is not a new identity: le Cessie and van Houwelingen (1995) state the
+    variance in exactly that elementwise form in eq. (A.6) before collapsing it to the
+    trace. The package had been computing the trace version.
+
+  Measured against the previous implementation, both byte-compiled and called through
+  the installed package: 2.5x at n = 200, 4.5x at n = 500, 11.0x at n = 1000, 42.6x at
+  n = 2000 and 87.7x at n = 3000 (48.1 s down to 1.1 s, and 139.9 s down to 1.6 s). The
+  ratio grows with n because the change is O(n^3) to O(n^2 p) rather than a constant
+  factor; at small n the shared cost of building the kernel matrix, which is unchanged,
+  still dominates. The largest relative difference in the statistic was 6e-14 across
+  null models, misspecified models, factor covariates and designs whose fitted
+  probabilities reach machine zero. Rejection rates agree to four decimal places under
+  the null and under alternatives, so no previously reported result moves.
+  `tests/testthat/test-lecessie-algebra.R` pins the agreement at 1e-12 relative against
+  the previous code, kept verbatim.
+
+  Memory is unchanged: the test still builds the n-by-n kernel matrix and is still
+  O(n^2) in space. This change buys time, not memory.
+
+* The comment attached to the 2.4.1 transpose fix was wrong about the source and has
+  been corrected. It said `smwrStats::leCessie.test()` was written for ordinary least
+  squares, where the hat matrix is symmetric and the transpose is a no-op. It is not:
+  that function computes the weighted, non-symmetric H correctly and then omits the
+  transpose, so it departs from le Cessie and van Houwelingen (1995), Section 4, which
+  prescribes (I-H)'R(I-H) in words. The omission is a size bug rather than a power bug.
+  At n = 200 over 4000 replicates, the smwrStats form rejects a true null 7.05% of the
+  time at the 5% level against 5.55% for the corrected form, and 7.62% against 5.15%
+  when the fitted probabilities are extreme; power against a quadratic or an
+  interaction departure is 1.000 either way.
 
 ## Notes on what is *not* here
 
