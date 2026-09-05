@@ -1,3 +1,34 @@
+# ebrahim.gof 2.7.0
+
+## New features
+
+* `calm.gof()` -- a closed-form reference distribution for the shrinkage-corrected
+  goodness-of-fit statistics, so that they can be used without a bootstrap. It is the
+  companion of `shrink.gof()`: the statistics are the same, only the reference differs,
+  and where `shrink.gof()` needs several hundred penalized refits `calm.gof()` needs one
+  fit and returns in a fraction of a second.
+
+  The reference is built by replacing the fitted Bernoulli variance, which shrinkage
+  inflates towards one quarter, by a de-noised estimate of the null variance obtained
+  from the fit alone through the observable adjustments of Bellec (2025), and then
+  reading the exact tail of the resulting weighted chi-squared law (Davies 1980).
+
+  Three statistics are returned. `SC.EDGE.adaptive` is the one to prefer: it projects
+  the corrected residual onto orthogonal polynomials in the group-mean fitted
+  probability and chooses the degree from the data, keeping the cubic direction only
+  when the fitted index is accurate enough to carry a cubic signal. `SC.HL` is the
+  shrinkage-corrected Hosmer-Lemeshow statistic, reported for continuity with that
+  tradition; its reference relies on a constant calibrated by simulation, which does
+  not transfer to every design, and `?calm.gof` says where it fails.
+
+  The reference is validated for aspect ratios p/n up to 0.4 and for penalties that
+  shrink towards zero. The lasso is not covered.
+
+## Dependency change
+
+* `CompQuadForm` moves from Suggests to Imports. `calm.gof()` cannot produce a p-value
+  without it, so it is no longer optional.
+
 # ebrahim.gof 2.6.0
 
 ## New features
