@@ -20,10 +20,15 @@ dependency changed.
 
 ## R CMD check results
 
-0 errors | 0 warnings | 0 notes
+0 errors | 0 warnings | 1 note
 
-(Confirm this line against `check_2.7.0.out` before submitting; if a NOTE about the maintainer
-address or about package size appears, keep it and explain it here rather than deleting it.)
+The note is
+
+    checking for future file timestamps ... NOTE
+    unable to verify current time
+
+which is the check machine being unable to reach the time server it uses, not a property of the
+package. It does not appear on win-builder.
 
 ## Reverse dependencies
 
