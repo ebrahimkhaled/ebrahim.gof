@@ -288,7 +288,11 @@
 #' ## suggested packages mgcv, BAGofT, givitiR and callr; in an interactive
 #' ## session run.all.gof() offers to install any that are missing
 #' ## (install = "ask"). See also gof_install_suggests().
-#' run.all.gof(fit, install = "no", control = list("Stute-Zhu" = list(B = 50)))
+#' ## The control= list forwards options to the individual tests; the reductions
+#' ## here keep the example quick without changing what it demonstrates.
+#' run.all.gof(fit, install = "no",
+#'             control = list("Stute-Zhu" = list(B = 50),
+#'                            BAGofT = list(nsim = 20)))
 #'
 #' ## The GiViTI calibration belt shows WHERE on the risk scale a model drifts,
 #' ## which a single p-value cannot.
@@ -467,6 +471,13 @@
 #' \doi{10.5281/zenodo.21900114}
 #' @importFrom stats fitted predict model.matrix model.frame coef deviance pchisq binomial glm.fit kmeans median dist anova lm pnorm
 #' @importFrom utils capture.output
+#' @concept goodness-of-fit
+#' @concept calibration
+#' @concept logistic regression
+#' @concept model diagnostics
+#' @concept test battery
+#' @concept Hosmer-Lemeshow
+#' @concept binary classification
 #' @export
 run.all.gof <- function(object, predicted_probs = NULL, X = NULL,
                         tests = "all", G = 10, include_slow = TRUE,

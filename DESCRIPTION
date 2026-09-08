@@ -2,8 +2,8 @@ Package: ebrahim.gof
 Type: Package
 Title: Goodness-of-Fit and Calibration Tests for Logistic Regression
 Version: 2.7.0
-Date: 2026-09-05
-Authors@R: person("Ebrahim", "Khaled Ebrahim",
+Date: 2026-09-08
+Authors@R: person(given = "Ebrahim Khaled", family = "Ebrahim",
                   email = "ebrahimkhaled@alexu.edu.eg",
                   role = c("aut", "cre"),
                   comment = c(ORCID = "0009-0006-7839-8778"))
@@ -12,19 +12,24 @@ Description: Provides a unified battery of goodness-of-fit and calibration
     tests for binary logistic regression, runnable in a single call via
     'run.all.gof()'. Around twenty-five tests spanning five decades of
     literature are aggregated and grouped by the departure each is built to
-    detect: global and standardized statistics, partition tests, directed and
-    covariate-space tests, smoothing and resampling tests, and calibration
-    tests. Each is obtained from its own package where installed and
-    attributed to its authors. The package also implements the author's own
-    procedures for sparse data, where the Hosmer-Lemeshow test loses power:
-    the omnibus Ebrahim-Farrington test, the directed 'EDGE' test,
-    'DeepGOF-1' (a pretrained convolutional statistic whose level comes from the
-    analyst's own parametric bootstrap rather than from the network), a
-    Cauchy-combination ensemble, 'legoft()' (a pretrained combination whose
-    weights are fixed offline and ship frozen, so two analysts obtain the same
-    p-value), and 'shrink.gof()' for penalized (ridge) logistic regression,
-    where shrinkage biases the fitted probabilities and invalidates the usual
-    chi-squared references. For more details see Hosmer (1980)
+    detect: global and standardized statistics, partition tests such as
+    Hosmer-Lemeshow, directed and covariate-space tests, smoothing and
+    resampling tests, and calibration tests. Each is obtained from its own
+    package where installed and attributed to its authors. The package also
+    implements the author's own procedures for sparse data, where the
+    Hosmer-Lemeshow test loses power: the omnibus Ebrahim-Farrington test
+    'ef.gof()', the directed 'edge.gof()' and its covariate-space variant
+    'cdef.gof()', the Cauchy-combination ensemble 'edges.gof()', 'DeepGOF-1'
+    (a pretrained convolutional statistic whose level comes from the analyst's
+    own parametric bootstrap rather than from the network), and 'legoft()'
+    (a frozen-weight combination whose weights are fixed offline and ship
+    frozen, so two analysts obtain the same p-value). For penalized (ridge)
+    logistic regression, where shrinkage biases the fitted probabilities and
+    invalidates the usual chi-squared references, the corrected statistics are
+    referred either to a prepivoting bootstrap by 'shrink.gof()' or to a
+    closed-form reference by 'calm.gof()', which needs a single fit and is
+    validated for designs in which the number of predictors is a sizeable
+    fraction of the sample size. For more details see Hosmer (1980)
     <doi:10.1080/03610928008827941> and Farrington (1996)
     <doi:10.1111/j.2517-6161.1996.tb02086.x>.
 License: GPL-3

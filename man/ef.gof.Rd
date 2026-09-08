@@ -70,8 +70,10 @@ Farrington test with full variance calculations.
   \item For binary data with automatic grouping (\code{G} specified): Use the
         Ebrahim-Farrington test which is computationally efficient and doesn't
         require the model specification.
-  \item For grouped data (\code{m} provided): Use the original Farrington test
-        which requires the fitted model object.
+  \item For grouped data (\code{m} provided \emph{and} \code{G} set to \code{NULL}):
+        Use the original Farrington test, which requires the fitted model object.
+        Leaving \code{G} at its default keeps the automatic grouping, and \code{m}
+        and \code{model} are then ignored.
   \item The test statistic follows a standard normal distribution under the
         null hypothesis of adequate model fit.
   \item For binary data with \code{m=1} for all observations and no grouping,
@@ -100,9 +102,7 @@ result_4 <- ef.gof(y, predicted_probs, G = 4)
 result_20 <- ef.gof(y, predicted_probs, G = 20)
 
 # Example 3: Grouped data (original Farrington test)
-# Note: This requires actual grouped data with trials > 1
-\dontrun{
-# Simulated grouped data
+set.seed(456)
 n_groups <- 50
 m_trials <- sample(5:20, n_groups, replace = TRUE)
 x_grouped <- rnorm(n_groups)
@@ -116,11 +116,13 @@ model_grouped <- glm(cbind(successes, trials - successes) ~ x,
                      data = data_grouped, family = binomial())
 predicted_probs_grouped <- fitted(model_grouped)
 
-# Original Farrington test
-result_grouped <- ef.gof(y_grouped, predicted_probs_grouped, 
-                         model = model_grouped, m = m_trials)
+# Original Farrington test. G = NULL is required: left at its default of 10 the
+# call takes the automatic-grouping branch instead, which ignores 'model' and 'm'
+# and refers binomial counts to the binary statistic.
+result_grouped <- ef.gof(y_grouped, predicted_probs_grouped,
+                         model = model_grouped, m = m_trials,
+                         G = NULL)
 print(result_grouped)
-}
 
 }
 \references{
@@ -134,3 +136,10 @@ Hosmer, D. W., & Lemeshow, S. (1980). A goodness-of-fit test for the multiple lo
 \author{
 Ebrahim Khaled Ebrahim \email{ebrahimkhaled@alexu.edu.eg}
 }
+\concept{Ebrahim-Farrington}
+\concept{Hosmer-Lemeshow}
+\concept{calibration}
+\concept{goodness-of-fit}
+\concept{logistic regression}
+\concept{model diagnostics}
+\concept{sparse data}

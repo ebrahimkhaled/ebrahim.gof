@@ -63,9 +63,9 @@ The released version is on CRAN:
 ```r
 install.packages("ebrahim.gof")
 ```
-Version **2.4.0** — with the directed EDGE test, the Cauchy-combination ensemble,
-the one-call battery, and forwarded `BAGofT` partition controls — is available
-from GitHub now and is being submitted to CRAN.
+The development version, with any tests newer than the CRAN release, is on
+GitHub. What each release added is listed in
+[NEWS.md](https://github.com/ebrahimkhaled/ebrahim.gof/blob/main/NEWS.md).
 
 ## Quick Start
 

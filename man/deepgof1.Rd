@@ -69,3 +69,10 @@ Besag, J. and Clifford, P. (1989). Generalized Monte Carlo significance tests.
 \seealso{
 \code{\link{run.all.gof}}, \code{\link{ef.gof}}, \code{\link{legoft}}
 }
+\concept{DeepGOF-1}
+\concept{calibration}
+\concept{convolutional neural network}
+\concept{goodness-of-fit}
+\concept{logistic regression}
+\concept{model diagnostics}
+\concept{pretrained}

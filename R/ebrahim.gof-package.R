@@ -3,17 +3,39 @@
 #' A unified toolbox of goodness-of-fit and calibration tests for binary
 #' logistic regression, callable in a single line via \code{\link{run.all.gof}}.
 #' The package is aimed particularly at \emph{sparse} data, where the classical
-#' Hosmer--Lemeshow test loses power.
+#' Hosmer--Lemeshow test loses power, and at \emph{penalized} fits, where it is
+#' not merely weak but invalid.
 #'
-#' @section The author's own tests:
-#' \itemize{
-#'   \item \code{\link{ef.gof}} --- the omnibus Ebrahim--Farrington (EF) test for
-#'     binary data with automatic grouping.
-#'   \item \code{\link{def.gof}} / \code{\link{edge.gof}} --- the Directed EF
-#'     (\dQuote{EDGE}) test, which spends its few degrees of freedom on the
-#'     smooth calibration-shape directions where structured misfit concentrates.
-#'   \item \code{\link{def.ensemble.gof}} --- a Cauchy-combination ensemble of
-#'     the directed bases.
+#' @section Choosing a test:
+#' The battery is the place to start; the table below is for when you already
+#' know something about what you are looking for.
+#' \describe{
+#'   \item{No prior idea of what is wrong}{\code{\link{run.all.gof}} --- runs the
+#'     whole battery and groups the results by the departure each test detects.}
+#'   \item{Sparse data, no direction in mind}{\code{\link{ef.gof}} --- the omnibus
+#'     Ebrahim--Farrington test, which groups automatically and needs no model
+#'     object.}
+#'   \item{Misfit expected in the shape of the calibration curve}{\code{\link{edge.gof}}
+#'     --- spends its few degrees of freedom on the smooth directions where
+#'     structured misfit concentrates.}
+#'   \item{Misfit expected in the covariates themselves}{\code{\link{cdef.gof}} ---
+#'     the covariate-space directed test.}
+#'   \item{Unwilling to choose one direction}{\code{\link{edges.gof}} --- a
+#'     Cauchy combination over the directed bases, which pays little for the
+#'     directions that turn out to be empty.}
+#'   \item{Wanting one number, reproducible between analysts}{\code{\link{legoft}}
+#'     --- weights fixed offline and shipped frozen, so nothing is retrained when
+#'     you call it; \code{\link{legoft.localize}} then says which domain of
+#'     evidence carries the misfit, with familywise error control.}
+#'   \item{Willing to spend a bootstrap for more power}{\code{\link{deepgof1}} ---
+#'     a pretrained convolutional statistic whose level comes from your own
+#'     parametric bootstrap rather than from the network.}
+#'   \item{A penalized (ridge) fit}{\code{\link{calm.gof}} for a closed-form
+#'     reference from a single fit, or \code{\link{shrink.gof}} for the same
+#'     correction referred to a prepivoting bootstrap. Under a penalty the usual
+#'     chi-squared references are wrong, not just conservative.}
+#'   \item{A scorer of your own}{\code{\link{gof.features}} turns a fit into a
+#'     feature vector and \code{\link{deploy.gof}} applies a scorer to it.}
 #' }
 #'
 #' @section Aggregated tests (for comparison):
@@ -23,16 +45,44 @@
 #' and the \pkg{givitiR} calibration test. Each aggregated test is obtained from
 #' its own package (where installed) and is attributed to its authors; these are
 #' provided for head-to-head comparison, not claimed as original to this package.
+#' \code{\link{gof_install_suggests}} installs the optional packages they need.
 #'
 #' @section Data:
 #' \code{\link{gof_demo}} is a bundled example dataset with a documented,
 #' reproducible misfit for illustrating the battery.
 #'
+#' @section Citing the methods:
+#' Each of the author's tests has a paper behind it. Run
+#' \code{citation("ebrahim.gof")} for the current references; they are kept
+#' there rather than duplicated here, because several are moving from preprint
+#' to journal.
+#'
+#' @examples
+#' set.seed(1)
+#' n <- 200
+#' x <- rnorm(n)
+#' y <- rbinom(n, 1, plogis(0.3 + 0.9 * x))
+#' fit <- glm(y ~ x, family = binomial())
+#'
+#' # the omnibus test on the fitted probabilities
+#' ef.gof(y, fitted(fit))
+#'
+#' # the directed test, when misfit is expected in the calibration shape
+#' edge.gof(fit)
+#'
 #' @seealso The vignette
 #'   \code{vignette("ebrahim-gof-toolbox", package = "ebrahim.gof")}.
 #'
-#' @docType package
+#' @concept goodness-of-fit
+#' @concept calibration
+#' @concept logistic regression
+#' @concept model diagnostics
+#' @concept Hosmer-Lemeshow
+#' @concept sparse data
+#' @concept binary classification
+#' @concept penalized regression
+#' @concept test battery
+#'
 #' @name ebrahim.gof-package
 #' @aliases ebrahim.gof
-#' @keywords internal
 "_PACKAGE"

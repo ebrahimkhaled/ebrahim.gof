@@ -61,6 +61,12 @@
 #'
 #' @seealso \code{\link{ef.gof}}, \code{\link{def.ensemble.gof}}.
 #' @importFrom stats fitted predict model.matrix qlogis poly pchisq
+#' @concept goodness-of-fit
+#' @concept calibration
+#' @concept logistic regression
+#' @concept model diagnostics
+#' @concept DEF
+#' @concept directed test
 #' @export
 def.gof <- function(object, predicted_probs = NULL, X = NULL, G = 10,
                     basis  = c("poly3", "poly2", "stukel", "ensemble"),

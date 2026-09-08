@@ -55,6 +55,13 @@
 #' cdef.gof(fit, basis = "spline")  # for local / oscillatory misfit
 #'
 #' @importFrom stats fitted model.matrix qlogis sd quantile setNames
+#' @concept goodness-of-fit
+#' @concept calibration
+#' @concept logistic regression
+#' @concept model diagnostics
+#' @concept covariate space
+#' @concept directed test
+#' @concept machine learning features
 #' @export
 cdef.gof <- function(object, predicted_probs = NULL, X = NULL,
                      basis  = c("poly", "spline", "combined"),
@@ -144,12 +151,19 @@ cdef.gof <- function(object, predicted_probs = NULL, X = NULL,
 #' @return A named numeric vector of evidence features.
 #' @seealso \code{\link{deploy.gof}}, \code{\link{cdef.gof}}, \code{\link{run.all.gof}}.
 #' @importFrom stats qnorm
+#' @concept goodness-of-fit
+#' @concept calibration
+#' @concept logistic regression
+#' @concept model diagnostics
+#' @concept covariate space
+#' @concept directed test
+#' @concept machine learning features
 #' @export
 gof.features <- function(object,
                          tests = c("HL", "HL-equalwidth", "Pigeon-Heyse",
                                    "Tsiatis", "Xie", "EF",
                                    "DEF.poly2", "DEF.poly3", "DEF.stukel")) {
-  r  <- suppressWarnings(run.all.gof(object))
+  r  <- suppressWarnings(run.all.gof(object, tests = tests, install = "no"))
   pv <- setNames(r$p_value, r$Test)[tests]
   cp <- suppressWarnings(cdef.gof(object, basis = "poly")$p_value)
   cs <- suppressWarnings(cdef.gof(object, basis = "spline")$p_value)
@@ -180,6 +194,13 @@ gof.features <- function(object,
 #'   bootstrap \code{p_value}.
 #' @seealso \code{\link{gof.features}}, \code{\link{cdef.gof}}.
 #' @importFrom stats fitted formula glm binomial rbinom predict
+#' @concept goodness-of-fit
+#' @concept calibration
+#' @concept logistic regression
+#' @concept model diagnostics
+#' @concept covariate space
+#' @concept directed test
+#' @concept machine learning features
 #' @export
 deploy.gof <- function(object, meta, B = 99, feature_fn = gof.features) {
   stopifnot(inherits(object, "glm"))

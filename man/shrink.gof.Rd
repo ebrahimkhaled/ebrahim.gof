@@ -2,7 +2,7 @@
 % Please edit documentation in R/shrink_gof.R
 \name{shrink.gof}
 \alias{shrink.gof}
-\title{The shrinkage-corrected Hosmer-Lemeshow test}
+\title{Shrinkage-corrected goodness-of-fit test for penalized (ridge) logistic regression}
 \usage{
 shrink.gof(
   X,
@@ -39,19 +39,19 @@ intercept is never penalized.}
 naive application of Hosmer--Lemeshow to a penalized fit computes.}
 }
 \value{
-a list with the statistic and p-value for each basis requested.
-Goodness of fit for penalized (ridge) logistic regression
-
+An object of class \code{"shrink.gof"}: a list carrying the settings the test ran
+  under (\code{lambda} on the theory scale, \code{G}, \code{B}, \code{n}, \code{p}) and,
+  for each requested basis, a component named \code{SC.HL} or \code{SC.EDGE} holding its
+  \code{statistic} and bootstrap \code{p.value}, plus \code{p.uncorrected} when
+  \code{uncorrected = TRUE}. Printed by \code{print.shrink.gof}.
+}
+\description{
 The Hosmer--Lemeshow test is not valid when the coefficients are shrunk: penalization
 biases the fitted probabilities, the grouped residuals acquire a non-centrality, and the
 usual chi-squared reference is wrong. \code{shrink.gof()} removes that non-centrality and
-refers the corrected statistic to a bootstrap built from the debiased generator.
-
-a list with the corrected statistics and their bootstrap p-values on each
-  requested basis.
-}
-\description{
-The shrinkage-corrected Hosmer-Lemeshow test
+refers the corrected statistic to a bootstrap built from the debiased generator. For the
+same correction referred to a closed-form reference, needing one fit rather than \code{B}
+of them, see \code{\link{calm.gof}}.
 }
 \details{
 The correction subtracts the estimated shrinkage non-centrality and prepivots against
@@ -73,5 +73,13 @@ shrink.gof(X, y, lambda = 40, basis = "decile", B = 99, seed = 1)
 }
 }
 \seealso{
-\code{\link{run.all.gof}} for the unpenalized battery.
+\code{\link{calm.gof}}, which refers the same corrected statistics to a
+  closed-form reference and needs a single fit; \code{\link{run.all.gof}} for the
+  unpenalized battery.
 }
+\concept{Hosmer-Lemeshow}
+\concept{calibration}
+\concept{goodness-of-fit}
+\concept{logistic regression}
+\concept{penalized regression}
+\concept{ridge regression}

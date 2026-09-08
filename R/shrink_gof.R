@@ -15,9 +15,8 @@
 #   to glaucoma diagnosis.
 #
 # It is SELF-CONTAINED: it depends only on base R and stats, so reproducing
-# the paper does not depend on any package version. It is the code that will
-# be released as shrink.gof() in a future version of the 'ebrahim.gof'
-# package; that package does NOT currently export it.
+# the paper does not depend on any package version. It is exported as
+# shrink.gof() from version 2.5.0 of the 'ebrahim.gof' package.
 #
 # The procedure (Sections 3.1 and 3.2 of the paper):
 #   1. fit the ridge model by penalized IRLS;
@@ -88,28 +87,14 @@
   }) >= S)
 }
 
-#' The shrinkage-corrected Hosmer-Lemeshow test
-#'
-#' @param X   numeric matrix of covariates, WITHOUT an intercept column.
-#' @param y   0/1 response.
-#' @param lambda ridge penalty on the theory scale, lambda = n * lambda_glmnet.
-#' @param G   number of groups (default 10).
-#' @param basis "edge" (SC.EDGE, the default and the more powerful),
-#'   "decile" (SC.HL), or both.
-#' @param B   bootstrap replicates for the prepivoted reference.
-#' @param seed optional integer; set it for a reproducible p-value.
-#' @param penalize logical vector of length ncol(X): which columns are
-#'   penalized. Defaults to all of them; the intercept is never penalized.
-#' @param uncorrected if TRUE, also return the uncorrected p-value, which is
-#'   the quantity the paper shows to be invalid. For comparison only.
-#'
-#' @return a list with the statistic and p-value for each basis requested.
-#' Goodness of fit for penalized (ridge) logistic regression
+#' Shrinkage-corrected goodness-of-fit test for penalized (ridge) logistic regression
 #'
 #' The Hosmer--Lemeshow test is not valid when the coefficients are shrunk: penalization
 #' biases the fitted probabilities, the grouped residuals acquire a non-centrality, and the
 #' usual chi-squared reference is wrong. \code{shrink.gof()} removes that non-centrality and
-#' refers the corrected statistic to a bootstrap built from the debiased generator.
+#' refers the corrected statistic to a bootstrap built from the debiased generator. For the
+#' same correction referred to a closed-form reference, needing one fit rather than \code{B}
+#' of them, see \code{\link{calm.gof}}.
 #'
 #' @param X numeric design matrix, without an intercept column.
 #' @param y binary response (0/1) of length \code{nrow(X)}.
@@ -123,8 +108,11 @@
 #'   intercept is never penalized.
 #' @param uncorrected if \code{TRUE}, also return the uncorrected statistic, which is what a
 #'   naive application of Hosmer--Lemeshow to a penalized fit computes.
-#' @return a list with the corrected statistics and their bootstrap p-values on each
-#'   requested basis.
+#' @return An object of class \code{"shrink.gof"}: a list carrying the settings the test ran
+#'   under (\code{lambda} on the theory scale, \code{G}, \code{B}, \code{n}, \code{p}) and,
+#'   for each requested basis, a component named \code{SC.HL} or \code{SC.EDGE} holding its
+#'   \code{statistic} and bootstrap \code{p.value}, plus \code{p.uncorrected} when
+#'   \code{uncorrected = TRUE}. Printed by \code{print.shrink.gof}.
 #' @details
 #' The correction subtracts the estimated shrinkage non-centrality and prepivots against
 #' \eqn{\pi(\tilde\beta)} rather than \eqn{\pi(\hat\beta)} (Beran prepivoting), so the
@@ -136,7 +124,15 @@
 #'
 #' Depends only on base \R and \pkg{stats}, so results do not move with package versions.
 #' @importFrom stats rnorm rbinom pchisq quantile
-#' @seealso \code{\link{run.all.gof}} for the unpenalized battery.
+#' @seealso \code{\link{calm.gof}}, which refers the same corrected statistics to a
+#'   closed-form reference and needs a single fit; \code{\link{run.all.gof}} for the
+#'   unpenalized battery.
+#' @concept goodness-of-fit
+#' @concept calibration
+#' @concept logistic regression
+#' @concept penalized regression
+#' @concept ridge regression
+#' @concept Hosmer-Lemeshow
 #' @examples
 #' \donttest{
 #' set.seed(1)
@@ -188,10 +184,11 @@ shrink.gof <- function(X, y, lambda, G = 10,
   out
 }
 
+#' @export
 print.shrink.gof <- function(x, ...) {
   cat("\nShrinkage-corrected Hosmer-Lemeshow test\n")
-  cat(sprintf("n = %d, p = %d, lambda = %.4g, G = %d, B = %d\n\n",
-              x$n, x$p, x$lambda, x$G, x$B))
+  cat(sprintf("n = %d, p = %d (p/n = %.3f), lambda = %.4g, G = %d, B = %d\n\n",
+              x$n, x$p, x$p / x$n, x$lambda, x$G, x$B))
   for (nm in c("SC.HL", "SC.EDGE")) if (!is.null(x[[nm]])) {
     cat(sprintf("  %-8s statistic = %8.4f   p = %.4f", nm,
                 x[[nm]]$statistic, x[[nm]]$p.value))

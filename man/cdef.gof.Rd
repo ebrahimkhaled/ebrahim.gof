@@ -74,3 +74,10 @@ Models to Sparse Data. \emph{JRSS-B} 58(2), 349-360.
 \seealso{
 \code{\link{def.gof}}, \code{\link{ef.gof}}, \code{\link{run.all.gof}}.
 }
+\concept{calibration}
+\concept{covariate space}
+\concept{directed test}
+\concept{goodness-of-fit}
+\concept{logistic regression}
+\concept{machine learning features}
+\concept{model diagnostics}

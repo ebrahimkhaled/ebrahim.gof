@@ -32,3 +32,10 @@ comes from the bootstrap, independent of how \code{meta} was trained.
 \seealso{
 \code{\link{gof.features}}, \code{\link{cdef.gof}}.
 }
+\concept{calibration}
+\concept{covariate space}
+\concept{directed test}
+\concept{goodness-of-fit}
+\concept{logistic regression}
+\concept{machine learning features}
+\concept{model diagnostics}

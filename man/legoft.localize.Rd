@@ -47,3 +47,10 @@ legoft.localize(fit, B = 99, seed = 1)
 \seealso{
 \code{\link{legoft}}
 }
+\concept{LEGofT}
+\concept{calibration}
+\concept{familywise error}
+\concept{frozen weights}
+\concept{goodness-of-fit}
+\concept{logistic regression}
+\concept{model diagnostics}

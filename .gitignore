@@ -50,3 +50,4 @@ rsconnect/
 /check_*.out
 /check_*.txt
 /CRAN_reply_*.txt
+PRERELEASE_AUDIT_*.md

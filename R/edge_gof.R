@@ -38,6 +38,13 @@
 #'
 #' @seealso \code{\link{def.gof}} (legacy name), \code{\link{ef.gof}},
 #'   \code{\link{def.ensemble.gof}}, \code{\link{run.all.gof}}.
+#' @concept goodness-of-fit
+#' @concept calibration
+#' @concept logistic regression
+#' @concept model diagnostics
+#' @concept EDGE
+#' @concept directed test
+#' @concept sparse data
 #' @export
 edge.gof <- function(object, predicted_probs = NULL, X = NULL, G = 10,
                      basis = "poly3", method = "satterthwaite") {

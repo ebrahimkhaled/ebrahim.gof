@@ -84,3 +84,9 @@ for Sparse Data in Binary Logistic Regression (companion paper).
 \author{
 Ebrahim Khaled Ebrahim \email{ebrahimkhaled@alexu.edu.eg}
 }
+\concept{DEF}
+\concept{calibration}
+\concept{directed test}
+\concept{goodness-of-fit}
+\concept{logistic regression}
+\concept{model diagnostics}

@@ -1,5 +1,57 @@
 # ebrahim.gof 2.7.0
 
+## Bug fix
+
+* The grouped-data example on `?ef.gof` now passes `G = NULL`, and runs. Without it the
+  call fell through to the automatic-grouping branch, which ignores `m` and `model` and
+  refers binomial counts to the binary statistic, so the documented example reported a
+  p-value of zero on data drawn from the fitted model. The example is no longer wrapped
+  in `\dontrun{}`, so `R CMD check` exercises the original Farrington branch as well.
+  The `@note` bullet that said supplying `m` selects the original test has been corrected
+  to say that `G` must be set to `NULL`.
+
+* `gof.features()` honoured its documented `tests` argument only after the fact: it ran
+  the whole battery and subset the result, so a caller asking for nine p-values paid for
+  all twenty-five. The returned feature vector is unchanged; only the cost was wrong.
+
+* `print.shrink.gof()` was defined but never registered, so `shrink.gof()` results printed
+  as a raw nested list. It is now an S3 method, and reports `p/n` as `print.calm.gof()`
+  already did.
+
+## Documentation
+
+* The `Description` field now names `calm.gof()`, `edges.gof()` and `cdef.gof()`, and gives
+  the penalized case its own sentence rather than filing `shrink.gof()` under sparse data.
+  The field is frozen for the life of a release and is the text CRAN's own search indexes,
+  so an omission there costs months; this is the same slip recorded at 2.5.0.
+
+* `Authors@R` used positional arguments, which made "Khaled Ebrahim" the family name, so
+  `citation()` rendered "Khaled Ebrahim E" and BibTeX filed the package under K. The
+  arguments are now named and the surname agrees with `inst/CITATION`.
+
+* `?shrink.gof` had two roxygen drafts merged, which left every parameter documented twice
+  and the real title and description buried inside `\value`, so the rendered page's
+  description was its own title repeated. Rewritten.
+
+* `?calm.gof` now documents its class-balance scope, and `calm.gof()` warns when it is
+  called on a strongly unbalanced outcome, where the reference is not validated.
+
+* `?legoft` no longer carries a title indistinguishable from `?deepgof1`.
+
+* The package landing page, `?ebrahim.gof`, is no longer marked internal and now opens
+  with a table for choosing among the tests.
+
+* Every function page gained `\concept` entries, which is what `??` and the documentation
+  mirrors search.
+
+* `inst/CITATION` took its version from a hardcoded string, which had been stale since
+  2.4.0; it now reads `meta$Version`. The benchmark paper is recorded as in press at the
+  Journal of Intelligent Computing and Data Science rather than as a preprint.
+
+* The full-battery example forwards `nsim = 20` to BAGofT, which cuts
+  `R CMD check --run-donttest` from 213 to 54 seconds without changing what it shows.
+
+
 ## New features
 
 * `calm.gof()` -- a closed-form reference distribution for the shrinkage-corrected

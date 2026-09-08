@@ -40,3 +40,9 @@ Liu, Y. and Xie, J. (2020). Cauchy combination test. \emph{JASA}, 115(529), 393-
 \author{
 Ebrahim Khaled Ebrahim \email{ebrahimkhaled@alexu.edu.eg}
 }
+\concept{DEF}
+\concept{calibration}
+\concept{ensemble}
+\concept{goodness-of-fit}
+\concept{logistic regression}
+\concept{model diagnostics}

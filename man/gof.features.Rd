@@ -27,3 +27,10 @@ covariate-space directed tests. Larger values mean stronger evidence of misfit.
 \seealso{
 \code{\link{deploy.gof}}, \code{\link{cdef.gof}}, \code{\link{run.all.gof}}.
 }
+\concept{calibration}
+\concept{covariate space}
+\concept{directed test}
+\concept{goodness-of-fit}
+\concept{logistic regression}
+\concept{machine learning features}
+\concept{model diagnostics}

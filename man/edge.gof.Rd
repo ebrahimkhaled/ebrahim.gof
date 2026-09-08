@@ -73,3 +73,10 @@ goodness-of-fit test for sparse logistic regression. arXiv:2607.15454.
 \author{
 Ebrahim Khaled Ebrahim \email{ebrahimkhaled@alexu.edu.eg}
 }
+\concept{EDGE}
+\concept{calibration}
+\concept{directed test}
+\concept{goodness-of-fit}
+\concept{logistic regression}
+\concept{model diagnostics}
+\concept{sparse data}

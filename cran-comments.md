@@ -14,9 +14,9 @@ dependency changed.
 
 ## Test environments
 
-* local: Windows 11, R 4.4.x, `R CMD check --as-cran`
-* (fill in before submitting) win-builder devel and release
-* (fill in before submitting) macOS builder
+* local: Windows 11, R 4.4.1, `R CMD check --as-cran`
+* win-builder, R-devel and R-release  <!-- PENDING: run devtools::check_win_devel() and
+  check_win_release(), then replace this line with the result before submitting -->
 
 ## R CMD check results
 

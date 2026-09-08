@@ -51,6 +51,12 @@
 #'
 #' @seealso \code{\link{def.gof}}, \code{\link{ef.gof}}.
 #' @importFrom stats fitted pchisq
+#' @concept goodness-of-fit
+#' @concept calibration
+#' @concept logistic regression
+#' @concept model diagnostics
+#' @concept ensemble
+#' @concept DEF
 #' @export
 def.ensemble.gof <- function(object, predicted_probs = NULL, X = NULL,
                              components = c("poly2", "poly3", "stukel"),
@@ -123,6 +129,12 @@ def.ensemble.gof <- function(object, predicted_probs = NULL, X = NULL,
 #'
 #' @seealso \code{\link{def.ensemble.gof}} (legacy name), \code{\link{edge.gof}},
 #'   \code{\link{def.gof}}.
+#' @concept goodness-of-fit
+#' @concept calibration
+#' @concept logistic regression
+#' @concept model diagnostics
+#' @concept ensemble
+#' @concept DEF
 #' @export
 edges.gof <- function(...) def.ensemble.gof(...)
 

@@ -242,6 +242,18 @@
 #'   the shrunk probabilities are calibrated, which under a penalty they are
 #'   not, by an amount the analyst chose when selecting \code{lambda}.
 #'
+#'   The reference is validated for outcomes that are not strongly unbalanced.
+#'   Once \eqn{p/n} is an appreciable fraction the level is lost as the
+#'   prevalence falls: at \eqn{p/n = 0.25} the smooth basis rejects 0.140,
+#'   0.574 and 0.884 of correctly specified models at prevalences 0.30, 0.15
+#'   and 0.08, and the decile basis 0.060, 0.204 and 0.492. At fixed dimension
+#'   the decile basis is unaffected and the smooth one degrades far more
+#'   slowly, to 0.130 at prevalence 0.08. What fails there is the
+#'   response-dependent grouping inherited from the Hosmer-Lemeshow
+#'   construction rather than the reference itself. With few events and
+#'   \eqn{p/n} an appreciable fraction, neither statistic is validated and
+#'   \code{\link{shrink.gof}} is the less badly behaved of the two.
+#'
 #' @references
 #' Bellec, P. C. (2025). Observable adjustments in single-index models for
 #' regularized M-estimators with bounded p/n. \emph{The Annals of Statistics},
@@ -265,6 +277,15 @@
 #' y <- rbinom(n, 1, 1 / (1 + exp(-(X[, 1] - 0.5 * X[, 2]))))
 #' calm.gof(X, y, lambda = 100)
 #'
+#' @concept goodness-of-fit
+#' @concept calibration
+#' @concept logistic regression
+#' @concept model diagnostics
+#' @concept CALM
+#' @concept penalized regression
+#' @concept ridge regression
+#' @concept high-dimensional
+#' @concept Hosmer-Lemeshow
 #' @export
 calm.gof <- function(X, y, lambda, G = 10,
                      basis = c("decile", "adaptive", "edge"),
@@ -280,6 +301,20 @@ calm.gof <- function(X, y, lambda, G = 10,
   X <- as.matrix(X); y <- as.numeric(y); n <- length(y)
   if (nrow(X) != n) stop("X and y have different numbers of observations.", call. = FALSE)
   if (!all(y %in% c(0, 1))) stop("y must contain only 0 and 1.", call. = FALSE)
+  prev <- mean(y)
+  bal  <- min(prev, 1 - prev)
+  if (bal < 0.35 && ncol(X) / n >= 0.05) {
+    warning(sprintf(
+      "calm.gof(): outcome prevalence is %.3f at p/n = %.3f. The reference is validated for
+outcomes that are not strongly unbalanced; in this regime the level is lost as the prevalence
+falls (see the Scope section of ?calm.gof). Treat the p-value as indicative only.",
+      prev, ncol(X) / n), call. = FALSE)
+  } else if (bal < 0.20) {
+    warning(sprintf(
+      "calm.gof(): outcome prevalence is %.3f. At fixed dimension the decile basis is unaffected,
+but the smooth basis degrades with strong imbalance (see the Scope section of ?calm.gof).",
+      prev), call. = FALSE)
+  }
   if (ncol(X) >= n) stop("calm.gof() needs p < n; the reference is built from the sample covariance of X.", call. = FALSE)
   lambda_glmnet <- if (lambda_scale == "glmnet") lambda else lambda / n
   if (lambda_scale == "glmnet") lambda <- n * lambda
@@ -294,7 +329,7 @@ calm.gof <- function(X, y, lambda, G = 10,
   gof <- function(which) if (inflate == "none") 0 else
     kappa * c(dec = 0.24, e2 = 0.11, e3 = 1.15)[[which]]
 
-  out <- list(lambda = lambda, lambda_glmnet = lambda_glmnet, G = G, kappa = kappa,
+  out <- list(prevalence = prev, lambda = lambda, lambda_glmnet = lambda_glmnet, G = G, kappa = kappa,
               rho_hat = rho_hat, tau = tau, inflate = inflate,
               est_signal_sd = ref$est_signal_sd, scale_c = ref$c)
   if ("decile" %in% basis)
@@ -321,6 +356,15 @@ calm.gof <- function(X, y, lambda, G = 10,
   out
 }
 
+#' @concept goodness-of-fit
+#' @concept calibration
+#' @concept logistic regression
+#' @concept model diagnostics
+#' @concept CALM
+#' @concept penalized regression
+#' @concept ridge regression
+#' @concept high-dimensional
+#' @concept Hosmer-Lemeshow
 #' @export
 print.calm.gof <- function(x, ...) {
   cat("\nCALM: closed-form goodness of fit for penalized logistic regression\n")

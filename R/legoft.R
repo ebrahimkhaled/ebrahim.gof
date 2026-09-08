@@ -86,7 +86,7 @@
   out[stats::complete.cases(out), , drop = FALSE]
 }
 
-#' Pretrained goodness-of-fit test for binary logistic regression
+#' LEGofT: frozen-weight combination goodness-of-fit test for binary logistic regression
 #'
 #' Combines eleven classical and directed goodness-of-fit statistics with weights that
 #' were fixed offline and ship frozen, and calibrates the combination by a parametric
@@ -114,6 +114,13 @@
 #' fit <- glm(y ~ x1 + x2, family = binomial())
 #' legoft(fit, B = 99, seed = 1)
 #' }
+#' @concept goodness-of-fit
+#' @concept calibration
+#' @concept logistic regression
+#' @concept model diagnostics
+#' @concept LEGofT
+#' @concept frozen weights
+#' @concept familywise error
 #' @export
 legoft <- function(object, B = 199, seed = NULL, weights = NULL) {
   if (!inherits(object, "glm") || !identical(stats::family(object)$family, "binomial"))
@@ -132,6 +139,13 @@ legoft <- function(object, B = 199, seed = NULL, weights = NULL) {
             class = "legoft")
 }
 
+#' @concept goodness-of-fit
+#' @concept calibration
+#' @concept logistic regression
+#' @concept model diagnostics
+#' @concept LEGofT
+#' @concept frozen weights
+#' @concept familywise error
 #' @export
 print.legoft <- function(x, ...) {
   cat("\n", x$method, "\n\n", sep = "")
@@ -172,6 +186,13 @@ print.legoft <- function(x, ...) {
 #' fit <- glm(y ~ x1 + x2, family = binomial())
 #' legoft.localize(fit, B = 99, seed = 1)
 #' }
+#' @concept goodness-of-fit
+#' @concept calibration
+#' @concept logistic regression
+#' @concept model diagnostics
+#' @concept LEGofT
+#' @concept frozen weights
+#' @concept familywise error
 #' @export
 legoft.localize <- function(object, B = 199, seed = NULL, alpha = 0.05) {
   if (!inherits(object, "glm") || !identical(stats::family(object)$family, "binomial"))
@@ -206,6 +227,13 @@ legoft.localize <- function(object, B = 199, seed = NULL, alpha = 0.05) {
             class = "legoft_localize")
 }
 
+#' @concept goodness-of-fit
+#' @concept calibration
+#' @concept logistic regression
+#' @concept model diagnostics
+#' @concept LEGofT
+#' @concept frozen weights
+#' @concept familywise error
 #' @export
 print.legoft_localize <- function(x, ...) {
   cat("\nLEGofT-Localize: closed testing over two domains of evidence\n\n")

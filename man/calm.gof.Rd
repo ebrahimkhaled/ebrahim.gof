@@ -85,6 +85,18 @@ fails.
   logistic form is correct along the fitted index. It does not ask whether
   the shrunk probabilities are calibrated, which under a penalty they are
   not, by an amount the analyst chose when selecting \code{lambda}.
+
+  The reference is validated for outcomes that are not strongly unbalanced.
+  Once \eqn{p/n} is an appreciable fraction the level is lost as the
+  prevalence falls: at \eqn{p/n = 0.25} the smooth basis rejects 0.140,
+  0.574 and 0.884 of correctly specified models at prevalences 0.30, 0.15
+  and 0.08, and the decile basis 0.060, 0.204 and 0.492. At fixed dimension
+  the decile basis is unaffected and the smooth one degrades far more
+  slowly, to 0.130 at prevalence 0.08. What fails there is the
+  response-dependent grouping inherited from the Hosmer-Lemeshow
+  construction rather than the reference itself. With few events and
+  \eqn{p/n} an appreciable fraction, neither statistic is validated and
+  \code{\link{shrink.gof}} is the less badly behaved of the two.
 }
 
 \examples{
@@ -112,3 +124,12 @@ proportional regime.
 \code{\link{shrink.gof}} for the bootstrap reference for the same
   statistics, and \code{\link{edge.gof}} for the EDGE test on an unpenalized fit.
 }
+\concept{CALM}
+\concept{Hosmer-Lemeshow}
+\concept{calibration}
+\concept{goodness-of-fit}
+\concept{high-dimensional}
+\concept{logistic regression}
+\concept{model diagnostics}
+\concept{penalized regression}
+\concept{ridge regression}

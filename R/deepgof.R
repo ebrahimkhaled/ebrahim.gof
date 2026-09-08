@@ -146,6 +146,13 @@
 #' deepgof1(fit, B = 49)   # B = 49 to keep the example fast; use the default in practice
 #'
 #' @seealso \code{\link{run.all.gof}}, \code{\link{ef.gof}}, \code{\link{legoft}}
+#' @concept goodness-of-fit
+#' @concept calibration
+#' @concept logistic regression
+#' @concept model diagnostics
+#' @concept DeepGOF-1
+#' @concept convolutional neural network
+#' @concept pretrained
 #' @export
 deepgof1 <- function(fit, B = 199L, K = 6L) {
   if (!inherits(fit, "glm") || fit$family$family != "binomial")
@@ -179,6 +186,13 @@ deepgof1 <- function(fit, B = 199L, K = 6L) {
             class = "deepgof1")
 }
 
+#' @concept goodness-of-fit
+#' @concept calibration
+#' @concept logistic regression
+#' @concept model diagnostics
+#' @concept DeepGOF-1
+#' @concept convolutional neural network
+#' @concept pretrained
 #' @export
 print.deepgof1 <- function(x, ...) {
   cat("\n\t", x$method, "\n\n", sep = "")

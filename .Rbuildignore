@@ -12,3 +12,4 @@
 ^ebrahim\.gof_.*\.tar\.gz$
 ^ebrahim\.gof\.Rcheck$
 ^data-raw$
+^PRERELEASE_AUDIT_.*\.md$

@@ -2,7 +2,7 @@
 % Please edit documentation in R/legoft.R
 \name{legoft}
 \alias{legoft}
-\title{Pretrained goodness-of-fit test for binary logistic regression}
+\title{LEGofT: frozen-weight combination goodness-of-fit test for binary logistic regression}
 \usage{
 legoft(object, B = 199, seed = NULL, weights = NULL)
 }
@@ -44,3 +44,10 @@ legoft(fit, B = 99, seed = 1)
 \seealso{
 \code{\link{legoft.localize}} for which domain of evidence carries the misfit.
 }
+\concept{LEGofT}
+\concept{calibration}
+\concept{familywise error}
+\concept{frozen weights}
+\concept{goodness-of-fit}
+\concept{logistic regression}
+\concept{model diagnostics}
