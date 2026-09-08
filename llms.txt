@@ -66,7 +66,7 @@ for a full walkthrough on the bundled `gof_demo` dataset.
 > The **core battery runs out of the box** (only `parallel` + `stats`
 > are required). A few *slow* tests (GAM, `BAGofT`, `GiViTI`,
 > Lai–Liu–HL) need optional packages — when they are missing,
-> [`library(ebrahim.gof)`](https://github.com/ebrahimkhaled/ebrahim.gof)
+> [`library(ebrahim.gof)`](https://ebrahimkhaled.github.io/ebrahim.gof/)
 > prints a one-time hint, and you can install them all at once with
 > **[`gof_install_suggests()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/gof_install_suggests.md)**.
 > Missing packages are never installed silently, and any test whose
