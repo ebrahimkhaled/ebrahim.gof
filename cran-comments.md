@@ -15,7 +15,8 @@ dependency changed.
 ## Test environments
 
 * local: Windows 11, R 4.4.1, `R CMD check --as-cran` -- 1 note (see below)
-* win-builder, R-devel  <!-- PENDING: paste the result of the run on THIS tarball -->
+* GitHub Actions: Windows-release, macOS-release, Ubuntu devel/release/oldrel-1 -- all passing
+* win-builder, R-devel (2026-09-06 r90498 ucrt) -- 1 note (see below); install 5s, check 99s
 * win-builder, R-release  <!-- PENDING: paste the result of the run on THIS tarball -->
 
 ## R CMD check results
