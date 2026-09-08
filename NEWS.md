@@ -20,6 +20,37 @@
 
 ## Documentation
 
+* The catalogue entry for `Deviance` called it "the more conservative of the two" against
+  `Pearson`. Measured on correctly specified models it rejects 100 per cent where Pearson
+  rejects none: on ungrouped binary data its expectation depends on the fitted risks alone,
+  so the direction of the error is set by the risk profile and not by the fit. Corrected.
+
+* `?deepgof1` said to see `run.all.gof()` to run it alongside the battery. It is not one of
+  the tests the battery selects, so naming it in `tests` errors. Both that sentence and the
+  battery's own text now say which procedures sit outside the panel.
+
+* `?shrink.gof` gained a section on choosing between it and `calm.gof()`, including the
+  trap that `calm.gof()` takes `lambda_scale` and `shrink.gof()` does not, so the same
+  number means penalties a factor of n apart.
+
+* The Details headings of `?run.all.gof` now carry the literal `Family` labels that appear
+  on every row of the output, so a reader can go from a label to its section.
+
+* The examples on `?def.gof` and `?def.ensemble.gof` fitted correctly specified models, so
+  no test ever fired. They now use `gof_demo`, whose documented misfit the directed tests
+  detect (p = 0.015), and then the corrected model, which they do not (p = 0.797).
+
+* Both vignettes predated 2.5.0 and mentioned none of the methods added since. The toolbox
+  vignette gained a section on the penalised, frozen-weight and pretrained procedures.
+
+* A pkgdown site is configured (`_pkgdown.yml` and a workflow), giving the reference pages
+  and vignettes indexable HTML addresses.
+
+* `ef.gof()` now warns, rather than messages, when `model` or `m` is supplied while `G` is
+  left at its default, since both are then ignored.
+
+* Smoke tests were added for ten exports that had none, `calm.gof()` among them.
+
 * The `Description` field now names `calm.gof()`, `edges.gof()` and `cdef.gof()`, and gives
   the penalized case its own sentence rather than filing `shrink.gof()` under sparse data.
   The field is frozen for the life of a release and is the text CRAN's own search indexes,

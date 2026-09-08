@@ -13,3 +13,6 @@
 ^ebrahim\.gof\.Rcheck$
 ^data-raw$
 ^PRERELEASE_AUDIT_.*\.md$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$

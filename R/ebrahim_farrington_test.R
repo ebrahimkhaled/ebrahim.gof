@@ -172,9 +172,9 @@ ef.gof <- function(y, predicted_probs = NULL, model = NULL, m = NULL, G = 10,
   if (!is.null(G)) {
     # Ebrahim-Farrington test with automatic grouping
     if (!is.null(model) || !is.null(m)) {
-      message("Note: When using Ebrahim-Farrington grouping (G specified), ",
-              "the 'model' and 'm' parameters are not needed. ",
-              "Ignoring these parameters for grouping mode.")
+      warning("Ebrahim-Farrington grouping is in force (G is not NULL), so 'model' and ",
+              "'m' are ignored. For the original Farrington test on grouped data, set ",
+              "G = NULL.")
     }
     
     if (!is.numeric(G) || length(G) != 1 || G < 2) {

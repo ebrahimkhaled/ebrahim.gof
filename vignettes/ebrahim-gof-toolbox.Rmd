@@ -114,6 +114,53 @@ The Cauchy-combination ensemble pools the directed bases into a single p-value:
 def.ensemble.gof(fit)
 ```
 
+## Beyond the battery
+
+`run.all.gof()` selects among the classical tests and the directed ones. Several of the
+package's procedures sit outside it, because they need something the battery does not have:
+a penalty, a frozen set of weights, or a scorer of your own. They are called directly on the
+same fitted model.
+
+### Penalised (ridge) fits
+
+Under a penalty the classical references are not merely weak but **invalid**: shrinkage
+biases the fitted probabilities, so the grouped residuals acquire a non-centrality and the
+usual chi-squared reference is wrong. Two functions apply the same correction and differ
+only in what they refer it to.
+
+```{r}
+set.seed(4)
+n <- 300; p <- 8
+X <- matrix(rnorm(n * p), n, p)
+y <- rbinom(n, 1, plogis(0.2 + X %*% c(0.9, -0.6, 0.4, rep(0, p - 3))))
+
+# closed form: one fit, no resampling, and no Monte Carlo error in the p-value
+calm.gof(X, y, lambda = 40)
+```
+
+`shrink.gof()` computes the same statistics and calibrates them by prepivoting instead,
+which costs `B` penalised refits. Prefer `calm.gof()` unless you need `penalize` to choose
+which columns are shrunk, or `p >= n`, which it refuses. Note the penalty scale: `lambda`
+here is `n` times a **glmnet** lambda, and `calm.gof()` takes a `lambda_scale` argument
+while `shrink.gof()` does not.
+
+`?calm.gof` states where the reference is validated. It is not validated for strongly
+unbalanced outcomes once `p/n` is an appreciable fraction, and the function warns when you
+call it there.
+
+### Frozen-weight and pretrained tests
+
+`legoft()` combines eleven statistics with weights fixed offline and shipped frozen, so two
+analysts obtain the same p-value; `legoft.localize()` then says which domain of evidence
+carries the misfit, with familywise error control. `deepgof1()` is a pretrained convolutional
+statistic whose level comes from your own parametric bootstrap rather than from the network.
+None of these is retrained when you call it.
+
+### Building your own
+
+`gof.features()` turns a fitted model into a feature vector of test statistics, and
+`deploy.gof()` refers a scorer of yours to a parametric bootstrap under the fitted model.
+
 ## Going further
 
 * **The full battery.** Set `include_slow = TRUE` to add the resampling/refit-based tests

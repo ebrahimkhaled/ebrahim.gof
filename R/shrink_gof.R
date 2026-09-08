@@ -124,9 +124,24 @@
 #'
 #' Depends only on base \R and \pkg{stats}, so results do not move with package versions.
 #' @importFrom stats rnorm rbinom pchisq quantile
+#' @section Choosing between this and calm.gof:
+#'   The statistics are the same; only the reference differs.
+#'   \code{\link{calm.gof}} reads the exact tail of a weighted chi-squared law from a
+#'   single fit, so it returns in a fraction of a second and its p-value carries no Monte
+#'   Carlo error -- which matters when the p-value is read as a magnitude rather than
+#'   compared with a threshold. \code{shrink.gof()} needs \code{B} penalized refits and
+#'   its p-value is granular to \eqn{1/(B+1)}.
+#'
+#'   Prefer \code{calm.gof()} unless one of these applies: the columns to shrink are
+#'   chosen through \code{penalize}, which \code{calm.gof()} does not accept; or
+#'   \eqn{p \ge n}, which it refuses. Note also that \code{calm.gof()} takes a
+#'   \code{lambda_scale} argument and \code{shrink.gof()} does not, so the same number
+#'   passed to both is a \code{glmnet} penalty in one and a theory-scale penalty in the
+#'   other -- a factor of \eqn{n} apart. This function expects the theory scale.
+#'
 #' @seealso \code{\link{calm.gof}}, which refers the same corrected statistics to a
-#'   closed-form reference and needs a single fit; \code{\link{run.all.gof}} for the
-#'   unpenalized battery.
+#'   closed-form reference and needs a single fit, and the section above for when to
+#'   prefer it; \code{\link{run.all.gof}} for the unpenalized battery.
 #' @concept goodness-of-fit
 #' @concept calibration
 #' @concept logistic regression

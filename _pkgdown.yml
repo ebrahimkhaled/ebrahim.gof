@@ -1,0 +1,74 @@
+url: https://ebrahimkhaled.github.io/ebrahim.gof/
+
+template:
+  bootstrap: 5
+
+home:
+  title: Goodness-of-fit and calibration tests for logistic regression
+  description: >
+    A unified battery of goodness-of-fit and calibration tests for binary
+    logistic regression, runnable in one call, with the author's own procedures
+    for sparse data and for penalized (ridge) fits.
+
+reference:
+- title: Start here
+  desc: >
+    The battery runs everything and groups the results by the departure each
+    test detects. The package page has a table for choosing a single test.
+  contents:
+  - run.all.gof
+  - ebrahim.gof-package
+
+- title: Sparse data
+  desc: >
+    Where the classical Hosmer-Lemeshow test loses power. The omnibus test asks
+    whether anything is wrong; the directed tests spend their few degrees of
+    freedom on the shapes where structured misfit concentrates.
+  contents:
+  - ef.gof
+  - edge.gof
+  - edges.gof
+  - cdef.gof
+  - def.gof
+  - def.ensemble.gof
+
+- title: Penalized (ridge) fits
+  desc: >
+    Under a penalty the usual chi-squared references are not merely weak but
+    invalid, because shrinkage displaces the grouped residuals. These two apply
+    the same correction and differ only in the reference they refer it to.
+  contents:
+  - calm.gof
+  - shrink.gof
+
+- title: Pretrained and frozen-weight tests
+  desc: >
+    Weights fixed offline and shipped frozen, so two analysts obtain the same
+    p-value. Nothing is retrained at call time.
+  contents:
+  - legoft
+  - legoft.localize
+  - deepgof1
+
+- title: Building your own scorer
+  contents:
+  - gof.features
+  - deploy.gof
+
+- title: Data and setup
+  contents:
+  - gof_demo
+  - gof_demo_grouped
+  - gof_install_suggests
+
+- title: Printing and plotting
+  contents:
+  - print.gof_battery
+  - plot.gof_battery
+
+articles:
+- title: Guides
+  navbar: ~
+  contents:
+  - ebrahim-gof-toolbox
+  - ebrahim-farrington-intro

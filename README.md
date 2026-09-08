@@ -212,7 +212,7 @@ Across the family, **DEF and its vote ensemble are the most powerful while keepi
 the size near the nominal 0.05** — they are not liberal — and they roughly double
 the power of Hosmer–Lemeshow, Tsiatis, and Xie on the wrong-link misfit.
 
-![Size and power across partition-based GOF tests](vignettes/power_size_def.png)
+![Size and power across partition-based GOF tests](man/figures/power_size_def.png)
 
 ### Pros and cons of partition-based tests
 
@@ -411,7 +411,7 @@ which is a more accurate small-sample reference; the standardized-normal form
 4. **Theoretical Foundation**: Based on rigorous asymptotic theory
 ## Superior Performance at G=10
 Simulation results consistently demonstrate that the Ebrahim-Farrington test outperforms the Hosmer-Lemeshow test, even when the model misspecification is minimal—such as with a missing interaction or omitted quadratic term—when using **G = 10** groups (Ebrahim, 2025).
-![Power_Comparison_All_Scenarios_Combined.png](vignettes/Power_Comparison_All_Scenarios_Combined.png)
+![Power_Comparison_All_Scenarios_Combined.png](man/figures/Power_Comparison_All_Scenarios_Combined.png)
 
 ## Asymptotically Following the Standard Normal Distribution
 The following two figures illustrate that, under the null hypothesis, the Ebrahim-Farrington test statistic is asymptotically standard normal for both single-predictor and multiple-predictor logistic regression models. This property holds even in sparse data settings, confirming the theoretical foundation of the test and supporting its use for model assessment. (see (Ebrahim,2025))
@@ -421,8 +421,8 @@ The following two figures illustrate that, under the null hypothesis, the Ebrahi
 
 These results demonstrate that the Ebrahim-Farrington test maintains the correct type I error rate and its statistic converges to the standard normal distribution as sample size increases, validating its asymptotic properties.
 
-![Farrington CDF Comparison (U-3_3)](vignettes/farrington_cdf_comparison_u_3_3.png)
-![Farrington CDF Comparison (multi_indep)](vignettes/farrington_cdf_comparison_multi_indep.png)
+![Farrington CDF Comparison (U-3_3)](man/figures/farrington_cdf_comparison_u_3_3.png)
+![Farrington CDF Comparison (multi_indep)](man/figures/farrington_cdf_comparison_multi_indep.png)
 
 ## Performance: parallel and GPU
 

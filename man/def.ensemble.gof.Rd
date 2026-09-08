@@ -60,13 +60,16 @@ independence and are offered for comparison only; under positive dependence
 should be calibrated by simulation before use (not done here).
 }
 \examples{
-set.seed(1)
-n <- 500
-x <- runif(n, -3, 3)
-y <- rbinom(n, 1, 1 / (1 + exp(-(0.6 * x))))
-fit <- glm(y ~ x, family = binomial())
-def.ensemble.gof(fit)                 # CCT of the three DEF bases
-def.ensemble.gof(fit, add_ef = TRUE)  # add the omnibus EF
+data("gof_demo", package = "ebrahim.gof")
+wrong <- glm(outcome ~ age + bmi + sex + treatment,
+             data = gof_demo, family = binomial())
+def.ensemble.gof(wrong)                 # CCT of the three DEF bases
+def.ensemble.gof(wrong, add_ef = TRUE)  # add the omnibus EF
+
+## the corrected model, for contrast
+right <- glm(outcome ~ poly(age, 2) + bmi + sex + treatment,
+             data = gof_demo, family = binomial())
+def.ensemble.gof(right)
 
 }
 \references{

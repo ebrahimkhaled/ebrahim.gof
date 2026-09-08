@@ -101,7 +101,10 @@ distribution. Under sparse data -- almost every covariate pattern unique --
 the classical chi-square references fail, which is the situation this package
 was written for.
 
-\strong{Global and standardized statistics.} These compare observed and
+Every row the battery returns carries a \code{Family} label, and the sections below are
+those labels: find the label in the output, then the section of the same name here.
+
+\strong{Global and Standardized statistics} (\code{Family} "Global", "Standardized"). These compare observed and
 fitted responses over the whole sample without grouping.
 \itemize{
   \item \code{Pearson} -- the sum of squared Pearson residuals. Its
@@ -109,8 +112,13 @@ fitted responses over the whole sample without grouping.
     sparse data that assumption fails and the test is unreliable in both
     directions; it is reported for completeness and comparison, not for use.
   \item \code{Deviance} -- the likelihood-ratio statistic against the
-    saturated model. It carries the same sparse-data problem as
-    \code{Pearson}, and in practice is the more conservative of the two.
+    saturated model. On ungrouped binary data its expectation depends on the
+    fitted risks alone and not on whether they agree with the responses, so it
+    sits above \eqn{n - p} when the fitted risks are near one half and far below
+    it when they are extreme; the direction of the error is set by the risk
+    profile rather than by the fit. On a correctly specified model with
+    mid-range risks it therefore rejects almost always. It is reported for
+    completeness and comparison, not for use.
   \item \code{Osius-Rojek} -- rescues the Pearson statistic by standardizing
     it with its asymptotic mean and variance computed under increasing sample
     size rather than increasing cell counts, giving a normal reference that
@@ -131,7 +139,7 @@ fitted responses over the whole sample without grouping.
     specification rather than on calibration alone.
 }
 
-\strong{Partition tests.} These sort observations by fitted risk, group them,
+\strong{Partition tests} (\code{Family} "Partition"). These sort observations by fitted risk, group them,
 and compare observed with expected counts group by group.
 \itemize{
   \item \code{HL} -- the Hosmer-Lemeshow test, the field's default: G groups
@@ -160,7 +168,7 @@ and compare observed with expected counts group by group.
     \code{control = list("Lai-Liu-HL" = list(n0 = ..., k = ...))}.
 }
 
-\strong{Directed tests.} Rather than asking whether anything is wrong, these
+\strong{Directed tests} (\code{Family} "Directed"). Rather than asking whether anything is wrong, these
 ask whether a \emph{particular} shape of departure is present, which buys
 power when the guess is right.
 \itemize{
@@ -179,7 +187,7 @@ power when the guess is right.
     level in sparse designs; the one-sided components are better behaved.
 }
 
-\strong{Covariate-space tests.} These partition the covariates themselves
+\strong{Covariate-space tests} (\code{Family} "Covariate-space"). These partition the covariates themselves
 rather than the fitted risk, so they can see structure that risk-ordering
 averages away -- an omitted interaction, for instance, need not disturb the
 marginal calibration at all.
@@ -197,7 +205,7 @@ marginal calibration at all.
     note when there is none.
 }
 
-\strong{Smoothing tests.} These replace grouping with a smoother, so nothing
+\strong{Smoothing and GAM tests} (\code{Family} "Smoothing", "GAM"). These replace grouping with a smoother, so nothing
 is lost to an arbitrary choice of bin edges.
 \itemize{
   \item \code{le-Cessie} -- the le Cessie-van Houwelingen score test, which
@@ -212,7 +220,7 @@ is lost to an arbitrary choice of bin edges.
     boundaries fall. These need \pkg{mgcv}.
 }
 
-\strong{Resampling tests.} When a statistic has no usable closed-form
+\strong{Resampling tests} (\code{Family} "Bootstrap"). When a statistic has no usable closed-form
 reference, these build one by simulation.
 \itemize{
   \item \code{Stute-Zhu} -- a cumulative-residual test: residuals are
@@ -230,7 +238,7 @@ reference, these build one by simulation.
     \pkg{BAGofT} package.
 }
 
-\strong{Calibration tests.} These come from clinical prediction, and ask
+\strong{Calibration tests} (\code{Family} "Calibration"). These come from clinical prediction, and ask
 directly whether predicted risks match observed frequencies.
 \itemize{
   \item \code{GiViTI}, \code{GiViTI-external} -- the GiViTI polynomial
@@ -250,7 +258,7 @@ directly whether predicted risks match observed frequencies.
     conservative.
 }
 
-\strong{Combinations.} Rather than choosing one test, these pool several.
+\strong{Combinations} (\code{Family} "Ensemble"). Rather than choosing one test, these pool several.
 \itemize{
   \item \code{Ensemble.Vote(3DEF)} and \code{Ensemble.Univ(3DEF+EF)} -- Cauchy
     combinations of the directed tests, and of those plus the omnibus EF. The
@@ -272,9 +280,15 @@ reproduces the implementation used in the original simulation study:
 installed), \code{Copas-RSS} follows the \pkg{rms} gof residual, and
 \code{HL} follows \code{ResourceSelection::hoslem.test}.
 
-For goodness of fit after \emph{penalized} fitting, where none of the above
-references are valid because the coefficients are shrunk, see
-\code{\link{shrink.gof}}.
+\strong{Procedures the battery does not select.} Some of the package's own methods are
+not part of the panel and are called directly on the fitted model, their p-values read
+beside it: \code{\link{deepgof1}} and \code{\link{legoft}} are of that kind. Naming
+them in \code{tests} does not reach them.
+
+For goodness of fit after \emph{penalized} fitting, where none of the above references
+are valid because the coefficients are shrunk, use \code{\link{calm.gof}} or
+\code{\link{shrink.gof}}. These take the design, the response and the penalty rather
+than a fitted \code{glm}, so they are called separately from the battery.
 }
 \note{
 \strong{Grouped vs sparse forms.} \code{Pearson}, \code{Deviance} and

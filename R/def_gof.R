@@ -55,14 +55,19 @@
 #' @author Ebrahim Khaled Ebrahim \email{ebrahimkhaled@@alexu.edu.eg}
 #'
 #' @examples
-#' set.seed(1)
-#' n <- 500
-#' x <- runif(n, -3, 3)
-#' y <- rbinom(n, 1, 1 / (1 + exp(-(0.6 * x))))
-#' fit <- glm(y ~ x, family = binomial())
-#' def.gof(fit)                       # default poly3 basis
-#' def.gof(fit, basis = "stukel")     # tail-shape basis
-#' def.gof(fit, basis = "ensemble")   # combine all three (CCT)
+#' ## gof_demo carries a documented smooth calibration misfit: the risk bends in age,
+#' ## and a model linear in age misses it. The point of a directed test is to see that.
+#' data("gof_demo", package = "ebrahim.gof")
+#' wrong <- glm(outcome ~ age + bmi + sex + treatment,
+#'              data = gof_demo, family = binomial())
+#' def.gof(wrong)                       # default poly3 basis
+#' def.gof(wrong, basis = "stukel")     # tail-shape basis
+#' def.gof(wrong, basis = "ensemble")   # combine all three (CCT)
+#'
+#' ## give the model the term it was missing, and the same test stands down
+#' right <- glm(outcome ~ poly(age, 2) + bmi + sex + treatment,
+#'              data = gof_demo, family = binomial())
+#' def.gof(right)
 #'
 #' @seealso \code{\link{ef.gof}}, \code{\link{def.ensemble.gof}}.
 #' @importFrom stats fitted predict model.matrix qlogis poly pchisq

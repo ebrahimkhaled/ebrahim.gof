@@ -110,7 +110,9 @@
 #' The test is a small-sample instrument. Against the classical partition tests it gains
 #' most at \eqn{n} of 50 to 200 and the gain decays as \eqn{n} grows; because the grid uses
 #' only two covariates, misfit that lives off those axes is harder for it to see than for
-#' covariate-space or smoothing tests. See \code{\link{run.all.gof}} to run it alongside
+#' covariate-space or smoothing tests. It is not one of the tests
+#' \code{\link{run.all.gof}} selects: call it directly on the same fitted model and read its
+#' p-value beside the panel. See \code{\link{run.all.gof}} for
 #' the classical battery.
 #'
 #' @param fit a fitted \code{glm} with \code{family = binomial()} and at least two
@@ -130,8 +132,9 @@
 #' p-value.
 #'
 #' @references
-#' Ebrahim, E.K. (2026). DeepGOF-1: a pretrained convolutional goodness-of-fit test for
-#' logistic regression with a computable consistency certificate.
+#' Ebrahim EK (2026). "DeepGOF-1: A Pretrained Convolutional Goodness-of-Fit Test for
+#' Logistic Regression with a Computable Consistency Certificate." Manuscript under review.
+#' Reproduction materials and frozen weights: \doi{10.5281/zenodo.22113220}
 #'
 #' Besag, J. and Clifford, P. (1989). Generalized Monte Carlo significance tests.
 #' \emph{Biometrika} \strong{76}, 633--642. \doi{10.1093/biomet/76.4.633}
