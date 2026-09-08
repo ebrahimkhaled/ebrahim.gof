@@ -14,21 +14,33 @@ dependency changed.
 
 ## Test environments
 
-* local: Windows 11, R 4.4.1, `R CMD check --as-cran`
-* win-builder, R-devel and R-release  <!-- PENDING: run devtools::check_win_devel() and
-  check_win_release(), then replace this line with the result before submitting -->
+* local: Windows 11, R 4.4.1, `R CMD check --as-cran` -- 1 note (see below)
+* win-builder, R-devel (2026-09-06 r90498 ucrt) -- 1 note (see below); install 26s, check 217s
+* win-builder, R-release  <!-- PENDING: paste the result when the second mail arrives -->
 
 ## R CMD check results
 
-0 errors | 0 warnings | 1 note
+0 errors | 0 warnings | 1 note on each environment, and they are different notes.
 
-The note is
+On win-builder R-devel:
+
+    checking CRAN incoming feasibility ... NOTE
+    Possibly misspelled words in DESCRIPTION:
+      prepivoting (29:26)
+
+"Prepivoting" is the standard term for Beran's bootstrap transformation, from Beran (1987),
+"Prepivoting to reduce level error of confidence sets", Biometrika 74(3), 457-468. It is spelled
+correctly and is the name of the procedure `shrink.gof()` implements. It is listed in
+`inst/WORDLIST`, which the `spelling` package honours but the incoming check's own aspell run does
+not.
+
+Locally:
 
     checking for future file timestamps ... NOTE
     unable to verify current time
 
-which is the check machine being unable to reach the time server it uses, not a property of the
-package. It does not appear on win-builder.
+which is this machine being unable to reach the time server it uses, not a property of the package.
+It does not appear on win-builder.
 
 ## Reverse dependencies
 
