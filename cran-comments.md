@@ -17,7 +17,9 @@ dependency changed.
 * local: Windows 11, R 4.4.1, `R CMD check --as-cran` -- 1 note (see below)
 * GitHub Actions: Windows-release, macOS-release, Ubuntu devel/release/oldrel-1 -- all passing
 * win-builder, R-devel (2026-09-06 r90498 ucrt) -- 1 note (see below); install 5s, check 99s
-* win-builder, R-release  <!-- PENDING: paste the result of the run on THIS tarball -->
+* win-builder, R-release -- submitted, but the result mail has not been delivered to the
+  maintainer address on three attempts; the R-release platform is covered by the GitHub
+  Actions Windows-release job above, which passes
 
 ## R CMD check results
 
