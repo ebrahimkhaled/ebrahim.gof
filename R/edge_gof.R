@@ -20,11 +20,13 @@
 #'   \code{p_value}, as documented in \code{\link{def.gof}}.
 #'
 #' @references
-#' Ebrahim, E. K. and El-Kotory, A. (2026). EDGE: a closed-form directed
-#' goodness-of-fit test for sparse logistic regression. Manuscript.
+#' Ebrahim EK, El-Kotory A (2026). "EDGE: A Closed-Form Directed Goodness-of-Fit
+#' Test for Sparse Logistic Regression." arXiv:2608.20511 [stat.ME].
+#' \doi{10.48550/arXiv.2608.20511}
 #'
-#' Ebrahim, E. K. and El-Kotory, A. (2026). A directional Hosmer-Lemeshow
-#' goodness-of-fit test for sparse logistic regression. arXiv:2607.15454.
+#' Ebrahim EK, El-Kotory A (2026). "A Directional Hosmer-Lemeshow Goodness-of-Fit
+#' Test for Sparse Logistic Regression." arXiv:2607.15454 [stat.ME].
+#' \doi{10.48550/arXiv.2607.15454}
 #'
 #' @author Ebrahim Khaled Ebrahim \email{ebrahimkhaled@@alexu.edu.eg}
 #'

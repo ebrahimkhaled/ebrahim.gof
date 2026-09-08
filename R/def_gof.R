@@ -44,8 +44,13 @@
 #'   \code{\link{def.ensemble.gof}}.
 #'
 #' @references
-#' Ebrahim, K. E. and El-Kotory, A. Omnibus versus Directed Goodness-of-Fit Tests
-#' for Sparse Data in Binary Logistic Regression (companion paper).
+#' Ebrahim EK, El-Kotory A (2026). "A Directional Hosmer-Lemeshow Goodness-of-Fit
+#' Test for Sparse Logistic Regression." arXiv:2607.15454 [stat.ME].
+#' \doi{10.48550/arXiv.2607.15454}
+#'
+#' Ebrahim EK, El-Kotory A (2026). "EDGE: A Closed-Form Directed Goodness-of-Fit
+#' Test for Sparse Logistic Regression." arXiv:2608.20511 [stat.ME].
+#' \doi{10.48550/arXiv.2608.20511}
 #'
 #' @author Ebrahim Khaled Ebrahim \email{ebrahimkhaled@@alexu.edu.eg}
 #'

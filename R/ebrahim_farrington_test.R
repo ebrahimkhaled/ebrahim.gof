@@ -62,9 +62,21 @@
 #' }
 #'
 #' @references
-#' Farrington, C. P. (1996). On Assessing Goodness of Fit of Generalized Linear Models to Sparse Data. *Journal of the Royal Statistical Society. Series B (Methodological)*, 58(2), 349-360.
-#' Ebrahim, K. E. (2025). Goodness-of-Fits Tests and Calibration Machine Learning Algorithms for Logistic Regression Model with Sparse Data. *Master's Thesis*, Alexandria University.
-#' Hosmer, D. W., & Lemeshow, S. (1980). A goodness-of-fit test for the multiple logistic regression model. *Communications in Statistics - Theory and Methods*, 9(10), 1043–1069. https://doi.org/10.1080/03610928008827941
+#' Farrington CP (1996). "On Assessing Goodness of Fit of Generalized Linear Models
+#' to Sparse Data." \emph{Journal of the Royal Statistical Society, Series B},
+#' \bold{58}(2), 349-360. \doi{10.1111/j.2517-6161.1996.tb02086.x}
+#'
+#' Hosmer DW, Lemeshow S (1980). "A goodness-of-fit test for the multiple logistic
+#' regression model." \emph{Communications in Statistics - Theory and Methods},
+#' \bold{9}(10), 1043-1069. \doi{10.1080/03610928008827941}
+#'
+#' Ebrahim EK, El-Kotory A (2026). "A Directional Hosmer-Lemeshow Goodness-of-Fit
+#' Test for Sparse Logistic Regression." arXiv:2607.15454 [stat.ME].
+#' \doi{10.48550/arXiv.2607.15454}
+#'
+#' Ebrahim EK (2026). "Goodness-of-Fit Tests and Calibration Machine-Learning
+#' Algorithms for Logistic Regression with Sparse Data." M.Sc. thesis, Alexandria
+#' University. arXiv:2608.11140 [stat.ME]. \doi{10.48550/arXiv.2608.11140}
 #'
 #' @author Ebrahim Khaled Ebrahim \email{ebrahimkhaled@@alexu.edu.eg}
 #'

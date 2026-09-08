@@ -476,7 +476,8 @@ Goodness-of-Fit Test for Sparse Logistic Regression." arXiv:2607.15454
 
 Ebrahim EK, El-Kotory A (2026). "Benchmarking Goodness-of-Fit and Calibration
 Algorithms for Logistic Regression Classifiers: A Large-Scale Simulation
-Study under Sparse Data." arXiv:2607.16344 [stat.ME].
+Study under Sparse Data." \emph{Journal of Intelligent Computing and Data
+Science}, in press. arXiv:2607.16344 [stat.ME].
 \doi{10.48550/arXiv.2607.16344} Reproduction materials:
 \doi{10.5281/zenodo.21286171}
 

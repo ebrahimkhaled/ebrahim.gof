@@ -185,63 +185,41 @@ control.
 
 ## Power Analysis Example
 
-Let's examine the power of the test to detect model misspecification:
+How much does directing the test buy? The comparison below runs each test on the
+*same* simulated datasets, so the difference between the columns is the tests'
+behaviour and not the noise between two separate runs. The data carry a quadratic
+term; the fitted model omits it.
 
 ```{r}
-# Function to simulate power under model misspecification
-simulate_power <- function(n, beta_quad = 0.1, n_sims = 100, G = 10) {
-  rejections_ef <- 0
-  rejections_hl <- 0
-  
-  for (i in 1:n_sims) {
-    # Generate data with quadratic term (true model)
-    x <- runif(n, -2, 2)
-    linpred_true <- 0 + x + beta_quad * x^2
-    prob_true <- plogis(linpred_true)
-    y <- rbinom(n, 1, prob_true)
-    
-    # Fit misspecified linear model (omitting quadratic term)
-    model_mis <- glm(y ~ x, family = binomial())
-    pred_probs <- fitted(model_mis)
-    
-    # Ebrahim-Farrington test
-    ef_test <- ef.gof(y, pred_probs, G = G)
-    if (ef_test$p_value < 0.05) rejections_ef <- rejections_ef + 1
-    
-    # Hosmer-Lemeshow test (if available)
-    if (requireNamespace("ResourceSelection", quietly = TRUE)) {
-      hl_test <- ResourceSelection::hoslem.test(y, pred_probs, g = G)
-      if (hl_test$p.value < 0.05) rejections_hl <- rejections_hl + 1
-    }
+set.seed(2026)
+
+power_paired <- function(n, beta_quad = 0.15, n_sims = 200, G = 10) {
+  have_rs <- requireNamespace("ResourceSelection", quietly = TRUE)
+  rej <- c(EF = 0, HL = 0)
+  for (i in seq_len(n_sims)) {
+    x    <- runif(n, -2, 2)
+    y    <- rbinom(n, 1, plogis(x + beta_quad * x^2))
+    fit  <- glm(y ~ x, family = binomial())      # misspecified: no quadratic term
+    p    <- fitted(fit)
+
+    # both tests see this same dataset
+    if (ef.gof(y, p, G = G)$p_value < 0.05) rej["EF"] <- rej["EF"] + 1
+    if (have_rs &&
+        ResourceSelection::hoslem.test(y, p, g = G)$p.value < 0.05) rej["HL"] <- rej["HL"] + 1
   }
-  
-  power_ef <- rejections_ef / n_sims
-  power_hl <- if (requireNamespace("ResourceSelection", quietly = TRUE)) {
-    rejections_hl / n_sims
-  } else {
-    NA
-  }
-  
-  return(list(power_ef = power_ef, power_hl = power_hl))
+  c(n = n, EF = unname(rej["EF"]) / n_sims,
+    HL = if (have_rs) unname(rej["HL"]) / n_sims else NA_real_)
 }
 
-# Calculate power for different sample sizes
-sample_sizes <- c(200, 500, 1000)
-power_results <- data.frame(
-  n = sample_sizes,
-  EbrahimFarrington_Power = sapply(sample_sizes, function(n) {
-    simulate_power(n, beta_quad = 0.15, n_sims = 50)$power_ef
-  })
-)
-
-if (requireNamespace("ResourceSelection", quietly = TRUE)) {
-  power_results$HosmerLemeshow_Power <- sapply(sample_sizes, function(n) {
-    simulate_power(n, beta_quad = 0.15, n_sims = 50)$power_hl
-  })
-}
-
-print(power_results)
+power_results <- as.data.frame(do.call(rbind, lapply(c(200, 500, 1000), power_paired)))
+print(power_results, row.names = FALSE)
 ```
+
+Read the table rather than a headline: on this misfit the two are close at the
+smaller sample sizes, and any separation appears only as `n` grows. The directed
+tests of the next section are where the gain against a *shape* departure shows up;
+the omnibus EF test is built for breadth, not for beating Hosmer-Lemeshow on a
+departure that grouping already exposes.
 
 ## Handling Grouped Data (Original Farrington Test)
 
