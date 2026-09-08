@@ -15,8 +15,8 @@ dependency changed.
 ## Test environments
 
 * local: Windows 11, R 4.4.1, `R CMD check --as-cran` -- 1 note (see below)
-* win-builder, R-devel (2026-09-06 r90498 ucrt) -- 1 note (see below); install 26s, check 217s
-* win-builder, R-release  <!-- PENDING: paste the result when the second mail arrives -->
+* win-builder, R-devel  <!-- PENDING: paste the result of the run on THIS tarball -->
+* win-builder, R-release  <!-- PENDING: paste the result of the run on THIS tarball -->
 
 ## R CMD check results
 
