@@ -596,8 +596,12 @@ run.all.gof <- function(object, predicted_probs = NULL, X = NULL,
 
   # ensemble rows (only when a model is available and running the full set)
   if (ctx$has_model && identical(tests, "all")) {
-    v3 <- tryCatch(def.ensemble.gof(ctx$model, G = G)$p_value, error = function(e) NA_real_)
-    vu <- tryCatch(def.ensemble.gof(ctx$model, add_ef = TRUE, G = G)$p_value, error = function(e) NA_real_)
+    # a few-events warning is already in the Note of the directed rows
+    quiet <- function(expr)
+      withCallingHandlers(expr, def_few_events = function(w) invokeRestart("muffleWarning"))
+    v3 <- tryCatch(quiet(def.ensemble.gof(ctx$model, G = G))$p_value, error = function(e) NA_real_)
+    vu <- tryCatch(quiet(def.ensemble.gof(ctx$model, add_ef = TRUE, G = G))$p_value,
+                   error = function(e) NA_real_)
     out <- rbind(out, data.frame(
       Test = c("Ensemble.Vote(3DEF)", "Ensemble.Univ(3DEF+EF)"), Family = "Ensemble",
       Statistic = NA_real_, df = NA_real_, p_value = c(v3, vu),
@@ -945,10 +949,17 @@ gof_def <- function(ctx, opts = list()) {
   b  <- if (is.null(opts$basis))   "poly3" else opts$basis
   wt <- if (is.null(opts$weights)) "unit"  else opts$weights
   G  <- if (is.null(opts$G)) ctx$G else if (identical(opts$G, "auto")) .def_auto_G(ctx$n) else opts$G
-  r  <- if (ctx$has_model) def.gof(ctx$model, G = G, basis = b, weights = wt)
-        else suppressWarnings(def.gof(ctx$y, ctx$ph, X = ctx$X, G = G, basis = b, weights = wt))
+  few <- NULL                                      # def.gof's few-events warning goes to Note
+  keep_few <- function(w) {
+    few <<- sub("^def.gof: ", "", conditionMessage(w))
+    invokeRestart("muffleWarning")
+  }
+  r  <- if (ctx$has_model)
+          withCallingHandlers(def.gof(ctx$model, G = G, basis = b, weights = wt), def_few_events = keep_few)
+        else suppressWarnings(withCallingHandlers(
+          def.gof(ctx$y, ctx$ph, X = ctx$X, G = G, basis = b, weights = wt), def_few_events = keep_few))
   note <- c(if (r$Method == "score") "score form",
-            if (identical(opts$G, "auto")) sprintf("G = %d (auto)", as.integer(G)))
+            if (identical(opts$G, "auto")) sprintf("G = %d (auto)", as.integer(G)), few)
   list(Statistic = r$Test_Statistic, df = r$df, p_value = r$p_value,
        Note = paste(note, collapse = "; "))
 }

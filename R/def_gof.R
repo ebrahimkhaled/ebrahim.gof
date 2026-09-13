@@ -36,6 +36,10 @@
 #' the score form keeps a shape on the logit scale from losing its signal when the
 #' group variances differ strongly, as they do at high discrimination.
 #'
+#' With fewer events (or fewer non-events) than groups, the grouped reference
+#' distribution is unreliable. The p-value is still returned, with a warning;
+#' a smaller \code{G} avoids it.
+#'
 #' @param object A fitted binary logistic \code{\link[stats]{glm}}, or a binary
 #'   (0/1) response vector \code{y} (then supply \code{predicted_probs}).
 #' @param predicted_probs Numeric predicted probabilities; required when
@@ -148,6 +152,7 @@ def.gof <- function(object, predicted_probs = NULL, X = NULL, G = 10,
   if (length(ph) != n) stop("'object' (y) and 'predicted_probs' lengths differ.")
   if (identical(G, "auto")) G <- .def_auto_G(n)
   if (G > n) stop("'G' cannot exceed the number of observations.")
+  if (min(sum(y), n - sum(y)) < G) .def_warn_few_events(sum(y), n, G)
 
   V <- ph * (1 - ph)
   w <- dmu^2 / V
@@ -240,6 +245,18 @@ def.gof <- function(object, predicted_probs = NULL, X = NULL, G = 10,
 
 # Internal: the number of groups for G = "auto", the partition rule of the EDGE paper.
 .def_auto_G <- function(n) max(10, round(n / 25))
+
+# Internal: warn that the grouped reference is unreliable with fewer events (or non-events)
+# than groups. The warning has its own class, so the battery can put it in Note and the
+# ensemble can raise it once rather than once per basis.
+.def_warn_few_events <- function(ne, n, G) {
+  what <- if (ne <= n - ne) "events" else "non-events"
+  msg  <- sprintf(paste("def.gof: %d %s for G = %s groups; the grouped reference distribution",
+                        "is unreliable with fewer %s than groups."),
+                  as.integer(min(ne, n - ne)), what, format(G), what)
+  warning(structure(class = c("def_few_events", "warning", "condition"),
+                    list(message = msg, call = NULL)))
+}
 
 # Internal: p-value of S under sum_j lambda_j chi^2_1.
 .def_pvalue <- function(S, lam, method) {

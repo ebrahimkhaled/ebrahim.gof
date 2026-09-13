@@ -87,6 +87,10 @@ to a \eqn{\chi^2} law on the rank of that information, read from it after
 scaling to a correlation matrix. The unit form is the statistic as published;
 the score form keeps a shape on the logit scale from losing its signal when the
 group variances differ strongly, as they do at high discrimination.
+
+With fewer events (or fewer non-events) than groups, the grouped reference
+distribution is unreliable. The p-value is still returned, with a warning;
+a smaller \code{G} avoids it.
 }
 \examples{
 ## gof_demo carries a documented smooth calibration misfit: the risk bends in age,

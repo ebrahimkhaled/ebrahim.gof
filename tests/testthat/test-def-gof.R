@@ -98,6 +98,27 @@ test_that("G = 'auto' is max(10, round(n / 25))", {
   expect_match(res$Note, "score form")
 })
 
+test_that("def.gof warns, but still returns a p-value, with fewer events than groups", {
+  set.seed(9)
+  x <- sort(runif(300, -3, 3))
+  y <- integer(300); y[sample(251:300, 7)] <- 1L                   # 7 events
+  fit <- glm(y ~ x, family = binomial())
+  expect_warning(res <- def.gof(fit), "unreliable with fewer events than groups")
+  expect_true(is.finite(res$p_value))
+  expect_silent(def.gof(fit, G = 5))
+  yy <- 1L - y
+  expect_warning(def.gof(glm(yy ~ x, family = binomial()), basis = "sym"), "fewer non-events than groups")
+
+  count <- function(expr) {
+    k <- 0L
+    suppressWarnings(withCallingHandlers(expr, def_few_events = function(w) k <<- k + 1L))
+    k
+  }
+  expect_equal(count(def.ensemble.gof(fit)), 1L)                    # once, not once per basis
+  expect_equal(count(bat <- run.all.gof(fit, include_slow = FALSE, install = "no")), 0L)
+  expect_match(bat$Note[bat$Test == "DEF.poly3"], "fewer events than groups")
+})
+
 test_that("def.gof errors on bad input", {
   set.seed(11)
   expect_error(def.gof(glm(rpois(30, 1) ~ rnorm(30), family = poisson())), "binomial")

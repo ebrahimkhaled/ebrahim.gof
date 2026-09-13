@@ -80,10 +80,16 @@ def.ensemble.gof <- function(object, predicted_probs = NULL, X = NULL,
     G <- .def_auto_G(if (inherits(object, "glm")) length(object$y) else length(object))
 
   # component DEF p-values (Satterthwaite default); flexible input threaded through.
-  pv <- vapply(components, function(b) {
+  # def.gof's few-events warning is raised once here, not once per basis.
+  few <- NULL
+  pv <- withCallingHandlers(vapply(components, function(b) {
     def.gof(object, predicted_probs = predicted_probs, X = X,
             G = G, basis = b, method = "satterthwaite", weights = weights)$p_value
-  }, numeric(1))
+  }, numeric(1)), def_few_events = function(w) {
+    few <<- w
+    invokeRestart("muffleWarning")
+  })
+  if (!is.null(few)) warning(few)
   names(pv) <- components
 
   if (isTRUE(add_ef)) {

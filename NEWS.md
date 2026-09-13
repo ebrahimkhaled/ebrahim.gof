@@ -46,6 +46,11 @@
   In the battery, `control = list(DEF.poly3 = list(G = "auto"))` applies it to one directed row, and
   `Note` records the number of groups used.
 
+* `def.gof()`, and so `edge.gof()` and `def.ensemble.gof()`, now warn when there are fewer events,
+  or fewer non-events, than groups. The p-value is still returned, but some groups then hold almost
+  no events and the grouped reference distribution is unreliable. `def.ensemble.gof()` warns once
+  rather than once per basis, and in `run.all.gof()` the directed rows report it in `Note` instead.
+
 ## Documentation
 
 * `?run.all.gof` said that Stukel's two-parameter form does not always hold its nominal level. That
