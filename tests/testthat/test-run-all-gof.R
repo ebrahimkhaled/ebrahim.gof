@@ -179,3 +179,75 @@ test_that("run.all.gof flags a cloglog link misfit", {
   expect_lt(res$p_value[res$Test == "EF"], 0.05)
   expect_lt(res$p_value[res$Test == "Stukel"], 0.05)
 })
+
+## Stukel's two directions, built the way gof_stukel builds them, for the reference fits below
+stukel_cols <- function(fit) {
+  eta <- predict(fit, type = "link"); ph <- fitted(fit)
+  cbind(za = 0.5 * eta^2 * (ph >= 0.5), zb = -0.5 * eta^2 * (ph < 0.5))
+}
+
+test_that("Stukel is the joint score test and agrees with anova(test = 'Rao')", {
+  fit <- make_fit()
+  res <- run.all.gof(fit, tests = "Stukel")
+  expect_equal(res$Statistic, 1.270855, tolerance = 1e-5)
+  expect_equal(res$df, 2)
+  expect_equal(res$p_value, 0.5297091, tolerance = 1e-5)
+  expect_identical(res$Note, "")
+  Z <- stukel_cols(fit); y <- fit$y; X <- model.matrix(fit)
+  rao <- anova(glm(y ~ X - 1, family = binomial()), glm(y ~ X + Z - 1, family = binomial()),
+               test = "Rao")$Rao[2]
+  expect_equal(res$Statistic, rao, tolerance = 1e-5)
+})
+
+test_that("the marginal Stukel sum is kept for reproducing 2.7.0 and earlier", {
+  skip_if_not_installed("statmod")
+  res <- run.all.gof(make_fit(), tests = "Stukel", control = list(Stukel = list(form = "marginal")))
+  expect_equal(res$Statistic, 0.394475, tolerance = 1e-5)
+  expect_equal(res$df, 2)
+  expect_equal(res$p_value, 0.8209956, tolerance = 1e-5)
+  expect_match(res$Note, "marginal")
+})
+
+test_that("Stukel falls back to one df when every fitted risk is on one side of 0.5", {
+  set.seed(5); x <- runif(400, -3, 3); y <- rbinom(400, 1, plogis(-4 + 0.5 * x))
+  lo <- run.all.gof(glm(y ~ x, family = binomial()), tests = "Stukel")
+  expect_equal(lo$df, 1)
+  expect_equal(lo$Statistic, 0.6245748, tolerance = 1e-5)
+  expect_equal(lo$p_value, 0.4293523, tolerance = 1e-5)
+  expect_match(lo$Note, "no fitted risk at or above 0.5")
+  set.seed(6); x <- runif(400, -3, 3); y <- rbinom(400, 1, plogis(4 + 0.5 * x))
+  hi <- run.all.gof(glm(y ~ x, family = binomial()), tests = "Stukel")
+  expect_equal(hi$df, 1)
+  expect_equal(hi$Statistic, 0.0356688, tolerance = 1e-4)
+  expect_equal(hi$p_value, 0.8502010, tolerance = 1e-5)
+  expect_match(hi$Note, "no fitted risk below 0.5")
+})
+
+test_that("Stukel form = 'lr' is the deviance drop of the augmented fit", {
+  fit <- make_fit()
+  res <- run.all.gof(fit, tests = "Stukel", control = list(Stukel = list(form = "lr")))
+  Z <- stukel_cols(fit); y <- fit$y; X <- model.matrix(fit)
+  f1 <- glm(y ~ X + Z - 1, family = binomial())
+  expect_equal(res$Statistic, deviance(fit) - deviance(f1), tolerance = 1e-6)
+  expect_equal(res$df, 2)
+  expect_equal(res$p_value, pchisq(res$Statistic, 2, lower.tail = FALSE), tolerance = 1e-10)
+
+  set.seed(5); x <- runif(400, -3, 3); y <- rbinom(400, 1, plogis(-4 + 0.5 * x))
+  lo  <- glm(y ~ x, family = binomial())
+  zb  <- stukel_cols(lo)[, "zb"]
+  res <- run.all.gof(lo, tests = "Stukel", control = list(Stukel = list(form = "lr")))
+  expect_equal(res$df, 1)
+  expect_equal(res$Statistic, deviance(lo) - deviance(glm(y ~ x + zb, family = binomial())),
+               tolerance = 1e-6)
+  expect_match(res$Note, "0.5")
+})
+
+test_that("the joint and LR Stukel forms refuse a non-logit fit", {
+  set.seed(3); x <- runif(300, -3, 3)
+  fit <- glm(rbinom(300, 1, pnorm(0.5 * x)) ~ x, family = binomial("probit"))
+  for (f in c("joint", "lr")) {
+    res <- run.all.gof(fit, tests = "Stukel", control = list(Stukel = list(form = f)))
+    expect_true(is.na(res$p_value))
+    expect_match(res$Note, "logit")
+  }
+})

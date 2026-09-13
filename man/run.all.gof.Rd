@@ -66,7 +66,9 @@ nothing is ever installed, regardless of this setting. See
 \item{control}{Optional named list of per-test options. Recognized entries:
 \code{"Stute-Zhu" = list(B = ...)} (bootstrap replicates);
 \code{GiViTI = list(devel = "internal"/"external")};
-\code{"Lai-Liu-HL" = list(n0 = ..., k = ..., alpha = ...)}; and
+\code{"Lai-Liu-HL" = list(n0 = ..., k = ..., alpha = ...)};
+\code{Stukel = list(form = "joint"/"lr"/"marginal")} (the joint score test by
+default, the likelihood-ratio refit, or the pre-2.8.0 marginal sum); and
 \code{BAGofT = list(...)} which forwards to the binary adaptive test --
 \code{nsim} (resampling iterations; default 100), \code{nsplits}, \code{ne}
 (the estimation-split size), and the random-forest partitioner's tuning
@@ -180,11 +182,15 @@ power when the guess is right.
     calibration curve: a quadratic or cubic drift in the linear predictor, or
     Stukel's asymmetry-and-tail family. Powerful when the misfit resembles the
     chosen basis, weaker when it does not.
-  \item \code{Stukel} -- a two-degree-of-freedom score test against Stukel's
-    generalized logistic link, which nests the logit and lets the two tails
-    bend independently. It is aimed squarely at link misspecification. Note
-    that the combined two-parameter form does not always hold its nominal
-    level in sparse designs; the one-sided components are better behaved.
+  \item \code{Stukel} -- a score test against Stukel's generalized logistic
+    link, which nests the logit and lets the two tails bend independently. It
+    is aimed squarely at link misspecification. The two tail directions are
+    tested jointly on 2 degrees of freedom (1 when every fitted risk lies on
+    one side of one half, which \code{Note} then says). Up to 2.7.0 this row
+    summed two marginal statistics and was liberal; see NEWS.
+    \code{control = list(Stukel = list(form = "lr"))} gives the likelihood-ratio
+    test for the same two directions, and \code{form = "marginal"} the old sum,
+    for reproducing earlier results only.
 }
 
 \strong{Covariate-space tests} (\code{Family} "Covariate-space"). These partition the covariates themselves
@@ -275,10 +281,13 @@ directly whether predicted risks match observed frequencies.
 covariate space with k-means using a fixed internal seed, so results are
 reproducible and your own random stream is left untouched. Every bundled test
 reproduces the implementation used in the original simulation study:
-\code{Osius-Rojek} and \code{Stukel} follow \pkg{LogisticDx}'s
-\code{gof.glm} (Stukel via \code{statmod::glm.scoretest} when \pkg{statmod} is
-installed), \code{Copas-RSS} follows the \pkg{rms} gof residual, and
-\code{HL} follows \code{ResourceSelection::hoslem.test}.
+\code{Osius-Rojek} follows \pkg{LogisticDx}'s \code{gof.glm},
+\code{Copas-RSS} follows the \pkg{rms} gof residual, and
+\code{HL} follows \code{ResourceSelection::hoslem.test}. The exception is
+\code{Stukel}: its default joint score statistic agrees with
+\code{anova(..., test = "Rao")} for the augmented model, and only
+\code{form = "marginal"} reproduces \pkg{LogisticDx} (through
+\code{statmod::glm.scoretest} when \pkg{statmod} is installed).
 
 \strong{Procedures the battery does not select.} Some of the package's own methods are
 not part of the panel and are called directly on the fitted model, their p-values read

@@ -5,7 +5,8 @@
 # and run.all.gof() only ever reaches the installer in an interactive session.
 
 # Which optional package each test needs to run (only tests that are skipped
-# entirely when the package is absent; Stukel still runs without statmod).
+# entirely when the package is absent). Stukel needs no optional package: statmod is
+# used only by its form = "marginal", which has a base-R path without it.
 .GOF_TEST_PKGS <- list(
   "GiViTI"          = c("givitiR", "callr"),
   "GiViTI-external" = c("givitiR", "callr"),

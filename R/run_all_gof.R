@@ -99,11 +99,15 @@
 #'     calibration curve: a quadratic or cubic drift in the linear predictor, or
 #'     Stukel's asymmetry-and-tail family. Powerful when the misfit resembles the
 #'     chosen basis, weaker when it does not.
-#'   \item \code{Stukel} -- a two-degree-of-freedom score test against Stukel's
-#'     generalized logistic link, which nests the logit and lets the two tails
-#'     bend independently. It is aimed squarely at link misspecification. Note
-#'     that the combined two-parameter form does not always hold its nominal
-#'     level in sparse designs; the one-sided components are better behaved.
+#'   \item \code{Stukel} -- a score test against Stukel's generalized logistic
+#'     link, which nests the logit and lets the two tails bend independently. It
+#'     is aimed squarely at link misspecification. The two tail directions are
+#'     tested jointly on 2 degrees of freedom (1 when every fitted risk lies on
+#'     one side of one half, which \code{Note} then says). Up to 2.7.0 this row
+#'     summed two marginal statistics and was liberal; see NEWS.
+#'     \code{control = list(Stukel = list(form = "lr"))} gives the likelihood-ratio
+#'     test for the same two directions, and \code{form = "marginal"} the old sum,
+#'     for reproducing earlier results only.
 #' }
 #'
 #' \strong{Covariate-space tests} (\code{Family} "Covariate-space"). These partition the covariates themselves
@@ -194,10 +198,13 @@
 #' covariate space with k-means using a fixed internal seed, so results are
 #' reproducible and your own random stream is left untouched. Every bundled test
 #' reproduces the implementation used in the original simulation study:
-#' \code{Osius-Rojek} and \code{Stukel} follow \pkg{LogisticDx}'s
-#' \code{gof.glm} (Stukel via \code{statmod::glm.scoretest} when \pkg{statmod} is
-#' installed), \code{Copas-RSS} follows the \pkg{rms} gof residual, and
-#' \code{HL} follows \code{ResourceSelection::hoslem.test}.
+#' \code{Osius-Rojek} follows \pkg{LogisticDx}'s \code{gof.glm},
+#' \code{Copas-RSS} follows the \pkg{rms} gof residual, and
+#' \code{HL} follows \code{ResourceSelection::hoslem.test}. The exception is
+#' \code{Stukel}: its default joint score statistic agrees with
+#' \code{anova(..., test = "Rao")} for the augmented model, and only
+#' \code{form = "marginal"} reproduces \pkg{LogisticDx} (through
+#' \code{statmod::glm.scoretest} when \pkg{statmod} is installed).
 #'
 #' \strong{Procedures the battery does not select.} Some of the package's own methods are
 #' not part of the panel and are called directly on the fitted model, their p-values read
@@ -246,7 +253,9 @@
 #' @param control Optional named list of per-test options. Recognized entries:
 #'   \code{"Stute-Zhu" = list(B = ...)} (bootstrap replicates);
 #'   \code{GiViTI = list(devel = "internal"/"external")};
-#'   \code{"Lai-Liu-HL" = list(n0 = ..., k = ..., alpha = ...)}; and
+#'   \code{"Lai-Liu-HL" = list(n0 = ..., k = ..., alpha = ...)};
+#'   \code{Stukel = list(form = "joint"/"lr"/"marginal")} (the joint score test by
+#'   default, the likelihood-ratio refit, or the pre-2.8.0 marginal sum); and
 #'   \code{BAGofT = list(...)} which forwards to the binary adaptive test --
 #'   \code{nsim} (resampling iterations; default 100), \code{nsplits}, \code{ne}
 #'   (the estimation-split size), and the random-forest partitioner's tuning
@@ -932,29 +941,89 @@ gof_def <- function(ctx, opts = list()) {
   list(Statistic = r$Test_Statistic, df = r$df, p_value = r$p_value, Note = "")
 }
 
-# Stukel (1988) two-direction link test, "SstBoth". Matches the thesis simulation
-# (LogisticDx::gof.glm), which uses the Rao SCORE test (statmod::glm.scoretest) on
-# the sign-split squared-logit directions: the two marginal score-z values are
-# squared and summed to a chi-square_2 statistic.
+# Stukel (1988) test against the generalized logistic link. The two directions are the
+# sign-split squared logits of LogisticDx::gof.glm ("SstBoth"): za = eta^2/2 where the
+# fitted risk is at least one half, zb = -eta^2/2 where it is below.
+#
+# form = "joint" (the default from 2.8.0) is u'I^-1 u, with u = Z'(y - p) and I the
+# information of Z after adjusting for the fitted coefficients: the Rao score test for
+# adding both columns, the number anova(..., test = "Rao") gives. When no fitted risk lies
+# on one side of one half that column is identically zero, and the test is the 1-df score
+# test on the other; Note says so.
+#
+# form = "lr" refits the model with the non-zero columns added and refers the drop in
+# deviance to chi-square on the number of columns the refit could estimate.
+#
+# form = "marginal" is the statistic of 2.7.0 and earlier, and of LogisticDx: the two
+# marginal score z's squared and summed. Once the model is fitted the two directions are
+# correlated (about -0.71 when fitted risks fall on both sides of one half), so the sum is
+# not chi-square(2) and rejects about 7% of correct models at the 5% level. It is kept only
+# so that earlier results can be reproduced.
 gof_stukel <- function(ctx, opts = list()) {
+  form <- if (is.null(opts$form)) "joint" else match.arg(opts$form, c("joint", "marginal", "lr"))
   if (!ctx$has_model)
     return(list(Statistic = NA, df = NA, p_value = NA, Note = "needs a glm model"))
   ph  <- ctx$ph; y <- ctx$y; X <- ctx$X
   eta <- as.numeric(stats::predict(ctx$model, type = "link"))
   za  <- 0.5 * eta^2 * (ph >= 0.5)                 # Stukel direction, p >= 0.5
   zb  <- -0.5 * eta^2 * (ph < 0.5)                 # Stukel direction, p < 0.5
-  if (requireNamespace("statmod", quietly = TRUE)) {
-    # exact match to the thesis simulation (LogisticDx::gof.glm uses glm.scoretest)
-    Z <- abs(statmod::glm.scoretest(ctx$model, cbind(za, zb)))
-    chi <- sum(Z^2)
-  } else {
-    za_z <- .gof_score_z(za, y, ph, X)
-    zb_z <- .gof_score_z(zb, y, ph, X)
-    if (!is.finite(za_z) || !is.finite(zb_z))
-      return(list(Statistic = NA, df = NA, p_value = NA, Note = "score test undefined"))
-    chi <- za_z^2 + zb_z^2
+
+  if (form == "marginal") {                        # the 2.7.0 code, unchanged
+    if (requireNamespace("statmod", quietly = TRUE)) {
+      Z <- abs(statmod::glm.scoretest(ctx$model, cbind(za, zb)))
+      chi <- sum(Z^2)
+    } else {
+      za_z <- .gof_score_z(za, y, ph, X)
+      zb_z <- .gof_score_z(zb, y, ph, X)
+      if (!is.finite(za_z) || !is.finite(zb_z))
+        return(list(Statistic = NA, df = NA, p_value = NA, Note = "score test undefined"))
+      chi <- za_z^2 + zb_z^2
+    }
+    return(list(Statistic = chi, df = 2, p_value = stats::pchisq(chi, 2, lower.tail = FALSE),
+                Note = "marginal sum (LogisticDx SstBoth), not chi-square(2)"))
   }
-  list(Statistic = chi, df = 2, p_value = stats::pchisq(chi, 2, lower.tail = FALSE), Note = "")
+
+  if (!identical(ctx$model$family$link, "logit") || any(ctx$model$prior.weights != 1) ||
+      !all(y %in% c(0, 1)))
+    return(list(Statistic = NA, df = NA, p_value = NA,
+                Note = "Not run: needs an unweighted logit fit to binary data"))
+  Z    <- cbind(za, zb)
+  keep <- colSums(Z != 0) > 0
+  if (!any(keep))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: the linear predictor is zero"))
+  Z    <- Z[, keep, drop = FALSE]
+  side <- if (all(keep)) "" else if (keep[1]) "1 df: no fitted risk below 0.5"
+          else "1 df: no fitted risk at or above 0.5"
+
+  if (form == "lr") {
+    off <- if (is.null(ctx$model$offset)) rep(0, length(y)) else ctx$model$offset
+    f1  <- tryCatch(suppressWarnings(stats::glm.fit(cbind(X, Z), y, family = stats::binomial(),
+                                                    offset = off)),
+                    error = function(e) e)
+    if (inherits(f1, "error"))
+      return(list(Statistic = NA, df = NA, p_value = NA,
+                  Note = paste("Not run: augmented fit failed:", conditionMessage(f1))))
+    if (!isTRUE(f1$converged))
+      return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: augmented fit did not converge"))
+    k <- f1$rank - ctx$model$rank
+    if (k < 1)
+      return(list(Statistic = NA, df = NA, p_value = NA,
+                  Note = "Not run: the Stukel columns are aliased with the model"))
+    lr <- max(ctx$model$deviance - f1$deviance, 0)
+    return(list(Statistic = lr, df = k, p_value = stats::pchisq(lr, k, lower.tail = FALSE), Note = side))
+  }
+
+  W   <- ph * (1 - ph)
+  u   <- colSums(Z * (y - ph))
+  chi <- tryCatch({
+    ZWX <- crossprod(Z, W * X)
+    I   <- crossprod(Z, W * Z) - ZWX %*% solve(crossprod(X, W * X), t(ZWX))
+    as.numeric(crossprod(u, solve(I, u)))
+  }, error = function(e) NA_real_)
+  if (!is.finite(chi) || chi < 0)
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: singular score information"))
+  k <- ncol(Z)
+  list(Statistic = chi, df = k, p_value = stats::pchisq(chi, k, lower.tail = FALSE), Note = side)
 }
 
 # Rao score-test z for adding one column to a fitted binomial glm. Equals
