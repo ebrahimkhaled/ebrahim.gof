@@ -94,11 +94,15 @@
 #'   \item \code{EF}, \code{EF-normal} -- the omnibus Ebrahim-Farrington test,
 #'     with the chi-square and normal references respectively. Built for sparse
 #'     data, where the classical grouped statistics lose their reference.
-#'   \item \code{DEF.poly2}, \code{DEF.poly3}, \code{DEF.stukel} -- the directed
-#'     forms, each aiming the test at a smooth departure in the shape of the
-#'     calibration curve: a quadratic or cubic drift in the linear predictor, or
-#'     Stukel's asymmetry-and-tail family. Powerful when the misfit resembles the
-#'     chosen basis, weaker when it does not.
+#'   \item \code{DEF.poly2}, \code{DEF.poly3}, \code{DEF.stukel}, \code{DEF.sym} --
+#'     the directed forms, each aiming the test at a smooth departure in the shape
+#'     of the calibration curve: a quadratic or cubic drift in the linear
+#'     predictor, Stukel's asymmetry-and-tail family, or Stukel's symmetric
+#'     direction, tails too heavy or too light on both sides. Powerful when the
+#'     misfit resembles the chosen basis, weaker when it does not. Each row takes
+#'     \code{weights} and \code{G} through \code{control}, for example
+#'     \code{control = list(DEF.sym = list(weights = "score", G = "auto"))}; see
+#'     \code{\link{def.gof}}.
 #'   \item \code{Stukel} -- a score test against Stukel's generalized logistic
 #'     link, which nests the logit and lets the two tails bend independently. It
 #'     is aimed squarely at link misspecification. The two tail directions are
@@ -255,7 +259,10 @@
 #'   \code{GiViTI = list(devel = "internal"/"external")};
 #'   \code{"Lai-Liu-HL" = list(n0 = ..., k = ..., alpha = ...)};
 #'   \code{Stukel = list(form = "joint"/"lr"/"marginal")} (the joint score test by
-#'   default, the likelihood-ratio refit, or the pre-2.8.0 marginal sum); and
+#'   default, the likelihood-ratio refit, or the pre-2.8.0 marginal sum);
+#'   \code{DEF.poly2}, \code{DEF.poly3}, \code{DEF.stukel} and \code{DEF.sym}
+#'   \code{= list(weights = "unit"/"score", G = ...)}, where \code{G} may be
+#'   \code{"auto"} (see \code{\link{def.gof}}); and
 #'   \code{BAGofT = list(...)} which forwards to the binary adaptive test --
 #'   \code{nsim} (resampling iterations; default 100), \code{nsplits}, \code{ne}
 #'   (the estimation-split size), and the random-forest partitioner's tuning
@@ -935,10 +942,15 @@ gof_ef_normal <- function(ctx, opts = list()) {
 gof_def <- function(ctx, opts = list()) {
   if (!ctx$has_model && is.null(ctx$X))
     return(list(Statistic = NA, df = NA, p_value = NA, Note = "needs a glm model or X"))
-  b <- if (is.null(opts$basis)) "poly3" else opts$basis
-  r <- if (ctx$has_model) def.gof(ctx$model, G = ctx$G, basis = b)
-       else suppressWarnings(def.gof(ctx$y, ctx$ph, X = ctx$X, G = ctx$G, basis = b))
-  list(Statistic = r$Test_Statistic, df = r$df, p_value = r$p_value, Note = "")
+  b  <- if (is.null(opts$basis))   "poly3" else opts$basis
+  wt <- if (is.null(opts$weights)) "unit"  else opts$weights
+  G  <- if (is.null(opts$G)) ctx$G else if (identical(opts$G, "auto")) .def_auto_G(ctx$n) else opts$G
+  r  <- if (ctx$has_model) def.gof(ctx$model, G = G, basis = b, weights = wt)
+        else suppressWarnings(def.gof(ctx$y, ctx$ph, X = ctx$X, G = G, basis = b, weights = wt))
+  note <- c(if (r$Method == "score") "score form",
+            if (identical(opts$G, "auto")) sprintf("G = %d (auto)", as.integer(G)))
+  list(Statistic = r$Test_Statistic, df = r$df, p_value = r$p_value,
+       Note = paste(note, collapse = "; "))
 }
 
 # Stukel (1988) test against the generalized logistic link. The two directions are the
@@ -1672,9 +1684,10 @@ gof_ftest <- function(ctx, opts = list()) {
   "F-test"        = list(fn = gof_ftest,    family = "Partition",    needs_model = FALSE, slow = FALSE),
   "EF"            = list(fn = gof_ef,       family = "Standardized", needs_model = FALSE, slow = FALSE),
   "EF-normal"     = list(fn = gof_ef_normal, family = "Standardized", needs_model = FALSE, slow = FALSE),
-  "DEF.poly2"     = list(fn = function(ctx, opts) gof_def(ctx, list(basis = "poly2")),  family = "Directed", needs_model = TRUE, slow = FALSE),
-  "DEF.poly3"     = list(fn = function(ctx, opts) gof_def(ctx, list(basis = "poly3")),  family = "Directed", needs_model = TRUE, slow = FALSE),
-  "DEF.stukel"    = list(fn = function(ctx, opts) gof_def(ctx, list(basis = "stukel")), family = "Directed", needs_model = TRUE, slow = FALSE),
+  "DEF.poly2"     = list(fn = function(ctx, opts) gof_def(ctx, list(basis = "poly2",  weights = opts$weights, G = opts$G)), family = "Directed", needs_model = TRUE, slow = FALSE),
+  "DEF.poly3"     = list(fn = function(ctx, opts) gof_def(ctx, list(basis = "poly3",  weights = opts$weights, G = opts$G)), family = "Directed", needs_model = TRUE, slow = FALSE),
+  "DEF.stukel"    = list(fn = function(ctx, opts) gof_def(ctx, list(basis = "stukel", weights = opts$weights, G = opts$G)), family = "Directed", needs_model = TRUE, slow = FALSE),
+  "DEF.sym"       = list(fn = function(ctx, opts) gof_def(ctx, list(basis = "sym",    weights = opts$weights, G = opts$G)), family = "Directed", needs_model = TRUE, slow = FALSE),
   "Stukel"        = list(fn = gof_stukel,   family = "Directed",     needs_model = TRUE,  slow = FALSE),
   "Tsiatis"             = list(fn = gof_tsiatis, family = "Covariate-space", needs_model = TRUE, slow = FALSE),
   "Xie"                 = list(fn = gof_xie,     family = "Covariate-space", needs_model = TRUE, slow = FALSE),

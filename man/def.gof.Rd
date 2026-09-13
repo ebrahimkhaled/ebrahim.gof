@@ -9,8 +9,9 @@ def.gof(
   predicted_probs = NULL,
   X = NULL,
   G = 10,
-  basis = c("poly3", "poly2", "stukel", "ensemble"),
-  method = c("satterthwaite", "imhof")
+  basis = c("poly3", "poly2", "stukel", "sym", "ensemble"),
+  method = c("satterthwaite", "imhof"),
+  weights = c("unit", "score")
 )
 }
 \arguments{
@@ -25,18 +26,31 @@ form: it enables the exact estimation-adjusted (\eqn{\Omega}) calibration
 (logit working weights assumed). Without it the conservative \eqn{\chi^2_k}
 reference is used and a warning is issued. Ignored when \code{object} is a glm.}
 
-\item{G}{Integer number of equal-frequency groups (default 10; must be >= 3).}
+\item{G}{Integer number of equal-frequency groups (default 10; must be >= 3),
+or \code{"auto"} for \code{max(10, round(n / 25))}, the partition rule of the
+EDGE paper.}
 
 \item{basis}{One of \code{"poly3"} (default), \code{"poly2"}, \code{"stukel"},
-or \code{"ensemble"}.}
+\code{"sym"}, or \code{"ensemble"}. \code{"sym"} is one column,
+\eqn{\eta|\eta|} at the logit \eqn{\eta} of each group's mean fitted risk:
+Stukel's (1988) symmetric direction, aimed at tails that are too heavy or too
+light on both sides, for example a probit or cauchit truth fitted by a logit.}
 
-\item{method}{One of \code{"satterthwaite"} (default) or \code{"imhof"}.}
+\item{method}{One of \code{"satterthwaite"} (default) or \code{"imhof"}.
+Ignored when \code{weights = "score"}.}
+
+\item{weights}{\code{"unit"} (default) is the statistic as published,
+\eqn{S = r'P_Z r} referred to a weighted chi-squared law. \code{"score"}
+multiplies each column by the square root of its group's variance, which makes
+the statistic the score test for adding the grouped shape to the model,
+referred to chi-squared on the number of columns (see Details).}
 }
 \value{
 A one-row \code{data.frame} with columns \code{Test}, \code{Basis},
   \code{Test_Statistic} (the statistic \eqn{S}), \code{df}, \code{Method}, and
-  \code{p_value}. When \code{basis = "ensemble"}, the return is that of
-  \code{\link{def.ensemble.gof}}.
+  \code{p_value}. For \code{weights = "score"}, \code{Method} is \code{"score"}
+  and \code{df} is the integer rank the statistic is referred to. When
+  \code{basis = "ensemble"}, the return is that of \code{\link{def.ensemble.gof}}.
 }
 \description{
 Performs the Directed Ebrahim-Farrington (DEF) goodness-of-fit test for a
@@ -60,8 +74,19 @@ projected onto a basis matrix \eqn{Z} of smooth shapes, giving
 estimation-adjusted covariance of the grouped residuals. The p-value uses a
 Satterthwaite scaled-\eqn{\chi^2} approximation (default) or Imhof's method
 (if the \pkg{CompQuadForm} package is installed). Bases: \code{"poly2"},
-\code{"poly3"} (default), \code{"stukel"}; \code{"ensemble"} runs all three and
-combines them via \code{\link{def.ensemble.gof}}.
+\code{"poly3"} (default), \code{"stukel"}, \code{"sym"}; \code{"ensemble"} runs
+\code{"poly2"}, \code{"poly3"} and \code{"stukel"} and combines them via
+\code{\link{def.ensemble.gof}}.
+
+With \code{weights = "score"} each column of \eqn{Z} is multiplied by
+\eqn{\sqrt{V_g}}, the square root of its group's variance, so that \eqn{Z'r}
+becomes \eqn{\sum_g z_g (O_g - E_g)}: the score for adding the grouped shape to
+the model as a step covariate. Its information after adjusting for the fitted
+coefficients is \eqn{Z'\Omega Z}, and the statistic \eqn{u'I^{-1}u} is referred
+to a \eqn{\chi^2} law on the rank of that information, read from it after
+scaling to a correlation matrix. The unit form is the statistic as published;
+the score form keeps a shape on the logit scale from losing its signal when the
+group variances differ strongly, as they do at high discrimination.
 }
 \examples{
 ## gof_demo carries a documented smooth calibration misfit: the risk bends in age,
@@ -71,7 +96,9 @@ wrong <- glm(outcome ~ age + bmi + sex + treatment,
              data = gof_demo, family = binomial())
 def.gof(wrong)                       # default poly3 basis
 def.gof(wrong, basis = "stukel")     # tail-shape basis
-def.gof(wrong, basis = "ensemble")   # combine all three (CCT)
+def.gof(wrong, basis = "sym")        # symmetric tail direction, one column
+def.gof(wrong, weights = "score")    # score form of the poly3 basis
+def.gof(wrong, basis = "ensemble")   # combine poly2, poly3 and stukel (CCT)
 
 ## give the model the term it was missing, and the same test stands down
 right <- glm(outcome ~ poly(age, 2) + bmi + sex + treatment,

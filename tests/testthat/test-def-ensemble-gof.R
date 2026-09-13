@@ -31,6 +31,18 @@ test_that("combiner internals are correct", {
   expect_equal(f(c(0.04, 0.3, 0.5), "minp"), 1 - (1 - 0.04)^3, tolerance = 1e-10)
 })
 
+test_that("the ensemble takes 'sym' as a component and passes weights on", {
+  fit <- make_fit()
+  res <- def.ensemble.gof(fit, components = c("poly3", "sym"))
+  expect_identical(res$Components, "poly3+sym")
+  sc <- def.ensemble.gof(fit, weights = "score")
+  pv <- vapply(c("poly2", "poly3", "stukel"),
+               function(b) def.gof(fit, basis = b, weights = "score")$p_value, numeric(1))
+  expect_equal(sc$p_value, ebrahim.gof:::.combine_pvalues(pv, "cct"), tolerance = 1e-12)
+  expect_equal(edges.gof(fit, weights = "score")$p_value, sc$p_value, tolerance = 1e-12)
+  expect_identical(def.ensemble.gof(fit, G = "auto"), def.ensemble.gof(fit, G = 24))
+})
+
 test_that("extra_pvalues are included", {
   res <- def.ensemble.gof(make_fit(), extra_pvalues = c(Tsiatis = 0.2))
   expect_equal(res$k, 4L)

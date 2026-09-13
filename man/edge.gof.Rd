@@ -10,7 +10,8 @@ edge.gof(
   X = NULL,
   G = 10,
   basis = "poly3",
-  method = "satterthwaite"
+  method = "satterthwaite",
+  weights = "unit"
 )
 }
 \arguments{
@@ -25,12 +26,24 @@ form: it enables the exact estimation-adjusted (\eqn{\Omega}) calibration
 (logit working weights assumed). Without it the conservative \eqn{\chi^2_k}
 reference is used and a warning is issued. Ignored when \code{object} is a glm.}
 
-\item{G}{Integer number of equal-frequency groups (default 10; must be >= 3).}
+\item{G}{Integer number of equal-frequency groups (default 10; must be >= 3),
+or \code{"auto"} for \code{max(10, round(n / 25))}, the partition rule of the
+EDGE paper.}
 
 \item{basis}{One of \code{"poly3"} (default), \code{"poly2"}, \code{"stukel"},
-or \code{"ensemble"}.}
+\code{"sym"}, or \code{"ensemble"}. \code{"sym"} is one column,
+\eqn{\eta|\eta|} at the logit \eqn{\eta} of each group's mean fitted risk:
+Stukel's (1988) symmetric direction, aimed at tails that are too heavy or too
+light on both sides, for example a probit or cauchit truth fitted by a logit.}
 
-\item{method}{One of \code{"satterthwaite"} (default) or \code{"imhof"}.}
+\item{method}{One of \code{"satterthwaite"} (default) or \code{"imhof"}.
+Ignored when \code{weights = "score"}.}
+
+\item{weights}{\code{"unit"} (default) is the statistic as published,
+\eqn{S = r'P_Z r} referred to a weighted chi-squared law. \code{"score"}
+multiplies each column by the square root of its group's variance, which makes
+the statistic the score test for adding the grouped shape to the model,
+referred to chi-squared on the number of columns (see Details).}
 }
 \value{
 A one-row \code{data.frame} with columns \code{Test} (\code{"EDGE"}),
@@ -57,6 +70,9 @@ y <- rbinom(500, 1, plogis(0.6 * x))
 fit <- glm(y ~ x, family = binomial())
 edge.gof(fit)                      # default cubic basis, G = 10
 edge.gof(fit, basis = "stukel")    # Stukel-shape basis
+edge.gof(fit, basis = "sym")       # Stukel's symmetric direction, one column
+edge.gof(fit, basis = "sym", weights = "score")   # its score form
+edge.gof(fit, G = "auto")          # G = max(10, round(n / 25)) = 20 here
 
 }
 \references{

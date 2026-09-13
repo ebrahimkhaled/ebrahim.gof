@@ -9,7 +9,7 @@ edges.gof(...)
 \arguments{
 \item{...}{Arguments passed on to \code{\link{def.ensemble.gof}} (e.g.
 \code{object}, \code{predicted_probs}, \code{X}, \code{components},
-\code{add_ef}, \code{combine}, \code{G}, \code{extra_pvalues}).}
+\code{add_ef}, \code{combine}, \code{G}, \code{extra_pvalues}, \code{weights}).}
 }
 \value{
 A one-row \code{data.frame} with columns \code{Test}, \code{Combiner},

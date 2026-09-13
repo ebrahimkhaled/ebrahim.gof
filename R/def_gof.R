@@ -22,8 +22,19 @@
 #' estimation-adjusted covariance of the grouped residuals. The p-value uses a
 #' Satterthwaite scaled-\eqn{\chi^2} approximation (default) or Imhof's method
 #' (if the \pkg{CompQuadForm} package is installed). Bases: \code{"poly2"},
-#' \code{"poly3"} (default), \code{"stukel"}; \code{"ensemble"} runs all three and
-#' combines them via \code{\link{def.ensemble.gof}}.
+#' \code{"poly3"} (default), \code{"stukel"}, \code{"sym"}; \code{"ensemble"} runs
+#' \code{"poly2"}, \code{"poly3"} and \code{"stukel"} and combines them via
+#' \code{\link{def.ensemble.gof}}.
+#'
+#' With \code{weights = "score"} each column of \eqn{Z} is multiplied by
+#' \eqn{\sqrt{V_g}}, the square root of its group's variance, so that \eqn{Z'r}
+#' becomes \eqn{\sum_g z_g (O_g - E_g)}: the score for adding the grouped shape to
+#' the model as a step covariate. Its information after adjusting for the fitted
+#' coefficients is \eqn{Z'\Omega Z}, and the statistic \eqn{u'I^{-1}u} is referred
+#' to a \eqn{\chi^2} law on the rank of that information, read from it after
+#' scaling to a correlation matrix. The unit form is the statistic as published;
+#' the score form keeps a shape on the logit scale from losing its signal when the
+#' group variances differ strongly, as they do at high discrimination.
 #'
 #' @param object A fitted binary logistic \code{\link[stats]{glm}}, or a binary
 #'   (0/1) response vector \code{y} (then supply \code{predicted_probs}).
@@ -33,15 +44,27 @@
 #'   form: it enables the exact estimation-adjusted (\eqn{\Omega}) calibration
 #'   (logit working weights assumed). Without it the conservative \eqn{\chi^2_k}
 #'   reference is used and a warning is issued. Ignored when \code{object} is a glm.
-#' @param G Integer number of equal-frequency groups (default 10; must be >= 3).
+#' @param G Integer number of equal-frequency groups (default 10; must be >= 3),
+#'   or \code{"auto"} for \code{max(10, round(n / 25))}, the partition rule of the
+#'   EDGE paper.
 #' @param basis One of \code{"poly3"} (default), \code{"poly2"}, \code{"stukel"},
-#'   or \code{"ensemble"}.
+#'   \code{"sym"}, or \code{"ensemble"}. \code{"sym"} is one column,
+#'   \eqn{\eta|\eta|} at the logit \eqn{\eta} of each group's mean fitted risk:
+#'   Stukel's (1988) symmetric direction, aimed at tails that are too heavy or too
+#'   light on both sides, for example a probit or cauchit truth fitted by a logit.
 #' @param method One of \code{"satterthwaite"} (default) or \code{"imhof"}.
+#'   Ignored when \code{weights = "score"}.
+#' @param weights \code{"unit"} (default) is the statistic as published,
+#'   \eqn{S = r'P_Z r} referred to a weighted chi-squared law. \code{"score"}
+#'   multiplies each column by the square root of its group's variance, which makes
+#'   the statistic the score test for adding the grouped shape to the model,
+#'   referred to chi-squared on the number of columns (see Details).
 #'
 #' @return A one-row \code{data.frame} with columns \code{Test}, \code{Basis},
 #'   \code{Test_Statistic} (the statistic \eqn{S}), \code{df}, \code{Method}, and
-#'   \code{p_value}. When \code{basis = "ensemble"}, the return is that of
-#'   \code{\link{def.ensemble.gof}}.
+#'   \code{p_value}. For \code{weights = "score"}, \code{Method} is \code{"score"}
+#'   and \code{df} is the integer rank the statistic is referred to. When
+#'   \code{basis = "ensemble"}, the return is that of \code{\link{def.ensemble.gof}}.
 #'
 #' @references
 #' Ebrahim EK, El-Kotory A (2026). "A Directional Hosmer-Lemeshow Goodness-of-Fit
@@ -62,7 +85,9 @@
 #'              data = gof_demo, family = binomial())
 #' def.gof(wrong)                       # default poly3 basis
 #' def.gof(wrong, basis = "stukel")     # tail-shape basis
-#' def.gof(wrong, basis = "ensemble")   # combine all three (CCT)
+#' def.gof(wrong, basis = "sym")        # symmetric tail direction, one column
+#' def.gof(wrong, weights = "score")    # score form of the poly3 basis
+#' def.gof(wrong, basis = "ensemble")   # combine poly2, poly3 and stukel (CCT)
 #'
 #' ## give the model the term it was missing, and the same test stands down
 #' right <- glm(outcome ~ poly(age, 2) + bmi + sex + treatment,
@@ -79,17 +104,20 @@
 #' @concept directed test
 #' @export
 def.gof <- function(object, predicted_probs = NULL, X = NULL, G = 10,
-                    basis  = c("poly3", "poly2", "stukel", "ensemble"),
-                    method = c("satterthwaite", "imhof")) {
+                    basis   = c("poly3", "poly2", "stukel", "sym", "ensemble"),
+                    method  = c("satterthwaite", "imhof"),
+                    weights = c("unit", "score")) {
 
-  basis  <- match.arg(basis)
-  method <- match.arg(method)
-  if (!is.numeric(G) || length(G) != 1 || G < 3) {
-    stop("'G' must be a single integer >= 3.")
+  basis   <- match.arg(basis)
+  method  <- match.arg(method)
+  weights <- match.arg(weights)
+  if (!identical(G, "auto") && (!is.numeric(G) || length(G) != 1 || G < 3)) {
+    stop("'G' must be a single integer >= 3, or 'auto'.")
   }
 
   if (basis == "ensemble")
-    return(def.ensemble.gof(object, predicted_probs = predicted_probs, X = X, G = G))
+    return(def.ensemble.gof(object, predicted_probs = predicted_probs, X = X, G = G,
+                            weights = weights))
 
   # --- accept either a fitted glm, OR (y, predicted_probs[, X]) ---
   if (inherits(object, "glm")) {
@@ -118,6 +146,7 @@ def.gof <- function(object, predicted_probs = NULL, X = NULL, G = 10,
   n <- length(y)
   if (!all(y %in% c(0, 1))) stop("DEF needs a binary (0/1) response.")
   if (length(ph) != n) stop("'object' (y) and 'predicted_probs' lengths differ.")
+  if (identical(G, "auto")) G <- .def_auto_G(n)
   if (G > n) stop("'G' cannot exceed the number of observations.")
 
   V <- ph * (1 - ph)
@@ -147,6 +176,32 @@ def.gof <- function(object, predicted_probs = NULL, X = NULL, G = 10,
   Z <- Z[, colSums(abs(Z)) > 1e-8, drop = FALSE]
   if (ncol(Z) < 1)
     stop("The chosen basis is degenerate for this fit. Try basis = 'poly3' or a larger G.")
+
+  if (weights == "score") {
+    # Score form: each column times sqrt(V_g), so Z'r = sum_g z_g (O_g - E_g), the score for
+    # adding the group-level step covariate to the model. Its information after adjusting for
+    # the fitted coefficients is Z' Omega Z, and u'I^-1 u is chi-square on its rank. The rank is
+    # read from I scaled to a correlation matrix, so a column that is small but not collinear
+    # (a Stukel half reaching a single group) is kept rather than dropped for its scale.
+    Zs <- Z * sqrt(Vg)
+    u  <- drop(crossprod(Zs, r))
+    I  <- crossprod(Zs, Omega %*% Zs)
+    d  <- sqrt(pmax(diag(I), 0))
+    ok <- d > 0
+    k  <- 0L
+    if (any(ok)) {
+      R   <- I[ok, ok, drop = FALSE] / outer(d[ok], d[ok])
+      ev  <- eigen((R + t(R)) / 2, symmetric = TRUE)
+      pos <- ev$values > 1e-8
+      k   <- sum(pos)
+      S   <- sum(drop(crossprod(ev$vectors[, pos, drop = FALSE], u[ok] / d[ok]))^2 / ev$values[pos])
+    }
+    return(data.frame(Test = "Directed Ebrahim-Farrington", Basis = basis,
+                      Test_Statistic = if (k > 0L) S else NA_real_,
+                      df = if (k > 0L) k else NA_real_, Method = "score",
+                      p_value = if (k > 0L) stats::pchisq(S, k, lower.tail = FALSE) else NA_real_,
+                      stringsAsFactors = FALSE))
+  }
 
   ZtZ <- crossprod(Z)
   Zr  <- crossprod(Z, r)
@@ -178,9 +233,13 @@ def.gof <- function(object, predicted_probs = NULL, X = NULL, G = 10,
     as.matrix(stats::poly(pbar, deg))
   } else {
     e <- stats::qlogis(pbar)
+    if (basis == "sym") return(cbind(e * abs(e)))   # Stukel's symmetric direction (alpha1 = alpha2)
     cbind(e, e^2 * (e >= 0), -e^2 * (e < 0))
   }
 }
+
+# Internal: the number of groups for G = "auto", the partition rule of the EDGE paper.
+.def_auto_G <- function(n) max(10, round(n / 25))
 
 # Internal: p-value of S under sum_j lambda_j chi^2_1.
 .def_pvalue <- function(S, lam, method) {

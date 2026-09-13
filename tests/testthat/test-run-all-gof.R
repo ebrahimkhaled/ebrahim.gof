@@ -8,7 +8,7 @@ test_that("run.all.gof returns a tidy battery for a model", {
   res <- run.all.gof(make_fit(), include_slow = FALSE)
   expect_s3_class(res, "data.frame")
   expect_equal(names(res), c("Test", "Family", "Statistic", "df", "p_value", "Note"))
-  expect_true(all(c("EF", "DEF.poly3", "HL", "Stukel") %in% res$Test))
+  expect_true(all(c("EF", "DEF.poly3", "DEF.sym", "HL", "Stukel") %in% res$Test))
   expect_true(any(grepl("Ensemble", res$Test)))
   pv <- res$p_value[is.finite(res$p_value)]
   expect_true(all(pv >= 0 & pv <= 1))

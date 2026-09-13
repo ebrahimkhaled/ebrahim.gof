@@ -68,7 +68,10 @@ nothing is ever installed, regardless of this setting. See
 \code{GiViTI = list(devel = "internal"/"external")};
 \code{"Lai-Liu-HL" = list(n0 = ..., k = ..., alpha = ...)};
 \code{Stukel = list(form = "joint"/"lr"/"marginal")} (the joint score test by
-default, the likelihood-ratio refit, or the pre-2.8.0 marginal sum); and
+default, the likelihood-ratio refit, or the pre-2.8.0 marginal sum);
+\code{DEF.poly2}, \code{DEF.poly3}, \code{DEF.stukel} and \code{DEF.sym}
+\code{= list(weights = "unit"/"score", G = ...)}, where \code{G} may be
+\code{"auto"} (see \code{\link{def.gof}}); and
 \code{BAGofT = list(...)} which forwards to the binary adaptive test --
 \code{nsim} (resampling iterations; default 100), \code{nsplits}, \code{ne}
 (the estimation-split size), and the random-forest partitioner's tuning
@@ -177,11 +180,15 @@ power when the guess is right.
   \item \code{EF}, \code{EF-normal} -- the omnibus Ebrahim-Farrington test,
     with the chi-square and normal references respectively. Built for sparse
     data, where the classical grouped statistics lose their reference.
-  \item \code{DEF.poly2}, \code{DEF.poly3}, \code{DEF.stukel} -- the directed
-    forms, each aiming the test at a smooth departure in the shape of the
-    calibration curve: a quadratic or cubic drift in the linear predictor, or
-    Stukel's asymmetry-and-tail family. Powerful when the misfit resembles the
-    chosen basis, weaker when it does not.
+  \item \code{DEF.poly2}, \code{DEF.poly3}, \code{DEF.stukel}, \code{DEF.sym} --
+    the directed forms, each aiming the test at a smooth departure in the shape
+    of the calibration curve: a quadratic or cubic drift in the linear
+    predictor, Stukel's asymmetry-and-tail family, or Stukel's symmetric
+    direction, tails too heavy or too light on both sides. Powerful when the
+    misfit resembles the chosen basis, weaker when it does not. Each row takes
+    \code{weights} and \code{G} through \code{control}, for example
+    \code{control = list(DEF.sym = list(weights = "score", G = "auto"))}; see
+    \code{\link{def.gof}}.
   \item \code{Stukel} -- a score test against Stukel's generalized logistic
     link, which nests the logit and lets the two tails bend independently. It
     is aimed squarely at link misspecification. The two tail directions are

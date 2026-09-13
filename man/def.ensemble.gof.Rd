@@ -12,7 +12,8 @@ def.ensemble.gof(
   add_ef = FALSE,
   combine = c("cct", "minp", "fisher"),
   G = 10,
-  extra_pvalues = NULL
+  extra_pvalues = NULL,
+  weights = c("unit", "score")
 )
 }
 \arguments{
@@ -25,18 +26,23 @@ def.ensemble.gof(
 \item{X}{Optional design matrix, threaded to \code{\link{def.gof}} for the exact
 calibration (only used with the \code{y}/\code{predicted_probs} form).}
 
-\item{components}{Character vector, a subset of \code{c("poly2","poly3","stukel")}.
-Default is all three.}
+\item{components}{Character vector, a subset of
+\code{c("poly2","poly3","stukel","sym")}. Default is \code{"poly2"},
+\code{"poly3"} and \code{"stukel"}, the three bases EDGES is defined on.}
 
 \item{add_ef}{Logical; if \code{TRUE}, the omnibus EF p-value (\code{\link{ef.gof}})
 is appended to the components. Default \code{FALSE}.}
 
 \item{combine}{One of \code{"cct"} (default), \code{"minp"}, \code{"fisher"}.}
 
-\item{G}{Integer number of groups passed to \code{def.gof}/\code{ef.gof} (default 10).}
+\item{G}{Integer number of groups passed to \code{def.gof}/\code{ef.gof} (default 10),
+or \code{"auto"} for \code{max(10, round(n / 25))} as in \code{\link{def.gof}}.}
 
 \item{extra_pvalues}{Optional named numeric vector of additional p-values to
 include (e.g. a Tsiatis test computed elsewhere). Default \code{NULL}.}
+
+\item{weights}{\code{"unit"} (default) or \code{"score"}, passed to
+\code{\link{def.gof}} for every component.}
 }
 \value{
 A one-row \code{data.frame} with columns \code{Test}, \code{Combiner},
