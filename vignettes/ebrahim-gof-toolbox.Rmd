@@ -61,7 +61,7 @@ battery
 
 Read the table by *family*. The **global omnibus** statistics (Pearson, deviance) spread their
 power over hundreds of covariate patterns and tend to **miss** this smooth misfit. The
-**directed** tests --- `DEF.poly2`, `DEF.poly3` (EDGE), `DEF.stukel`, and Stukel's score test ---
+**directed** tests --- `DEF.poly2`, `DEF.poly3` (EDGE), `DEF.stukel`, `DEF.sym`, and Stukel's score test ---
 concentrate their few degrees of freedom on the calibration-curve shape and **detect** it, as do
 the EF test and the ensemble. That contrast is the whole point of a directed test.
 

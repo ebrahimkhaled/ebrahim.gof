@@ -1,3 +1,56 @@
+# ebrahim.gof 2.8.0
+
+## Bug fix
+
+* The `Stukel` row of `run.all.gof()` squared and summed the two marginal score statistics of
+  Stukel's two tail directions and referred the sum to chi-squared on 2 degrees of freedom. That is
+  the statistic of `LogisticDx::gof.glm()` ("SstBoth"), which the battery was built to reproduce,
+  but it is not chi-squared on 2 degrees of freedom: once the model is fitted the two directions are
+  correlated (about -0.71 when fitted risks lie on both sides of one half), so the sum rejects about
+  7 per cent of correctly specified models at the 5 per cent level, and against symmetric departures
+  from the logit it loses much of its power. The row now reports the joint score statistic, which is
+  the score test for adding both directions to the model and agrees with `anova(..., test = "Rao")`.
+  The old statistic is still available, for reproducing earlier results only, with
+  `control = list(Stukel = list(form = "marginal"))`. The 2.0.0 entry below, which says the row
+  matches `LogisticDx`, now holds only for that form.
+
+* When every fitted risk lay on one side of one half, one of Stukel's directions was identically
+  zero and the row returned `NaN` without a note. It now reports the one-degree-of-freedom score test
+  on the remaining direction, and says so in `Note`.
+
+## New features
+
+* `control = list(Stukel = list(form = "lr"))` gives the likelihood-ratio test for the same two
+  directions: the model is refitted with them added, and the drop in deviance is referred to
+  chi-squared on the number of added columns the refit can estimate (one when every fitted risk lies
+  on one side of one half). If the refit fails or does not converge the row returns `NA` and says why.
+  The joint and likelihood-ratio forms need an unweighted logit fit to binary data, and return `NA`
+  with a note otherwise.
+
+* `edge.gof()` and `def.gof()` gain the basis `"sym"`: one column, eta|eta|, at the logit of each
+  group's mean fitted risk. It is Stukel's symmetric direction in grouped form and is aimed at tails
+  that are too heavy or too light on both sides, such as a probit or cauchit truth fitted by a logit.
+  The battery reports it as `DEF.sym`, so the fast battery has one more row.
+  `def.ensemble.gof()` accepts `"sym"` as a component; its default components are unchanged.
+
+* `edge.gof()`, `def.gof()` and `def.ensemble.gof()` gain `weights = c("unit", "score")`. `"unit"`
+  is the published statistic and stays the default. `"score"` multiplies each basis column by the
+  square root of its group's variance, so the statistic becomes the score test for adding the grouped
+  shape to the model, referred to chi-squared on the number of columns. When group variances differ
+  strongly, as they do at high discrimination, this keeps shapes on the logit scale from losing their
+  signal. The result keeps its six columns, with `Method = "score"` and an integer `df`. In the
+  battery, use `control = list(DEF.sym = list(weights = "score"))`.
+
+* `edge.gof()`, `def.gof()` and `def.ensemble.gof()` accept `G = "auto"`, which uses
+  `max(10, round(n / 25))` groups, the partition rule of the EDGE paper. A number is used as before.
+  In the battery, `control = list(DEF.poly3 = list(G = "auto"))` applies it to one directed row, and
+  `Note` records the number of groups used.
+
+## Documentation
+
+* `?run.all.gof` said that Stukel's two-parameter form does not always hold its nominal level. That
+  was a property of the summed statistic, not of the test, and the sentence has been replaced.
+
 # ebrahim.gof 2.7.0
 
 ## Bug fix

@@ -22,7 +22,7 @@ See the vignette *"A goodness-of-fit and calibration toolbox for logistic regres
 ## Key Features
 
 - **Ebrahim-Farrington Test** (`ef.gof()`): omnibus test for binary data with automatic grouping (chi-square or normal reference)
-- **Directed EF Test** (`def.gof()`): targets calibration-shape departures (poly2/poly3/stukel bases or their ensemble)
+- **Directed EF Test** (`def.gof()`): targets calibration-shape departures (poly2/poly3/stukel/sym bases or their ensemble)
 - **Ensemble** (`def.ensemble.gof()`): combines the DEF bases via the Cauchy combination test
 - **One-shot battery** (`run.all.gof()`): runs ~20+ GOF & calibration tests (plus opt-in slow ones) and returns a tidy data frame
 - **Original Farrington Test**: Full implementation for grouped data
@@ -120,18 +120,22 @@ grouped residuals onto a small smooth basis.
 
 ```r
 def.gof(object, predicted_probs = NULL, X = NULL, G = 10,
-        basis = c("poly3", "poly2", "stukel", "ensemble"),
-        method = c("satterthwaite", "imhof"))
+        basis = c("poly3", "poly2", "stukel", "sym", "ensemble"),
+        method = c("satterthwaite", "imhof"),
+        weights = c("unit", "score"))
 ```
 
 - `object`: a fitted binary-logistic `glm`, or a 0/1 response vector `y` (then give `predicted_probs`, and `X` to get the exact calibration).
-- `basis`: `"poly3"` (default), `"poly2"`, `"stukel"`, or `"ensemble"` (runs all three and combines them via `def.ensemble.gof()`).
+- `G`: the number of equal-frequency groups (default 10), or `"auto"` for `max(10, round(n / 25))`, the partition rule of the EDGE paper.
+- `basis`: `"poly3"` (default), `"poly2"`, `"stukel"`, `"sym"` (one column, eta|eta|, Stukel's symmetric tail direction), or `"ensemble"` (runs poly2, poly3 and stukel and combines them via `def.ensemble.gof()`).
 - `method`: `"satterthwaite"` (default, no extra dependency) or `"imhof"` (exact, needs `CompQuadForm`).
+- `weights`: `"unit"` (default, the published statistic) or `"score"`, which weights each basis column by the square root of its group's variance and makes the statistic the score test for adding the grouped shape to the model, referred to chi-squared on the number of columns.
 
 ```r
 fit <- glm(y ~ x1 + x2, family = binomial())
-def.gof(fit)                      # default poly3 basis
-def.gof(fit, basis = "ensemble")  # combined Cauchy decision
+def.gof(fit)                                   # default poly3 basis
+def.gof(fit, basis = "sym", weights = "score") # symmetric tail direction, score form
+def.gof(fit, basis = "ensemble")               # combined Cauchy decision
 ```
 
 ### `def.ensemble.gof()` — combine the DEF bases
@@ -157,10 +161,11 @@ run.all.gof(fit, tests = c("EF", "DEF.poly3", "HL"))   # a chosen subset
 run.all.gof(y, fitted(fit))            # prediction-only tests (no model)
 ```
 
-Default battery (19 rows): Pearson, Deviance, Osius-Rojek, Copas-RSS,
-Information-Matrix, Hosmer-Lemeshow (deciles and equal-width), Pigeon-Heyse, EF,
-EF-normal, the three DEF bases, Stukel, Tsiatis, Xie, Pulkstenis-Robinson, and
-the two Cauchy-combination ensemble rows. With `include_slow = TRUE` it also runs
+Default fast battery (22 rows on fully sparse data): Pearson, Deviance,
+Osius-Rojek, McCullagh, Copas-RSS, Information-Matrix, Hosmer-Lemeshow (deciles
+and equal-width), Pigeon-Heyse, the F-test, EF, EF-normal, the four DEF bases
+(poly2, poly3, stukel, sym), Stukel's joint score test, Tsiatis, Xie,
+Pulkstenis-Robinson, and the two Cauchy-combination ensemble rows. With `include_slow = TRUE` it also runs
 le Cessie-van Houwelingen, the GAM-based tests (HL-GAM, PR-GAM, Xie-GAM; need
 `mgcv`), Stute-Zhu, eHL, BAGofT, and the Lai & Liu standardized-power HL test.
 Every test reproduces the implementation used in the original thesis simulation.
