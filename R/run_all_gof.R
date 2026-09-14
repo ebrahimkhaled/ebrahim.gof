@@ -1017,6 +1017,7 @@ gof_stukel <- function(ctx, opts = list()) {
   Z    <- Z[, keep, drop = FALSE]
   side <- if (all(keep)) "" else if (keep[1]) "1 df: no fitted risk below 0.5"
           else "1 df: no fitted risk at or above 0.5"
+  X    <- X[, !is.na(stats::coef(ctx$model)), drop = FALSE]   # aliased columns carry no information
 
   if (form == "lr") {
     off <- if (is.null(ctx$model$offset)) rep(0, length(y)) else ctx$model$offset
@@ -1036,6 +1037,7 @@ gof_stukel <- function(ctx, opts = list()) {
     return(list(Statistic = lr, df = k, p_value = stats::pchisq(lr, k, lower.tail = FALSE), Note = side))
   }
 
+  ph  <- as.numeric(stats::fitted(ctx$model))       # unclamped, as the fit itself uses
   W   <- ph * (1 - ph)
   u   <- colSums(Z * (y - ph))
   chi <- tryCatch({

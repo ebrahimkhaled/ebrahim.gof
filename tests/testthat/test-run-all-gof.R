@@ -251,3 +251,34 @@ test_that("the joint and LR Stukel forms refuse a non-logit fit", {
     expect_match(res$Note, "logit")
   }
 })
+
+test_that("the joint and LR Stukel forms ignore an aliased column of the model", {
+  set.seed(3)
+  d <- data.frame(x1 = runif(300, -3, 3))
+  d$y <- rbinom(300, 1, plogis(0.5 * d$x1)); d$x2 <- 2 * d$x1
+  rd <- glm(y ~ x1 + x2, family = binomial(), data = d)             # the coefficient of x2 is NA
+  fr <- glm(y ~ x1, family = binomial(), data = d)
+  expect_true(is.na(coef(rd)[["x2"]]))
+  for (f in c("joint", "lr")) {
+    a <- run.all.gof(rd, tests = "Stukel", control = list(Stukel = list(form = f)))
+    b <- run.all.gof(fr, tests = "Stukel", control = list(Stukel = list(form = f)))
+    expect_true(is.finite(a$p_value))
+    expect_equal(a$Statistic, b$Statistic, tolerance = 1e-8)
+    expect_equal(a$df, 2)
+  }
+  expect_equal(run.all.gof(fr, tests = "Stukel")$Statistic, 0.3785754, tolerance = 1e-5)
+})
+
+test_that("the joint Stukel form uses the unclamped fitted risks under near separation", {
+  set.seed(14); x <- runif(300, -3, 3); y <- rbinom(300, 1, plogis(6 * x))
+  fit <- suppressWarnings(glm(y ~ x, family = binomial()))
+  p <- fitted(fit)
+  expect_true(any(p < 1e-6 | p > 1 - 1e-6))                          # some risks lie beyond the 1e-6 clamp
+  ## u'I^-1 u, with I from the weighted residuals of Z on X (a QR route, not the package's solve)
+  Z <- stukel_cols(fit); X <- model.matrix(fit); sw <- sqrt(p * (1 - p))
+  u <- colSums(Z * (y - p))
+  I <- crossprod(qr.resid(qr(sw * X), sw * Z))
+  res <- run.all.gof(fit, tests = "Stukel")
+  expect_equal(res$Statistic, drop(crossprod(u, solve(I, u))), tolerance = 1e-8)
+  expect_equal(res$df, 2)
+})
