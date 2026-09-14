@@ -31,7 +31,10 @@ run.all.gof(
 \item{tests}{Either \code{"all"} (default) or a character vector of test names
 to run (e.g. \code{c("EF","DEF.poly3","HL")}).}
 
-\item{G}{Integer number of groups passed to the grouping tests (default 10).}
+\item{G}{Integer number of groups passed to the grouping tests (default 10), or
+\code{"auto"} for \code{max(10, round(n / 25))} (see \code{\link{def.gof}}).
+\code{"auto"} is resolved once, so every row, the ensemble rows included, uses
+the same number of groups; the directed rows record it in \code{Note}.}
 
 \item{include_slow}{Logical; when \code{TRUE} (the default) the full battery
 runs, including the slow tests: le Cessie-van Houwelingen smoothing

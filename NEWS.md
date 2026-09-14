@@ -51,7 +51,9 @@
 * `edge.gof()`, `def.gof()` and `def.ensemble.gof()` accept `G = "auto"`, which uses
   `max(10, round(n / 25))` groups, the partition rule of the EDGE paper. A number is used as before.
   In the battery, `control = list(DEF.poly3 = list(G = "auto"))` applies it to one directed row, and
-  `Note` records the number of groups used.
+  `Note` records the number of groups used. `run.all.gof(G = "auto")` resolves the rule once, so
+  every row, the EF and ensemble rows included, uses the same number of groups, and the directed rows
+  record it in `Note`. Any other non-numeric `G` is now an error rather than a failure of each row.
 
 * `def.gof()`, and so `edge.gof()` and `def.ensemble.gof()`, now warn when there are fewer events,
   or fewer non-events, than groups. The p-value is still returned, but some groups then hold almost

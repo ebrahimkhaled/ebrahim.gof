@@ -228,7 +228,10 @@
 #'   \code{(y, predicted_probs)} form.
 #' @param tests Either \code{"all"} (default) or a character vector of test names
 #'   to run (e.g. \code{c("EF","DEF.poly3","HL")}).
-#' @param G Integer number of groups passed to the grouping tests (default 10).
+#' @param G Integer number of groups passed to the grouping tests (default 10), or
+#'   \code{"auto"} for \code{max(10, round(n / 25))} (see \code{\link{def.gof}}).
+#'   \code{"auto"} is resolved once, so every row, the ensemble rows included, uses
+#'   the same number of groups; the directed rows record it in \code{Note}.
 #' @param include_slow Logical; when \code{TRUE} (the default) the full battery
 #'   runs, including the slow tests: le Cessie-van Houwelingen smoothing
 #'   (O(n^2)-O(n^3)), the GAM tests, Stute-Zhu, eHL, BAGofT, and GiViTI. Set
@@ -517,6 +520,8 @@ run.all.gof <- function(object, predicted_probs = NULL, X = NULL,
                         control = list()) {
 
   install <- match.arg(install)
+  if (!identical(G, "auto") && (!is.numeric(G) || length(G) != 1))
+    stop("run.all.gof: 'G' must be a single number or 'auto'.")
   ctx <- .gof_context(object, predicted_probs, X, G = G)
   sel <- if (identical(tests, "all")) names(.GOF_REGISTRY) else intersect(tests, names(.GOF_REGISTRY))
   if (length(sel) == 0) stop("run.all.gof: no known tests selected.")
@@ -599,8 +604,8 @@ run.all.gof <- function(object, predicted_probs = NULL, X = NULL,
     # a few-events warning is already in the Note of the directed rows
     quiet <- function(expr)
       withCallingHandlers(expr, def_few_events = function(w) invokeRestart("muffleWarning"))
-    v3 <- tryCatch(quiet(def.ensemble.gof(ctx$model, G = G))$p_value, error = function(e) NA_real_)
-    vu <- tryCatch(quiet(def.ensemble.gof(ctx$model, add_ef = TRUE, G = G))$p_value,
+    v3 <- tryCatch(quiet(def.ensemble.gof(ctx$model, G = ctx$G))$p_value, error = function(e) NA_real_)
+    vu <- tryCatch(quiet(def.ensemble.gof(ctx$model, add_ef = TRUE, G = ctx$G))$p_value,
                    error = function(e) NA_real_)
     out <- rbind(out, data.frame(
       Test = c("Ensemble.Vote(3DEF)", "Ensemble.Univ(3DEF+EF)"), Family = "Ensemble",
@@ -747,7 +752,7 @@ print.gof_battery <- function(x, ...) {
 
 # Build the one context object every test reads from.
 .gof_context <- function(object, predicted_probs = NULL, X = NULL, G = 10) {
-  if (inherits(object, "glm")) {
+  ctx <- if (inherits(object, "glm")) {
     if (object$family$family != "binomial")
       stop("run.all.gof: the model must be a binomial glm.")
     y  <- as.numeric(object$y)
@@ -770,6 +775,11 @@ print.gof_battery <- function(x, ...) {
     list(y = y, ph = ph, X = X, data = NULL, model = NULL, G = G, n = length(y),
          has_model = FALSE, p = if (is.null(X)) NA_integer_ else ncol(X))
   }
+  if (identical(G, "auto")) {                      # resolved once, so every row uses the same G
+    ctx$G <- .def_auto_G(ctx$n)
+    ctx$G_auto <- TRUE
+  }
+  ctx
 }
 
 # Equal-frequency grouping of the predicted probabilities into G groups.
@@ -958,8 +968,9 @@ gof_def <- function(ctx, opts = list()) {
           withCallingHandlers(def.gof(ctx$model, G = G, basis = b, weights = wt), def_few_events = keep_few)
         else suppressWarnings(withCallingHandlers(
           def.gof(ctx$y, ctx$ph, X = ctx$X, G = G, basis = b, weights = wt), def_few_events = keep_few))
+  auto <- identical(opts$G, "auto") || (is.null(opts$G) && isTRUE(ctx$G_auto))
   note <- c(if (r$Method == "score") "score form",
-            if (identical(opts$G, "auto")) sprintf("G = %d (auto)", as.integer(G)), few)
+            if (auto) sprintf("G = %d (auto)", as.integer(G)), few)
   list(Statistic = r$Test_Statistic, df = r$df, p_value = r$p_value,
        Note = paste(note, collapse = "; "))
 }

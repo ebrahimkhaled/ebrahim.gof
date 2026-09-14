@@ -14,6 +14,21 @@ test_that("run.all.gof returns a tidy battery for a model", {
   expect_true(all(pv >= 0 & pv <= 1))
 })
 
+test_that("run.all.gof(G = 'auto') resolves the number of groups once, for every row", {
+  fit <- make_fit()                                                  # n = 500, so G = 20
+  a <- as.data.frame(run.all.gof(fit, G = "auto", include_slow = FALSE, install = "no"))
+  b <- as.data.frame(run.all.gof(fit, G = 20, include_slow = FALSE, install = "no"))
+  expect_identical(a$Test, b$Test)
+  expect_equal(a[, c("Statistic", "df", "p_value")], b[, c("Statistic", "df", "p_value")])
+  expect_true(is.finite(a$p_value[a$Test == "EF"]))
+  expect_equal(a$df[a$Test == "EF"], 18)
+  def <- grepl("^DEF\\.", a$Test)
+  expect_equal(sum(def), 4)
+  expect_true(all(grepl("G = 20 \\(auto\\)", a$Note[def])))
+  expect_identical(a$Note[!def], b$Note[!def])
+  expect_error(run.all.gof(fit, G = "many"), "single number or 'auto'")
+})
+
 test_that("run.all.gof selects a subset", {
   res <- run.all.gof(make_fit(), tests = c("EF", "DEF.poly3", "HL"))
   expect_setequal(res$Test, c("EF", "DEF.poly3", "HL"))
