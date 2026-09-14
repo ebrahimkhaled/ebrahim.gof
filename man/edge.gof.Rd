@@ -41,9 +41,11 @@ Ignored when \code{weights = "score"}.}
 
 \item{weights}{\code{"unit"} (default) is the statistic as published,
 \eqn{S = r'P_Z r} referred to a weighted chi-squared law. \code{"score"}
-multiplies each column by the square root of its group's variance, which makes
-the statistic the score test for adding the grouped shape to the model,
-referred to chi-squared on the number of columns (see Details).}
+multiplies each column by the square root of its group's variance, which for a
+logit fit makes the statistic the score test for adding the grouped shape to
+the model (a score-type test for other links). It is referred to chi-squared on
+the rank of its information matrix, which is the number of columns unless one
+is redundant (see Details).}
 }
 \value{
 A one-row \code{data.frame} with columns \code{Test} (\code{"EDGE"}),

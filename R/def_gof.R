@@ -28,11 +28,16 @@
 #'
 #' With \code{weights = "score"} each column of \eqn{Z} is multiplied by
 #' \eqn{\sqrt{V_g}}, the square root of its group's variance, so that \eqn{Z'r}
-#' becomes \eqn{\sum_g z_g (O_g - E_g)}: the score for adding the grouped shape to
-#' the model as a step covariate. Its information after adjusting for the fitted
-#' coefficients is \eqn{Z'\Omega Z}, and the statistic \eqn{u'I^{-1}u} is referred
-#' to a \eqn{\chi^2} law on the rank of that information, read from it after
-#' scaling to a correlation matrix. The unit form is the statistic as published;
+#' becomes \eqn{\sum_g z_g (O_g - E_g)}: for a logit fit, the score for adding the
+#' grouped shape to the model as a step covariate. Its information after adjusting
+#' for the fitted coefficients is \eqn{Z'\Omega Z}, and the statistic
+#' \eqn{u'I^{-1}u} is referred to a \eqn{\chi^2} law on the rank of that
+#' information (the number of columns unless one is redundant), read from it after
+#' scaling to a correlation matrix. For a logit fit this is the Rao score test for
+#' adding the grouped columns, and it agrees with \code{anova(..., test = "Rao")} up
+#' to glm's convergence tolerance; for other links it is a score-type test.
+#' Before either form is computed, a basis column shorter than \eqn{10^{-6}} times
+#' the longest one is dropped. The unit form is the statistic as published;
 #' the score form keeps a shape on the logit scale from losing its signal when the
 #' group variances differ strongly, as they do at high discrimination.
 #'
@@ -60,9 +65,11 @@
 #'   Ignored when \code{weights = "score"}.
 #' @param weights \code{"unit"} (default) is the statistic as published,
 #'   \eqn{S = r'P_Z r} referred to a weighted chi-squared law. \code{"score"}
-#'   multiplies each column by the square root of its group's variance, which makes
-#'   the statistic the score test for adding the grouped shape to the model,
-#'   referred to chi-squared on the number of columns (see Details).
+#'   multiplies each column by the square root of its group's variance, which for a
+#'   logit fit makes the statistic the score test for adding the grouped shape to
+#'   the model (a score-type test for other links). It is referred to chi-squared on
+#'   the rank of its information matrix, which is the number of columns unless one
+#'   is redundant (see Details).
 #'
 #' @return A one-row \code{data.frame} with columns \code{Test}, \code{Basis},
 #'   \code{Test_Statistic} (the statistic \eqn{S}), \code{df}, \code{Method}, and

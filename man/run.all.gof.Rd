@@ -196,11 +196,13 @@ power when the guess is right.
     link, which nests the logit and lets the two tails bend independently. It
     is aimed squarely at link misspecification. The two tail directions are
     tested jointly on 2 degrees of freedom (1 when every fitted risk lies on
-    one side of one half, which \code{Note} then says). Up to 2.7.0 this row
-    summed two marginal statistics and was liberal; see NEWS.
+    one side of one half, which \code{Note} then says). Testing them jointly
+    gives up a little power against one-sided (cloglog-type) departures. Up to
+    2.7.0 this row summed two marginal statistics and was liberal; see NEWS.
     \code{control = list(Stukel = list(form = "lr"))} gives the likelihood-ratio
     test for the same two directions, and \code{form = "marginal"} the old sum,
-    for reproducing earlier results only.
+    for reproducing earlier results only. The likelihood-ratio refit can fail
+    to converge under separation; the row is then \code{NA}, with a note.
 }
 
 \strong{Covariate-space tests} (\code{Family} "Covariate-space"). These partition the covariates themselves
@@ -299,7 +301,8 @@ reproduces the implementation used in the original simulation study:
 \code{Copas-RSS} follows the \pkg{rms} gof residual, and
 \code{HL} follows \code{ResourceSelection::hoslem.test}. The exception is
 \code{Stukel}: its default joint score statistic agrees with
-\code{anova(..., test = "Rao")} for the augmented model, and only
+\code{anova(..., test = "Rao")} for the augmented model, up to glm's
+convergence tolerance, and only
 \code{form = "marginal"} reproduces \pkg{LogisticDx} (through
 \code{statmod::glm.scoretest} when \pkg{statmod} is installed).
 

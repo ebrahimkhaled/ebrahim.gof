@@ -107,11 +107,13 @@
 #'     link, which nests the logit and lets the two tails bend independently. It
 #'     is aimed squarely at link misspecification. The two tail directions are
 #'     tested jointly on 2 degrees of freedom (1 when every fitted risk lies on
-#'     one side of one half, which \code{Note} then says). Up to 2.7.0 this row
-#'     summed two marginal statistics and was liberal; see NEWS.
+#'     one side of one half, which \code{Note} then says). Testing them jointly
+#'     gives up a little power against one-sided (cloglog-type) departures. Up to
+#'     2.7.0 this row summed two marginal statistics and was liberal; see NEWS.
 #'     \code{control = list(Stukel = list(form = "lr"))} gives the likelihood-ratio
 #'     test for the same two directions, and \code{form = "marginal"} the old sum,
-#'     for reproducing earlier results only.
+#'     for reproducing earlier results only. The likelihood-ratio refit can fail
+#'     to converge under separation; the row is then \code{NA}, with a note.
 #' }
 #'
 #' \strong{Covariate-space tests} (\code{Family} "Covariate-space"). These partition the covariates themselves
@@ -210,7 +212,8 @@
 #' \code{Copas-RSS} follows the \pkg{rms} gof residual, and
 #' \code{HL} follows \code{ResourceSelection::hoslem.test}. The exception is
 #' \code{Stukel}: its default joint score statistic agrees with
-#' \code{anova(..., test = "Rao")} for the augmented model, and only
+#' \code{anova(..., test = "Rao")} for the augmented model, up to glm's
+#' convergence tolerance, and only
 #' \code{form = "marginal"} reproduces \pkg{LogisticDx} (through
 #' \code{statmod::glm.scoretest} when \pkg{statmod} is installed).
 #'
@@ -992,18 +995,20 @@ gof_def <- function(ctx, opts = list()) {
 #
 # form = "joint" (the default from 2.8.0) is u'I^-1 u, with u = Z'(y - p) and I the
 # information of Z after adjusting for the fitted coefficients: the Rao score test for
-# adding both columns, the number anova(..., test = "Rao") gives. When no fitted risk lies
+# adding both columns, which anova(..., test = "Rao") gives up to glm's convergence
+# tolerance. Aliased columns of X are left out. When no fitted risk lies
 # on one side of one half that column is identically zero, and the test is the 1-df score
 # test on the other; Note says so.
 #
 # form = "lr" refits the model with the non-zero columns added and refers the drop in
-# deviance to chi-square on the number of columns the refit could estimate.
+# deviance to chi-square on the number of columns the refit could estimate. Under separation
+# the refit may not converge, and the row is then NA with a note.
 #
 # form = "marginal" is the statistic of 2.7.0 and earlier, and of LogisticDx: the two
 # marginal score z's squared and summed. Once the model is fitted the two directions are
-# correlated (about -0.71 when fitted risks fall on both sides of one half), so the sum is
-# not chi-square(2) and rejects about 7% of correct models at the 5% level. It is kept only
-# so that earlier results can be reproduced.
+# correlated, so the sum is not chi-square(2) and is liberal: for example, a post-fit
+# correlation of about -0.71 in a typical design, and a rejection rate of up to about 7% at
+# the 5% level. It is kept only so that earlier results can be reproduced.
 gof_stukel <- function(ctx, opts = list()) {
   form <- if (is.null(opts$form)) "joint" else match.arg(opts$form, c("joint", "marginal", "lr"))
   if (!ctx$has_model)

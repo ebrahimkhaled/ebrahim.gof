@@ -6,13 +6,15 @@
   Stukel's two tail directions and referred the sum to chi-squared on 2 degrees of freedom. That is
   the statistic of `LogisticDx::gof.glm()` ("SstBoth"), which the battery was built to reproduce,
   but it is not chi-squared on 2 degrees of freedom: once the model is fitted the two directions are
-  correlated (about -0.71 when fitted risks lie on both sides of one half), so the sum rejects about
-  7 per cent of correctly specified models at the 5 per cent level, and against symmetric departures
-  from the logit it loses much of its power. The row now reports the joint score statistic, which is
-  the score test for adding both directions to the model and agrees with `anova(..., test = "Rao")`.
-  The old statistic is still available, for reproducing earlier results only, with
-  `control = list(Stukel = list(form = "marginal"))`. The 2.0.0 entry below, which says the row
-  matches `LogisticDx`, now holds only for that form.
+  correlated, and the sum is liberal: for example, a post-fit correlation of about -0.71 in a typical
+  design, and a rejection rate of up to about 7 per cent at the 5 per cent level. Against symmetric
+  departures from the logit it also loses much of its power. The row now reports the joint score
+  statistic, which is the score test for adding both directions to the model and agrees with
+  `anova(..., test = "Rao")` up to glm's convergence tolerance. The joint test gives up a little power
+  against one-sided (cloglog-type) departures. The old statistic is still available, for reproducing
+  earlier results only, with `control = list(Stukel = list(form = "marginal"))`. The 2.0.0 entry
+  below, which says the row matches `LogisticDx`, now holds only for that form. Aliased columns of the
+  model are left out of the joint and likelihood-ratio forms.
 
 * When every fitted risk lay on one side of one half, one of Stukel's directions was identically
   zero and the row returned `NaN` without a note. It now reports the one-degree-of-freedom score test
@@ -30,9 +32,9 @@
 * `control = list(Stukel = list(form = "lr"))` gives the likelihood-ratio test for the same two
   directions: the model is refitted with them added, and the drop in deviance is referred to
   chi-squared on the number of added columns the refit can estimate (one when every fitted risk lies
-  on one side of one half). If the refit fails or does not converge the row returns `NA` and says why.
-  The joint and likelihood-ratio forms need an unweighted logit fit to binary data, and return `NA`
-  with a note otherwise.
+  on one side of one half). If the refit fails or does not converge, as it can under separation, the
+  row returns `NA` and says why. The joint and likelihood-ratio forms need an unweighted logit fit to
+  binary data, and return `NA` with a note otherwise.
 
 * `edge.gof()` and `def.gof()` gain the basis `"sym"`: one column, eta|eta|, at the logit of each
   group's mean fitted risk. It is Stukel's symmetric direction in grouped form and is aimed at tails
@@ -42,10 +44,11 @@
 
 * `edge.gof()`, `def.gof()` and `def.ensemble.gof()` gain `weights = c("unit", "score")`. `"unit"`
   is the published statistic and stays the default. `"score"` multiplies each basis column by the
-  square root of its group's variance, so the statistic becomes the score test for adding the grouped
-  shape to the model, referred to chi-squared on the number of columns. When group variances differ
-  strongly, as they do at high discrimination, this keeps shapes on the logit scale from losing their
-  signal. The result keeps its six columns, with `Method = "score"` and an integer `df`. In the
+  square root of its group's variance. For a logit fit the statistic then becomes the Rao score test
+  for adding the grouped columns to the model (for other links it is a score-type test). It is
+  referred to chi-squared on the rank of its information matrix, which is the number of columns
+  unless one is redundant. When group variances differ strongly, as they do at high discrimination,
+  this keeps shapes on the logit scale from losing their signal. The result keeps its six columns, with `Method = "score"` and an integer `df`. In the
   battery, use `control = list(DEF.sym = list(weights = "score"))`. The two ensemble rows of the
   battery still combine the unit form of `DEF.poly2`, `DEF.poly3` and `DEF.stukel` at the battery's
   `G`; when `control` gives those rows other `weights` or another `G`, the ensemble rows say
@@ -57,6 +60,8 @@
   `Note` records the number of groups used. `run.all.gof(G = "auto")` resolves the rule once, so
   every row, the EF and ensemble rows included, uses the same number of groups, and the directed rows
   record it in `Note`. Any other non-numeric `G` is now an error rather than a failure of each row.
+
+## Behaviour changes
 
 * `def.gof()`, and so `edge.gof()` and `def.ensemble.gof()`, now warn when there are fewer events,
   or fewer non-events, than groups. The p-value is still returned, but some groups then hold almost

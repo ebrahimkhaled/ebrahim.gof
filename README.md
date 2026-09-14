@@ -129,7 +129,7 @@ def.gof(object, predicted_probs = NULL, X = NULL, G = 10,
 - `G`: the number of equal-frequency groups (default 10), or `"auto"` for `max(10, round(n / 25))`, the partition rule of the EDGE paper.
 - `basis`: `"poly3"` (default), `"poly2"`, `"stukel"`, `"sym"` (one column, eta|eta|, Stukel's symmetric tail direction), or `"ensemble"` (runs poly2, poly3 and stukel and combines them via `def.ensemble.gof()`).
 - `method`: `"satterthwaite"` (default, no extra dependency) or `"imhof"` (exact, needs `CompQuadForm`).
-- `weights`: `"unit"` (default, the published statistic) or `"score"`, which weights each basis column by the square root of its group's variance and makes the statistic the score test for adding the grouped shape to the model, referred to chi-squared on the number of columns.
+- `weights`: `"unit"` (default, the published statistic) or `"score"`, which weights each basis column by the square root of its group's variance. For a logit fit this makes the statistic the Rao score test for adding the grouped shape to the model (for other links it is a score-type test). It is referred to chi-squared on the rank of its information matrix, which is the number of columns unless one is redundant.
 
 ```r
 fit <- glm(y ~ x1 + x2, family = binomial())
