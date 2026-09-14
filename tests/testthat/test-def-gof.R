@@ -86,18 +86,20 @@ test_that("the score form is identical from a glm and from (y, predicted_probs, 
   }
 })
 
-test_that("a near-empty Stukel half-column is dropped, not left to a singular solve", {
+test_that("a near-empty Stukel half-column is kept and scaled, not left to a singular solve", {
   set.seed(4)
   ph <- c(sort(runif(475, 0.02, 0.45)), rep(0.5001, 25))            # G = 20: the top group's mean risk is 0.5001
   X  <- cbind(1, qlogis(ph)); y <- rbinom(500, 1, ph)
   res <- def.gof(y, ph, X = X, G = 20, basis = "stukel")
   expect_true(is.finite(res$p_value))
-  ## the unit form built by hand, with the e^2 (e >= 0) column (about 1.6e-7) left out
+  ## the unit form built by hand with all three columns kept; the e^2 (e >= 0) column is about 1.6e-7
+  ## long, so each column is scaled to unit length before the solve (S does not depend on that scale)
   g  <- pmin(ceiling(rank(ph, ties.method = "first") / 25), 20)
   V  <- ph * (1 - ph); Vg <- as.numeric(tapply(V, g, sum))
   r  <- as.numeric(tapply(y - ph, g, sum)) / sqrt(Vg)
   e  <- qlogis(as.numeric(tapply(ph, g, mean)))
-  Z  <- cbind(e, -e^2 * (e < 0))
+  Z  <- cbind(e, e^2 * (e >= 0), -e^2 * (e < 0))
+  Z  <- sweep(Z, 2, sqrt(colSums(Z^2)), "/")
   U  <- rowsum(V * X, g) / sqrt(Vg)
   Om <- diag(20) - U %*% solve(crossprod(X, V * X), t(U))
   S  <- drop(crossprod(r, Z %*% solve(crossprod(Z), crossprod(Z, r))))
@@ -106,7 +108,27 @@ test_that("a near-empty Stukel half-column is dropped, not left to a singular so
   p  <- pchisq(S / (sum(lam^2) / sum(lam)), sum(lam)^2 / sum(lam^2), lower.tail = FALSE)
   expect_equal(res$Test_Statistic, S, tolerance = 1e-10)
   expect_equal(res$p_value, p, tolerance = 1e-10)
-  expect_equal(def.gof(y, ph, X = X, G = 20, basis = "stukel", weights = "score")$df, 2)
+  expect_equal(def.gof(y, ph, X = X, G = 20, basis = "stukel", weights = "score")$df, 3)
+
+  ## a glm fit whose only group at or above 0.5 has mean risk 0.5008: the score form keeps all three
+  ## columns and equals anova(..., test = "Rao") for the grouped step covariates, on a warm-restarted fit
+  set.seed(392)
+  dat <- data.frame(xa = runif(500, -3, 3), db = rbinom(500, 1, 0.5))
+  dat$out <- rbinom(500, 1, plogis(-2 + 0.6 * dat$xa + 0.5 * dat$db))
+  ctl <- glm.control(epsilon = 1e-13, maxit = 100)
+  fit <- glm(out ~ xa + db, family = binomial(), data = dat, control = ctl)
+  fit <- glm(out ~ xa + db, family = binomial(), data = dat, control = ctl, start = coef(fit))
+  pf <- pmin(pmax(fitted(fit), 1e-6), 1 - 1e-6)
+  gf <- pmin(ceiling(rank(pf, ties.method = "first") / 25), 20)
+  ef <- qlogis(as.numeric(tapply(pf, gf, mean)))
+  expect_equal(sum(ef >= 0), 1)
+  s   <- cbind(ef, ef^2 * (ef >= 0), -ef^2 * (ef < 0))[gf, ]
+  aug <- suppressWarnings(glm(out ~ xa + db + s, family = binomial(), data = dat, control = ctl))
+  rao <- anova(fit, aug, test = "Rao")
+  sc  <- def.gof(fit, G = 20, basis = "stukel", weights = "score")
+  expect_equal(rao$Df[2], 3)
+  expect_equal(sc$df, 3)
+  expect_equal(sc$Test_Statistic, rao$Rao[2], tolerance = 1e-8)
 })
 
 test_that("G = 'auto' is max(10, round(n / 25))", {

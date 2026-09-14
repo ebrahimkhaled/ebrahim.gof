@@ -36,8 +36,7 @@
 #' scaling to a correlation matrix. For a logit fit this is the Rao score test for
 #' adding the grouped columns, and it agrees with \code{anova(..., test = "Rao")} up
 #' to glm's convergence tolerance; for other links it is a score-type test.
-#' Before either form is computed, a basis column shorter than \eqn{10^{-6}} times
-#' the longest one is dropped. The unit form is the statistic as published;
+#' The unit form is the statistic as published;
 #' the score form keeps a shape on the logit scale from losing its signal when the
 #' group variances differ strongly, as they do at high discrimination.
 #'
@@ -185,14 +184,13 @@ def.gof <- function(object, predicted_probs = NULL, X = NULL, G = 10,
 
   # --- shape basis Z ---
   Z <- .def_basis(pbar, basis)
-  # A column is dropped when it is negligible next to the largest one (a Stukel half reaching
-  # a single group whose mean risk is a hair above 0.5), and the rest are scaled to unit
-  # length. Both statistics and the eigenvalues do not depend on the column scale; solve() does.
-  nz <- sqrt(colSums(Z^2))
-  ok <- nz > 1e-6 * max(nz)
-  Z  <- Z[, ok, drop = FALSE] / rep(nz[ok], each = nrow(Z))
+  Z <- Z[, colSums(abs(Z)) > 1e-8, drop = FALSE]
   if (ncol(Z) < 1)
     stop("The chosen basis is degenerate for this fit. Try basis = 'poly3' or a larger G.")
+  # The kept columns are scaled to unit length before any solve. A Stukel half reaching a single
+  # group whose mean risk is a hair above 0.5 is tiny but not zero, and solve() fails on it
+  # unscaled. Both statistics and the eigenvalues do not depend on the column scale.
+  Z <- Z / rep(sqrt(colSums(Z^2)), each = nrow(Z))
 
   if (weights == "score") {
     # Score form: each column times sqrt(V_g), so Z'r = sum_g z_g (O_g - E_g), the score for

@@ -23,9 +23,8 @@
 * `def.gof()` and `edge.gof()` with `basis = "stukel"` stopped with "system is computationally
   singular" when one group's mean fitted risk lay just above one half. The basis column for risks at
   or above one half was then about 1e-7: large enough to pass the old filter, small enough to break
-  the solve. A basis column is now dropped when its length is below 1e-6 times that of the longest
-  column, and the kept columns are scaled to unit length first. Neither statistic nor its reference
-  depends on that scale, so other results do not change.
+  the solve. The kept columns are now scaled to unit length before any solve, which does not change
+  the statistic.
 
 ## New features
 

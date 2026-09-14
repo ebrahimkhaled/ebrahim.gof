@@ -90,8 +90,7 @@ information (the number of columns unless one is redundant), read from it after
 scaling to a correlation matrix. For a logit fit this is the Rao score test for
 adding the grouped columns, and it agrees with \code{anova(..., test = "Rao")} up
 to glm's convergence tolerance; for other links it is a score-type test.
-Before either form is computed, a basis column shorter than \eqn{10^{-6}} times
-the longest one is dropped. The unit form is the statistic as published;
+The unit form is the statistic as published;
 the score form keeps a shape on the logit scale from losing its signal when the
 group variances differ strongly, as they do at high discrimination.
 
