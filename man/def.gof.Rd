@@ -80,6 +80,10 @@ Satterthwaite scaled-\eqn{\chi^2} approximation (default) or Imhof's method
 \code{"poly2"}, \code{"poly3"} and \code{"stukel"} and combines them via
 \code{\link{def.ensemble.gof}}.
 
+Equal-frequency groups split tied fitted risks by row order. With many ties, as
+with grouped data or a model on discrete covariates, the result can therefore
+depend on the order of the rows, and randomising the row order is advised.
+
 With \code{weights = "score"} each column of \eqn{Z} is multiplied by
 \eqn{\sqrt{V_g}}, the square root of its group's variance, so that \eqn{Z'r}
 becomes \eqn{\sum_g z_g (O_g - E_g)}: for a logit fit, the score for adding the

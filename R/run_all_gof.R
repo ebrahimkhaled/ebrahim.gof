@@ -211,7 +211,11 @@
 #'
 #' \strong{Implementation notes.} \code{Tsiatis} and \code{Xie} cluster the
 #' covariate space with k-means using a fixed internal seed, so results are
-#' reproducible and your own random stream is left untouched. Every bundled test
+#' reproducible and your own random stream is left untouched. The equal-frequency
+#' groups of \code{HL}, \code{F-test}, \code{EF} and the \code{DEF} rows split tied
+#' fitted risks by row order, so with many ties (grouped data, or a model on
+#' discrete covariates) their results can depend on the order of the rows;
+#' randomising the row order is advised. Every bundled test
 #' reproduces the implementation used in the original simulation study:
 #' \code{Osius-Rojek} follows \pkg{LogisticDx}'s \code{gof.glm},
 #' \code{Copas-RSS} follows the \pkg{rms} gof residual, and
