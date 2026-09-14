@@ -178,7 +178,12 @@ def.gof <- function(object, predicted_probs = NULL, X = NULL, G = 10,
 
   # --- shape basis Z ---
   Z <- .def_basis(pbar, basis)
-  Z <- Z[, colSums(abs(Z)) > 1e-8, drop = FALSE]
+  # A column is dropped when it is negligible next to the largest one (a Stukel half reaching
+  # a single group whose mean risk is a hair above 0.5), and the rest are scaled to unit
+  # length. Both statistics and the eigenvalues do not depend on the column scale; solve() does.
+  nz <- sqrt(colSums(Z^2))
+  ok <- nz > 1e-6 * max(nz)
+  Z  <- Z[, ok, drop = FALSE] / rep(nz[ok], each = nrow(Z))
   if (ncol(Z) < 1)
     stop("The chosen basis is degenerate for this fit. Try basis = 'poly3' or a larger G.")
 
@@ -186,8 +191,7 @@ def.gof <- function(object, predicted_probs = NULL, X = NULL, G = 10,
     # Score form: each column times sqrt(V_g), so Z'r = sum_g z_g (O_g - E_g), the score for
     # adding the group-level step covariate to the model. Its information after adjusting for
     # the fitted coefficients is Z' Omega Z, and u'I^-1 u is chi-square on its rank. The rank is
-    # read from I scaled to a correlation matrix, so a column that is small but not collinear
-    # (a Stukel half reaching a single group) is kept rather than dropped for its scale.
+    # read from I scaled to a correlation matrix, so the scale of a column does not decide it.
     Zs <- Z * sqrt(Vg)
     u  <- drop(crossprod(Zs, r))
     I  <- crossprod(Zs, Omega %*% Zs)

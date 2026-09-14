@@ -86,6 +86,29 @@ test_that("the score form is identical from a glm and from (y, predicted_probs, 
   }
 })
 
+test_that("a near-empty Stukel half-column is dropped, not left to a singular solve", {
+  set.seed(4)
+  ph <- c(sort(runif(475, 0.02, 0.45)), rep(0.5001, 25))            # G = 20: the top group's mean risk is 0.5001
+  X  <- cbind(1, qlogis(ph)); y <- rbinom(500, 1, ph)
+  res <- def.gof(y, ph, X = X, G = 20, basis = "stukel")
+  expect_true(is.finite(res$p_value))
+  ## the unit form built by hand, with the e^2 (e >= 0) column (about 1.6e-7) left out
+  g  <- pmin(ceiling(rank(ph, ties.method = "first") / 25), 20)
+  V  <- ph * (1 - ph); Vg <- as.numeric(tapply(V, g, sum))
+  r  <- as.numeric(tapply(y - ph, g, sum)) / sqrt(Vg)
+  e  <- qlogis(as.numeric(tapply(ph, g, mean)))
+  Z  <- cbind(e, -e^2 * (e < 0))
+  U  <- rowsum(V * X, g) / sqrt(Vg)
+  Om <- diag(20) - U %*% solve(crossprod(X, V * X), t(U))
+  S  <- drop(crossprod(r, Z %*% solve(crossprod(Z), crossprod(Z, r))))
+  lam <- Re(eigen(solve(crossprod(Z), crossprod(Z, Om %*% Z)), only.values = TRUE)$values)
+  lam <- lam[lam > 1e-9]
+  p  <- pchisq(S / (sum(lam^2) / sum(lam)), sum(lam)^2 / sum(lam^2), lower.tail = FALSE)
+  expect_equal(res$Test_Statistic, S, tolerance = 1e-10)
+  expect_equal(res$p_value, p, tolerance = 1e-10)
+  expect_equal(def.gof(y, ph, X = X, G = 20, basis = "stukel", weights = "score")$df, 2)
+})
+
 test_that("G = 'auto' is max(10, round(n / 25))", {
   fit <- make_fit()                                                 # n = 600, so G = 24
   expect_identical(def.gof(fit, G = "auto"), def.gof(fit, G = 24))

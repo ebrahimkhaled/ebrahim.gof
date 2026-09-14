@@ -18,6 +18,13 @@
   zero and the row returned `NaN` without a note. It now reports the one-degree-of-freedom score test
   on the remaining direction, and says so in `Note`.
 
+* `def.gof()` and `edge.gof()` with `basis = "stukel"` stopped with "system is computationally
+  singular" when one group's mean fitted risk lay just above one half. The basis column for risks at
+  or above one half was then about 1e-7: large enough to pass the old filter, small enough to break
+  the solve. A basis column is now dropped when its length is below 1e-6 times that of the longest
+  column, and the kept columns are scaled to unit length first. Neither statistic nor its reference
+  depends on that scale, so other results do not change.
+
 ## New features
 
 * `control = list(Stukel = list(form = "lr"))` gives the likelihood-ratio test for the same two
