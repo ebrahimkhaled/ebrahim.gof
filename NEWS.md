@@ -46,7 +46,10 @@
   shape to the model, referred to chi-squared on the number of columns. When group variances differ
   strongly, as they do at high discrimination, this keeps shapes on the logit scale from losing their
   signal. The result keeps its six columns, with `Method = "score"` and an integer `df`. In the
-  battery, use `control = list(DEF.sym = list(weights = "score"))`.
+  battery, use `control = list(DEF.sym = list(weights = "score"))`. The two ensemble rows of the
+  battery still combine the unit form of `DEF.poly2`, `DEF.poly3` and `DEF.stukel` at the battery's
+  `G`; when `control` gives those rows other `weights` or another `G`, the ensemble rows say
+  "unit form" in `Note`.
 
 * `edge.gof()`, `def.gof()` and `def.ensemble.gof()` accept `G = "auto"`, which uses
   `max(10, round(n / 25))` groups, the partition rule of the EDGE paper. A number is used as before.

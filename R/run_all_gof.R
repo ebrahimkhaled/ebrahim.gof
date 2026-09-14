@@ -192,7 +192,11 @@
 #'     Cauchy combination is valid without knowing how the members correlate,
 #'     which is what makes pooling dependent tests possible at all. The point is
 #'     to avoid having to guess the departure in advance, at the cost of being
-#'     slightly less powerful than the single best member would have been.
+#'     slightly less powerful than the single best member would have been. Both
+#'     rows always combine the unit form of \code{DEF.poly2}, \code{DEF.poly3} and
+#'     \code{DEF.stukel} at the battery's \code{G}. When \code{control} gives those
+#'     rows other \code{weights} or another \code{G}, the ensemble rows do not
+#'     follow, and their \code{Note} says "unit form".
 #'   \item See also \code{\link{legoft}}, a pretrained combination whose weights
 #'     are fixed offline and ship frozen, so two analysts running it on the same
 #'     data obtain the same p-value.
@@ -607,10 +611,17 @@ run.all.gof <- function(object, predicted_probs = NULL, X = NULL,
     v3 <- tryCatch(quiet(def.ensemble.gof(ctx$model, G = ctx$G))$p_value, error = function(e) NA_real_)
     vu <- tryCatch(quiet(def.ensemble.gof(ctx$model, add_ef = TRUE, G = ctx$G))$p_value,
                    error = function(e) NA_real_)
+    # these rows combine the unit form at the battery G; say so when control has moved the
+    # three DEF rows they combine to other weights or another G
+    moved <- any(vapply(control[c("DEF.poly2", "DEF.poly3", "DEF.stukel")], function(o) {
+      g <- if (identical(o$G, "auto")) .def_auto_G(ctx$n) else o$G
+      (!is.null(o$weights) && !identical(o$weights, "unit")) || (!is.null(g) && !isTRUE(all(g == ctx$G)))
+    }, logical(1)))
     out <- rbind(out, data.frame(
       Test = c("Ensemble.Vote(3DEF)", "Ensemble.Univ(3DEF+EF)"), Family = "Ensemble",
       Statistic = NA_real_, df = NA_real_, p_value = c(v3, vu),
-      Note = "Cauchy combination of the directed tests",
+      Note = paste0("Cauchy combination of the directed tests",
+                    if (moved) sprintf("; unit form, G = %s", format(ctx$G))),
       stringsAsFactors = FALSE))
   }
 

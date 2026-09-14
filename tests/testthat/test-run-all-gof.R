@@ -29,6 +29,26 @@ test_that("run.all.gof(G = 'auto') resolves the number of groups once, for every
   expect_error(run.all.gof(fit, G = "many"), "single number or 'auto'")
 })
 
+test_that("the ensemble rows stay on the unit form at the battery G, and say so", {
+  fit <- make_fit()
+  plain <- run.all.gof(fit, include_slow = FALSE, install = "no")
+  ens <- grepl("^Ensemble", plain$Test)
+  expect_equal(sum(ens), 2)
+  expect_true(all(plain$Note[ens] == "Cauchy combination of the directed tests"))
+  moved <- run.all.gof(fit, include_slow = FALSE, install = "no",
+                       control = list(DEF.poly3 = list(weights = "score"), DEF.stukel = list(G = "auto")))
+  expect_identical(moved$Test, plain$Test)
+  expect_true(all(grepl("unit form, G = 10", moved$Note[ens])))
+  expect_match(moved$Note[moved$Test == "DEF.poly3"], "score form")
+  expect_equal(moved$p_value[ens], plain$p_value[ens])
+  expect_equal(moved$p_value[moved$Test == "Ensemble.Vote(3DEF)"], def.ensemble.gof(fit)$p_value)
+  expect_equal(moved$p_value[moved$Test == "Ensemble.Univ(3DEF+EF)"],
+               def.ensemble.gof(fit, add_ef = TRUE)$p_value)
+  sym <- run.all.gof(fit, include_slow = FALSE, install = "no",       # DEF.sym is not an ensemble member
+                     control = list(DEF.sym = list(weights = "score")))
+  expect_true(all(sym$Note[ens] == "Cauchy combination of the directed tests"))
+})
+
 test_that("run.all.gof selects a subset", {
   res <- run.all.gof(make_fit(), tests = c("EF", "DEF.poly3", "HL"))
   expect_setequal(res$Test, c("EF", "DEF.poly3", "HL"))

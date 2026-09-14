@@ -281,7 +281,11 @@ directly whether predicted risks match observed frequencies.
     Cauchy combination is valid without knowing how the members correlate,
     which is what makes pooling dependent tests possible at all. The point is
     to avoid having to guess the departure in advance, at the cost of being
-    slightly less powerful than the single best member would have been.
+    slightly less powerful than the single best member would have been. Both
+    rows always combine the unit form of \code{DEF.poly2}, \code{DEF.poly3} and
+    \code{DEF.stukel} at the battery's \code{G}. When \code{control} gives those
+    rows other \code{weights} or another \code{G}, the ensemble rows do not
+    follow, and their \code{Note} says "unit form".
   \item See also \code{\link{legoft}}, a pretrained combination whose weights
     are fixed offline and ship frozen, so two analysts running it on the same
     data obtain the same p-value.
