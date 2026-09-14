@@ -115,7 +115,10 @@
 #'     \code{control = list(Stukel = list(form = "lr"))} gives the likelihood-ratio
 #'     test for the same two directions, and \code{form = "marginal"} the old sum,
 #'     for reproducing earlier results only. The likelihood-ratio refit can fail
-#'     to converge under separation; the row is then \code{NA}, with a note.
+#'     to converge under separation; the row is then \code{NA}, with a note. The
+#'     joint form leaves out a direction whose information after the fit is below
+#'     \eqn{10^{-10}} times its information before the fit, as when the fitted logit
+#'     is constant; when no direction is left the row is \code{NA}, with a note.
 #' }
 #'
 #' \strong{Covariate-space tests} (\code{Family} "Covariate-space"). These partition the covariates themselves
@@ -983,10 +986,10 @@ gof_def <- function(ctx, opts = list()) {
   }
   r  <- if (ctx$has_model)
           withCallingHandlers(def.gof(ctx$model, G = G, basis = b, weights = wt), def_few_events = keep_few,
-                              def_degenerate = keep_few)
+                              def_degenerate = keep_few, def_no_information = keep_few)
         else suppressWarnings(withCallingHandlers(
           def.gof(ctx$y, ctx$ph, X = ctx$X, G = G, basis = b, weights = wt), def_few_events = keep_few,
-          def_degenerate = keep_few))
+          def_degenerate = keep_few, def_no_information = keep_few))
   auto <- identical(opts$G, "auto") || (is.null(opts$G) && isTRUE(ctx$G_auto))
   note <- c(if (r$Method == "score") "score form",
             if (auto) sprintf("G = %d (auto)", as.integer(G)), few)
@@ -1003,7 +1006,8 @@ gof_def <- function(ctx, opts = list()) {
 # adding both columns, which anova(..., test = "Rao") gives up to glm's convergence
 # tolerance. Aliased columns of X are left out. When no fitted risk lies
 # on one side of one half that column is identically zero, and the test is the 1-df score
-# test on the other; Note says so.
+# test on the other; Note says so. A column whose information after the fit is below 1e-10 of
+# its information before the fit is one the model already spans and is also left out.
 #
 # form = "lr" refits the model with the non-zero columns added and refers the drop in
 # deviance to chi-square on the number of columns the refit could estimate. Under separation
@@ -1076,14 +1080,22 @@ gof_stukel <- function(ctx, opts = list()) {
   ph  <- as.numeric(stats::fitted(ctx$model))       # unclamped, as the fit itself uses
   W   <- ph * (1 - ph)
   u   <- colSums(Z * (y - ph))
+  ok  <- rep(TRUE, ncol(Z))
   chi <- tryCatch({
     ZWX <- crossprod(Z, W * X)
     I   <- crossprod(Z, W * Z) - ZWX %*% solve(crossprod(X, W * X), t(ZWX))
-    as.numeric(crossprod(u, solve(I, u)))
+    # a direction the model already spans is left out: its information after the fit is below
+    # 1e-10 of its information before the fit (every direction, when the fitted logit is constant)
+    ok  <- diag(I) > 1e-10 * colSums(W * Z^2)
+    if (any(ok)) as.numeric(crossprod(u[ok], solve(I[ok, ok, drop = FALSE], u[ok]))) else NA_real_
   }, error = function(e) NA_real_)
+  if (!isTRUE(any(ok)))
+    return(list(Statistic = NA, df = NA, p_value = NA,
+                Note = "Not run: no Stukel direction has information left after the fit"))
   if (!is.finite(chi) || chi < 0)
     return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: singular score information"))
-  k <- ncol(Z)
+  k <- sum(ok)
+  if (!all(ok)) side <- "1 df: the other Stukel direction has no information left after the fit"
   list(Statistic = chi, df = k, p_value = stats::pchisq(chi, k, lower.tail = FALSE), Note = side)
 }
 

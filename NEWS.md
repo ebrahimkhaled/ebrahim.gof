@@ -73,6 +73,13 @@
   zero. `def.ensemble.gof()` warns once. In `run.all.gof()` the directed rows say so in `Note`, and
   every form of the `Stukel` row, `"marginal"` included, returns `NA` with a note.
 
+* The score form of `def.gof()` (and `edge.gof()`) and the joint form of the `Stukel` row now leave
+  out a column that the fitted model already spans: one whose information after the fit is below
+  1e-10 of its information before the fit. This happens when the fitted logit is constant or nearly
+  so, for example in a sample with two or three events. The information of such a column is rounding
+  noise, and inverting it could give a p-value of zero. When no column is left, `def.gof()` returns
+  `NA` with a warning of class `def_no_information`, and the `Stukel` row returns `NA` with a note.
+
 ## Documentation
 
 * `?run.all.gof` said that Stukel's two-parameter form does not always hold its nominal level. That

@@ -198,6 +198,41 @@ test_that("a sample with no event or no non-event gives NA, with a def_degenerat
   }
 })
 
+test_that("a column with no information left after the fit is left out of the score forms", {
+  ## two events at mirrored x: the fitted slope is zero, so the fitted logit is constant and the model
+  ## already spans every Stukel and sym column
+  x <- qnorm(ppoints(200)); y <- rep(0, 200); y[c(1, 200)] <- 1
+  fit <- suppressWarnings(glm(y ~ x, family = binomial()))
+  expect_lt(abs(coef(fit)[["x"]]), 1e-8)
+  for (b in c("stukel", "sym")) {
+    expect_warning(res <- def.gof(fit, basis = b, weights = "score"), class = "def_no_information")
+    expect_true(is.na(res$p_value))
+  }
+  expect_warning(res <- edge.gof(fit, basis = "sym", weights = "score"), class = "def_no_information")
+  expect_true(is.na(res$p_value))
+  st <- run.all.gof(fit, tests = "Stukel", install = "no")
+  expect_true(is.na(st$p_value))
+  expect_match(st$Note, "no Stukel direction has information left")
+  dr <- run.all.gof(fit, tests = "DEF.sym", install = "no", control = list(DEF.sym = list(weights = "score")))
+  expect_true(is.na(dr$p_value))
+  expect_match(dr$Note, "no basis column has information left")
+
+  ## a sparse sample with 3 events and a nearly flat fit: the one Stukel direction (every fitted risk is below
+  ## 0.5) keeps about 5e-16 of its information, so the joint form has no p-value
+  set.seed(563)
+  x <- as.numeric(scale(rchisq(100, 4))); y <- rbinom(100, 1, plogis(-4.9 + x))
+  expect_equal(sum(y), 3)
+  fit <- glm(y ~ x, family = binomial())
+  p <- fitted(fit); W <- p * (1 - p); X <- model.matrix(fit)
+  expect_lt(max(p), 0.5)
+  z <- -0.5 * predict(fit, type = "link")^2
+  zwx <- crossprod(X, W * z)
+  expect_lt(sum(W * z^2) - drop(crossprod(zwx, solve(crossprod(X, W * X), zwx))), 1e-10 * sum(W * z^2))
+  st <- run.all.gof(fit, tests = "Stukel", install = "no")
+  expect_true(is.na(st$p_value))
+  expect_match(st$Note, "no Stukel direction has information left")
+})
+
 test_that("def.gof errors on bad input", {
   set.seed(11)
   expect_error(def.gof(glm(rpois(30, 1) ~ rnorm(30), family = poisson())), "binomial")

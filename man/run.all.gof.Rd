@@ -204,7 +204,10 @@ power when the guess is right.
     \code{control = list(Stukel = list(form = "lr"))} gives the likelihood-ratio
     test for the same two directions, and \code{form = "marginal"} the old sum,
     for reproducing earlier results only. The likelihood-ratio refit can fail
-    to converge under separation; the row is then \code{NA}, with a note.
+    to converge under separation; the row is then \code{NA}, with a note. The
+    joint form leaves out a direction whose information after the fit is below
+    \eqn{10^{-10}} times its information before the fit, as when the fitted logit
+    is constant; when no direction is left the row is \code{NA}, with a note.
 }
 
 \strong{Covariate-space tests} (\code{Family} "Covariate-space"). These partition the covariates themselves

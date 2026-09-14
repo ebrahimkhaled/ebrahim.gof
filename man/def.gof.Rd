@@ -90,6 +90,11 @@ information (the number of columns unless one is redundant), read from it after
 scaling to a correlation matrix. For a logit fit this is the Rao score test for
 adding the grouped columns, and it agrees with \code{anova(..., test = "Rao")} up
 to glm's convergence tolerance; for other links it is a score-type test.
+A column whose information after the fit is below \eqn{10^{-10}} times its
+information before the fit (\eqn{Z_s'Z_s}, with \eqn{Z_s} the weighted columns)
+is one the model already spans, as when the fitted logit is constant. It is
+left out, and when no column is left the p-value is \code{NA}, with a warning of
+class \code{def_no_information}.
 The unit form is the statistic as published;
 the score form keeps a shape on the logit scale from losing its signal when the
 group variances differ strongly, as they do at high discrimination.

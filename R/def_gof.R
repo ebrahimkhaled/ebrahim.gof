@@ -36,6 +36,11 @@
 #' scaling to a correlation matrix. For a logit fit this is the Rao score test for
 #' adding the grouped columns, and it agrees with \code{anova(..., test = "Rao")} up
 #' to glm's convergence tolerance; for other links it is a score-type test.
+#' A column whose information after the fit is below \eqn{10^{-10}} times its
+#' information before the fit (\eqn{Z_s'Z_s}, with \eqn{Z_s} the weighted columns)
+#' is one the model already spans, as when the fitted logit is constant. It is
+#' left out, and when no column is left the p-value is \code{NA}, with a warning of
+#' class \code{def_no_information}.
 #' The unit form is the statistic as published;
 #' the score form keeps a shape on the logit scale from losing its signal when the
 #' group variances differ strongly, as they do at high discrimination.
@@ -206,11 +211,13 @@ def.gof <- function(object, predicted_probs = NULL, X = NULL, G = 10,
     # adding the group-level step covariate to the model. Its information after adjusting for
     # the fitted coefficients is Z' Omega Z, and u'I^-1 u is chi-square on its rank. The rank is
     # read from I scaled to a correlation matrix, so the scale of a column does not decide it.
+    # A column the model already spans is left out: its information after the fit is below 1e-10
+    # of its information before the fit, Zs'Zs (every column, when the fitted logit is constant).
     Zs <- Z * sqrt(Vg)
     u  <- drop(crossprod(Zs, r))
     I  <- crossprod(Zs, Omega %*% Zs)
     d  <- sqrt(pmax(diag(I), 0))
-    ok <- d > 0
+    ok <- d > 0 & diag(I) > 1e-10 * colSums(Zs^2)
     k  <- 0L
     if (any(ok)) {
       R   <- I[ok, ok, drop = FALSE] / outer(d[ok], d[ok])
@@ -218,7 +225,7 @@ def.gof <- function(object, predicted_probs = NULL, X = NULL, G = 10,
       pos <- ev$values > 1e-8
       k   <- sum(pos)
       S   <- sum(drop(crossprod(ev$vectors[, pos, drop = FALSE], u[ok] / d[ok]))^2 / ev$values[pos])
-    }
+    } else .def_warn_no_information()
     return(data.frame(Test = "Directed Ebrahim-Farrington", Basis = basis,
                       Test_Statistic = if (k > 0L) S else NA_real_,
                       df = if (k > 0L) k else NA_real_, Method = "score",
@@ -282,6 +289,15 @@ def.gof <- function(object, predicted_probs = NULL, X = NULL, G = 10,
   what <- if (ne == 0) "no events (every response is 0)" else "no non-events (every response is 1)"
   msg  <- sprintf("def.gof: %s; the model has no maximum-likelihood fit, so there is no p-value.", what)
   warning(structure(class = c("def_degenerate", "warning", "condition"),
+                    list(message = msg, call = NULL)))
+}
+
+# Internal: warn that no basis column of the score form keeps information after the fit, so it
+# has no p-value. Its own class lets the battery put it in Note.
+.def_warn_no_information <- function() {
+  msg <- paste("def.gof: no basis column has information left after the fit (each is below 1e-10",
+               "of its information before the fit), so the score form has no p-value.")
+  warning(structure(class = c("def_no_information", "warning", "condition"),
                     list(message = msg, call = NULL)))
 }
 
