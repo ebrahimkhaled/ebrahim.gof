@@ -1,55 +1,65 @@
-# ebrahim.gof 2.7.0
+<!-- On the day of submission: set Date in DESCRIPTION to that day and rebuild the tarball
+     (R CMD build) on that day, or the incoming check notes that the Date field and the build
+     time stamp are over a month old. -->
 
-## What is new
+# ebrahim.gof 2.8.0
 
-`calm.gof()`, a closed-form reference distribution for the shrinkage-corrected goodness-of-fit
-statistics. It is the companion of `shrink.gof()`, released in 2.5.0: the statistics are the same
-and only the reference differs, so where `shrink.gof()` needs several hundred penalised refits
-`calm.gof()` needs one fit. It accompanies a manuscript under review; the method and the designs in
-which its decile variant is not reliable are documented in `?calm.gof`.
+## Why this release
 
-`CompQuadForm` moves from Suggests to Imports. `calm.gof()` computes the exact tail of a weighted
-chi-squared law and cannot return a p-value without it, so it is no longer optional. No other
-dependency changed.
+It corrects a statistic. The `Stukel` row of `run.all.gof()` squared and summed two marginal score
+statistics and referred the sum to chi-squared on 2 degrees of freedom. After fitting, the two
+statistics are correlated, so the sum is not chi-squared on 2 degrees of freedom and the test was
+liberal: in simulation it rejected up to about 7 per cent of correctly specified models at the 5 per
+cent level. When every fitted risk lay on one side of 0.5 it returned `NaN` without a note. The row
+now reports the joint score test for the same two directions, on 2 degrees of freedom, or on 1 with a
+note when every fitted risk is on one side of 0.5. This is why 2.8.0 follows 2.7.0 closely.
+
+The same release fixes `def.gof()` and `edge.gof()`, which stopped with a singular-system error when
+one group's mean fitted risk lay just above 0.5 with `basis = "stukel"`.
+
+## New options
+
+* `run.all.gof(control = list(Stukel = list(form = ...)))`: `"lr"` gives the likelihood-ratio test
+  for the same two directions, and `"marginal"` the old statistic, kept for reproducing earlier
+  results.
+* `def.gof()`, `edge.gof()` and `def.ensemble.gof()`: the basis `"sym"`, `weights = "score"` and
+  `G = "auto"`. The defaults are unchanged.
+
+## Behaviour changes
+
+* The default `Stukel` statistic in `run.all.gof()` changes, so its p-values differ from 2.7.0.
+* `def.gof()`, `edge.gof()` and `def.ensemble.gof()` now warn when there are fewer events, or fewer
+  non-events, than groups. The p-value is still returned. Inside `run.all.gof()` the message goes to
+  the `Note` column instead of a warning.
+* The fast battery of `run.all.gof()` has one more row, `DEF.sym`.
 
 ## Test environments
 
-* local: Windows 11, R 4.4.1, `R CMD check --as-cran` -- 1 note (see below)
-* GitHub Actions: Windows-release, macOS-release, Ubuntu devel/release/oldrel-1 -- all passing
-* win-builder, R-devel (2026-09-06 r90498 ucrt) -- 1 note (see below); install 5s, check 99s
-* win-builder, R-release -- submitted, but the result mail has not been delivered to the
-  maintainer address on three attempts; the R-release platform is covered by the GitHub
-  Actions Windows-release job above, which passes
+* local: Windows 11 x64 (build 26200), R 4.4.1 (2024-06-14 ucrt), `R CMD check --as-cran` on the
+  built tarball -- 0 errors, 0 warnings, 2 notes (see below)
+* win-builder, R-devel and R-release -- not yet run for 2.8.0; to be run on the tarball rebuilt on
+  the day of submission
+* GitHub Actions: Windows-release, macOS-release, Ubuntu devel/release/oldrel-1 -- not yet run for
+  2.8.0
 
 ## R CMD check results
 
-0 errors | 0 warnings | 1 note on each environment, and they are different notes.
-
-On win-builder R-devel:
+0 errors | 0 warnings | 2 notes
 
     checking CRAN incoming feasibility ... NOTE
-    Possibly misspelled words in DESCRIPTION:
-      prepivoting (29:26)
+    Maintainer: 'Ebrahim Khaled Ebrahim <ebrahimkhaled@alexu.edu.eg>'
 
-"Prepivoting" is the standard term for Beran's bootstrap transformation, from Beran (1987),
-"Prepivoting to reduce level error of confidence sets", Biometrika 74(3), 457-468. It is spelled
-correctly and is the name of the procedure `shrink.gof()` implements. It is listed in
-`inst/WORDLIST`, which the `spelling` package honours but the incoming check's own aspell run does
-not.
+    Days since last update: 5
 
-Locally:
+2.7.0 was published on 2026-09-09. This update follows it closely because it corrects the liberal
+Stukel statistic described above.
 
     checking for future file timestamps ... NOTE
     unable to verify current time
 
-which is this machine being unable to reach the time server it uses, not a property of the package.
-It does not appear on win-builder.
+This is the local machine being unable to reach the time server it uses, not a property of the
+package.
 
 ## Reverse dependencies
 
 None.
-
-## Notes for the CRAN team
-
-The examples for `calm.gof()` run in about a second on a 300 by 20 design. The heavier comparisons
-in the manuscript are not run by the examples or the vignettes.
