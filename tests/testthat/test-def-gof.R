@@ -164,6 +164,40 @@ test_that("def.gof warns, but still returns a p-value, with fewer events than gr
   expect_match(bat$Note[bat$Test == "DEF.poly3"], "fewer events than groups")
 })
 
+test_that("a sample with no event or no non-event gives NA, with a def_degenerate warning", {
+  set.seed(20)
+  x1 <- as.numeric(scale(rchisq(200, 4))); x2 <- runif(200, -3, 3); d2 <- rbinom(200, 1, 0.5)
+  sets <- list(all0 = data.frame(x = x1, y = rep(0, 200)),
+               all1 = data.frame(x = x1, y = rep(1, 200)),
+               all0_two = data.frame(x = x2, d = d2, y = rep(0, 200)))
+  for (nm in names(sets)) {
+    fit <- suppressWarnings(glm(y ~ ., family = binomial(), data = sets[[nm]]))
+    for (b in c("poly3", "poly2", "stukel", "sym")) for (w in c("unit", "score")) {
+      expect_warning(res <- def.gof(fit, basis = b, weights = w), class = "def_degenerate")
+      expect_true(is.na(res$p_value))
+      expect_identical(res$Method, if (w == "score") "score" else "satterthwaite")
+    }
+    expect_warning(res <- def.gof(as.numeric(fit$y), fitted(fit), X = model.matrix(fit), basis = "stukel",
+                                  weights = "score"), class = "def_degenerate")
+    expect_true(is.na(res$p_value))
+    expect_warning(res <- edge.gof(fit, basis = "sym", weights = "score"), class = "def_degenerate")
+    expect_true(is.na(res$p_value))
+    k <- 0L
+    en <- withCallingHandlers(def.ensemble.gof(fit, add_ef = TRUE),
+                              def_degenerate = function(w) { k <<- k + 1L; invokeRestart("muffleWarning") })
+    expect_equal(k, 1L)                                            # once, not once per basis
+    expect_true(is.na(en$p_value))
+    for (f in c("joint", "lr", "marginal")) {
+      st <- run.all.gof(fit, tests = "Stukel", install = "no", control = list(Stukel = list(form = f)))
+      expect_true(is.na(st$p_value))
+      expect_match(st$Note, "no (events|non-events) in the sample")
+    }
+    dr <- run.all.gof(fit, tests = "DEF.stukel", install = "no")
+    expect_true(is.na(dr$p_value))
+    expect_match(dr$Note, "no maximum-likelihood fit")
+  }
+})
+
 test_that("def.gof errors on bad input", {
   set.seed(11)
   expect_error(def.gof(glm(rpois(30, 1) ~ rnorm(30), family = poisson())), "binomial")

@@ -67,6 +67,12 @@
   no events and the grouped reference distribution is unreliable. `def.ensemble.gof()` warns once
   rather than once per basis, and in `run.all.gof()` the directed rows report it in `Note` instead.
 
+* A sample with no event, or no non-event, has no maximum-likelihood fit. `def.gof()` in either form,
+  `edge.gof()` and `def.ensemble.gof()` now return `NA` for it, with a warning of class
+  `def_degenerate`, instead of stopping with an error or, for the score form, returning a p-value of
+  zero. `def.ensemble.gof()` warns once. In `run.all.gof()` the directed rows say so in `Note`, and
+  every form of the `Stukel` row, `"marginal"` included, returns `NA` with a note.
+
 ## Documentation
 
 * `?run.all.gof` said that Stukel's two-parameter form does not always hold its nominal level. That

@@ -191,7 +191,9 @@ power when the guess is right.
     misfit resembles the chosen basis, weaker when it does not. Each row takes
     \code{weights} and \code{G} through \code{control}, for example
     \code{control = list(DEF.sym = list(weights = "score", G = "auto"))}; see
-    \code{\link{def.gof}}.
+    \code{\link{def.gof}}. On a sample with no event, or no non-event, there is
+    no fitted model; these rows and the \code{Stukel} row are then \code{NA}, and
+    \code{Note} says why.
   \item \code{Stukel} -- a score test against Stukel's generalized logistic
     link, which nests the logit and lets the two tails bend independently. It
     is aimed squarely at link misspecification. The two tail directions are

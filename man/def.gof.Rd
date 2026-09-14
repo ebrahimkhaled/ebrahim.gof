@@ -96,7 +96,9 @@ group variances differ strongly, as they do at high discrimination.
 
 With fewer events (or fewer non-events) than groups, the grouped reference
 distribution is unreliable. The p-value is still returned, with a warning;
-a smaller \code{G} avoids it.
+a smaller \code{G} avoids it. With no event, or no non-event, the model has no
+maximum-likelihood fit, and the p-value is \code{NA}, with a warning of class
+\code{def_degenerate}.
 }
 \examples{
 ## gof_demo carries a documented smooth calibration misfit: the risk bends in age,

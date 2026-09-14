@@ -102,7 +102,9 @@
 #'     misfit resembles the chosen basis, weaker when it does not. Each row takes
 #'     \code{weights} and \code{G} through \code{control}, for example
 #'     \code{control = list(DEF.sym = list(weights = "score", G = "auto"))}; see
-#'     \code{\link{def.gof}}.
+#'     \code{\link{def.gof}}. On a sample with no event, or no non-event, there is
+#'     no fitted model; these rows and the \code{Stukel} row are then \code{NA}, and
+#'     \code{Note} says why.
 #'   \item \code{Stukel} -- a score test against Stukel's generalized logistic
 #'     link, which nests the logit and lets the two tails bend independently. It
 #'     is aimed squarely at link misspecification. The two tail directions are
@@ -608,9 +610,10 @@ run.all.gof <- function(object, predicted_probs = NULL, X = NULL,
 
   # ensemble rows (only when a model is available and running the full set)
   if (ctx$has_model && identical(tests, "all")) {
-    # a few-events warning is already in the Note of the directed rows
+    # a few-events or no-fit warning is already in the Note of the directed rows
     quiet <- function(expr)
-      withCallingHandlers(expr, def_few_events = function(w) invokeRestart("muffleWarning"))
+      withCallingHandlers(expr, def_few_events = function(w) invokeRestart("muffleWarning"),
+                          def_degenerate = function(w) invokeRestart("muffleWarning"))
     v3 <- tryCatch(quiet(def.ensemble.gof(ctx$model, G = ctx$G))$p_value, error = function(e) NA_real_)
     vu <- tryCatch(quiet(def.ensemble.gof(ctx$model, add_ef = TRUE, G = ctx$G))$p_value,
                    error = function(e) NA_real_)
@@ -973,15 +976,17 @@ gof_def <- function(ctx, opts = list()) {
   b  <- if (is.null(opts$basis))   "poly3" else opts$basis
   wt <- if (is.null(opts$weights)) "unit"  else opts$weights
   G  <- if (is.null(opts$G)) ctx$G else if (identical(opts$G, "auto")) .def_auto_G(ctx$n) else opts$G
-  few <- NULL                                      # def.gof's few-events warning goes to Note
+  few <- NULL                                      # def.gof's few-events and no-fit warnings go to Note
   keep_few <- function(w) {
-    few <<- sub("^def.gof: ", "", conditionMessage(w))
+    few <<- c(few, sub("^def.gof: ", "", conditionMessage(w)))
     invokeRestart("muffleWarning")
   }
   r  <- if (ctx$has_model)
-          withCallingHandlers(def.gof(ctx$model, G = G, basis = b, weights = wt), def_few_events = keep_few)
+          withCallingHandlers(def.gof(ctx$model, G = G, basis = b, weights = wt), def_few_events = keep_few,
+                              def_degenerate = keep_few)
         else suppressWarnings(withCallingHandlers(
-          def.gof(ctx$y, ctx$ph, X = ctx$X, G = G, basis = b, weights = wt), def_few_events = keep_few))
+          def.gof(ctx$y, ctx$ph, X = ctx$X, G = G, basis = b, weights = wt), def_few_events = keep_few,
+          def_degenerate = keep_few))
   auto <- identical(opts$G, "auto") || (is.null(opts$G) && isTRUE(ctx$G_auto))
   note <- c(if (r$Method == "score") "score form",
             if (auto) sprintf("G = %d (auto)", as.integer(G)), few)
@@ -1014,6 +1019,10 @@ gof_stukel <- function(ctx, opts = list()) {
   if (!ctx$has_model)
     return(list(Statistic = NA, df = NA, p_value = NA, Note = "needs a glm model"))
   ph  <- ctx$ph; y <- ctx$y; X <- ctx$X
+  if (min(sum(y), length(y) - sum(y)) == 0)        # no maximum-likelihood fit, in any form
+    return(list(Statistic = NA, df = NA, p_value = NA,
+                Note = paste("Not run: no", if (sum(y) == 0) "events" else "non-events",
+                             "in the sample, so the model has no maximum-likelihood fit")))
   eta <- as.numeric(stats::predict(ctx$model, type = "link"))
   za  <- 0.5 * eta^2 * (ph >= 0.5)                 # Stukel direction, p >= 0.5
   zb  <- -0.5 * eta^2 * (ph < 0.5)                 # Stukel direction, p < 0.5

@@ -42,7 +42,9 @@
 #'
 #' With fewer events (or fewer non-events) than groups, the grouped reference
 #' distribution is unreliable. The p-value is still returned, with a warning;
-#' a smaller \code{G} avoids it.
+#' a smaller \code{G} avoids it. With no event, or no non-event, the model has no
+#' maximum-likelihood fit, and the p-value is \code{NA}, with a warning of class
+#' \code{def_degenerate}.
 #'
 #' @param object A fitted binary logistic \code{\link[stats]{glm}}, or a binary
 #'   (0/1) response vector \code{y} (then supply \code{predicted_probs}).
@@ -158,6 +160,13 @@ def.gof <- function(object, predicted_probs = NULL, X = NULL, G = 10,
   if (length(ph) != n) stop("'object' (y) and 'predicted_probs' lengths differ.")
   if (identical(G, "auto")) G <- .def_auto_G(n)
   if (G > n) stop("'G' cannot exceed the number of observations.")
+  if (min(sum(y), n - sum(y)) == 0) {                  # no event or no non-event: no fitted model
+    .def_warn_degenerate(sum(y))
+    return(data.frame(Test = "Directed Ebrahim-Farrington", Basis = basis,
+                      Test_Statistic = NA_real_, df = NA_real_,
+                      Method = if (weights == "score") "score" else method,
+                      p_value = NA_real_, stringsAsFactors = FALSE))
+  }
   if (min(sum(y), n - sum(y)) < G) .def_warn_few_events(sum(y), n, G)
 
   V <- ph * (1 - ph)
@@ -264,6 +273,15 @@ def.gof <- function(object, predicted_probs = NULL, X = NULL, G = 10,
                         "is unreliable with fewer %s than groups."),
                   as.integer(min(ne, n - ne)), what, format(G), what)
   warning(structure(class = c("def_few_events", "warning", "condition"),
+                    list(message = msg, call = NULL)))
+}
+
+# Internal: warn that a sample with no event (or no non-event) has no maximum-likelihood fit, so
+# there is no p-value. Its own class lets the battery put it in Note and the ensemble raise it once.
+.def_warn_degenerate <- function(ne) {
+  what <- if (ne == 0) "no events (every response is 0)" else "no non-events (every response is 1)"
+  msg  <- sprintf("def.gof: %s; the model has no maximum-likelihood fit, so there is no p-value.", what)
+  warning(structure(class = c("def_degenerate", "warning", "condition"),
                     list(message = msg, call = NULL)))
 }
 

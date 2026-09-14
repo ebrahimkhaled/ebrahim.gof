@@ -64,6 +64,9 @@ calibration. The \code{"minp"} (Sidak) and \code{"fisher"} rules assume
 independence and are offered for comparison only; under positive dependence
 \code{"minp"} is conservative and \code{"fisher"} is anti-conservative, so they
 should be calibrated by simulation before use (not done here).
+
+With no event, or no non-event, the model has no maximum-likelihood fit: the
+p-value is \code{NA}, with one warning of class \code{def_degenerate}.
 }
 \examples{
 data("gof_demo", package = "ebrahim.gof")

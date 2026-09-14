@@ -17,6 +17,9 @@
 #' \code{"minp"} is conservative and \code{"fisher"} is anti-conservative, so they
 #' should be calibrated by simulation before use (not done here).
 #'
+#' With no event, or no non-event, the model has no maximum-likelihood fit: the
+#' p-value is \code{NA}, with one warning of class \code{def_degenerate}.
+#'
 #' @param object A fitted binary logistic \code{\link[stats]{glm}}, or a binary
 #'   (0/1) vector \code{y} (then supply \code{predicted_probs}).
 #' @param predicted_probs Numeric predicted probabilities; required when
@@ -78,6 +81,15 @@ def.ensemble.gof <- function(object, predicted_probs = NULL, X = NULL,
   weights    <- match.arg(weights)
   if (identical(G, "auto"))
     G <- .def_auto_G(if (inherits(object, "glm")) length(object$y) else length(object))
+
+  # no event or no non-event: there is no fitted model, so no component has a p-value; warn once
+  y0 <- if (inherits(object, "glm")) as.numeric(object$y) else if (is.numeric(object)) as.numeric(object)
+  if (length(y0) && min(sum(y0), length(y0) - sum(y0)) == 0) {
+    .def_warn_degenerate(sum(y0))
+    return(data.frame(Test = "DEF ensemble", Combiner = combine,
+                      Components = paste(c(components, if (isTRUE(add_ef)) "EF"), collapse = "+"),
+                      k = 0L, p_value = NA_real_, stringsAsFactors = FALSE))
+  }
 
   # component DEF p-values (Satterthwaite default); flexible input threaded through.
   # def.gof's few-events warning is raised once here, not once per basis.
