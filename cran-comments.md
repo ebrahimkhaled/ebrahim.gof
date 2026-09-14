@@ -32,6 +32,10 @@ one group's mean fitted risk lay just above 0.5 with `basis = "stukel"`.
   non-events, than groups. The p-value is still returned. Inside `run.all.gof()` the message goes to
   the `Note` column instead of a warning.
 * The fast battery of `run.all.gof()` has one more row, `DEF.sym`.
+* On a sample with no event, or no non-event, `def.gof()`, `edge.gof()` and `def.ensemble.gof()` return
+  `NA` with a warning instead of stopping with an error, and the `Stukel` row returns `NA` with a note.
+* The score form of `def.gof()` and the joint `Stukel` form leave out a column whose information after
+  the fit is below 1e-10 of its information before the fit; with none left they return `NA`.
 
 ## Test environments
 
