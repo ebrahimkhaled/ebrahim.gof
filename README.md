@@ -167,13 +167,15 @@ and equal-width), Pigeon-Heyse, the F-test, EF, EF-normal, the four DEF bases
 (poly2, poly3, stukel, sym), Stukel's joint score test, Tsiatis, Xie,
 Pulkstenis-Robinson, and the two Cauchy-combination ensemble rows. With `include_slow = TRUE` it also runs
 le Cessie-van Houwelingen, the GAM-based tests (HL-GAM, PR-GAM, Xie-GAM; need
-`mgcv`), Stute-Zhu, eHL, BAGofT, and the Lai & Liu standardized-power HL test.
+`mgcv`), Stute-Zhu, eHL, BAGofT (computed by `bagoft.fast()`), the projection test of
+Liu et al. (2024) (`projection.gof()`), and the Lai & Liu standardized-power HL test.
 Every test reproduces the implementation used in the original thesis simulation.
 
 ### Optional packages for the slow tests
 
 The slow tests rely on a few optional packages (`givitiR` + `callr` for the
-GiViTI calibration test and belt, `mgcv` for the GAM tests, `BAGofT`,
+GiViTI calibration test and belt, `mgcv` for the GAM tests, `randomForest` and
+`dcov` for BAGofT,
 `ResourceSelection`). They are not required to install `ebrahim.gof`; a test
 whose package is missing is simply skipped with a note. CRAN policy forbids a
 package from installing anything on its own, so `ebrahim.gof` never does that
