@@ -74,7 +74,13 @@
 
 ## ---- the residual map -------------------------------------------------------------------
 ## Identical to the training-time builder; changing it invalidates the shipped weights.
-.dg_map <- function(fit, K = 6L) {
+## `tb` breaks ties among covariate values: a random permutation of the rows, drawn once by
+## deepgof1() and passed unchanged to the observed map and to every bootstrap map. With
+## tb = NULL, ties go by row order, as in 2.7.0 and the training corpus (whose covariates
+## were continuous, so it had no ties). Row order must not be used on real data: a file
+## sorted by the outcome then puts tied rows into cells by their outcome, the bootstrap
+## outcomes are not sorted, and a correct model can be rejected.
+.dg_map <- function(fit, K = 6L, tb = NULL) {
   d  <- stats::model.frame(fit)
   mm <- stats::model.matrix(fit)
   vars <- colnames(mm)[-1]
@@ -85,7 +91,11 @@
   ph <- as.numeric(stats::fitted(fit))
   r  <- stats::model.response(d) - ph
   n  <- length(r)
-  bn <- function(v) pmin(K, 1L + floor(K * (rank(v, ties.method = "first") - 1) / n))
+  rk <- function(v) {
+    if (is.null(tb)) return(rank(v, ties.method = "first"))
+    o <- order(v, tb); rr <- integer(n); rr[o] <- seq_len(n); rr
+  }
+  bn <- function(v) pmin(K, 1L + floor(K * (rk(v) - 1) / n))
   idx <- factor((bn(mm[, ax[1]]) - 1L) * K + bn(mm[, ax[2]]), levels = 1:(K * K))
   s  <- tapply(r, idx, sum); vv <- tapply(ph * (1 - ph), idx, sum)
   s[is.na(s)] <- 0; vv[is.na(vv)] <- 0
@@ -106,6 +116,12 @@
 #' standardized residual sum, approximately standard normal under a correct model. Misfit
 #' therefore has a location on the map -- an omitted quadratic paints a stripe, an omitted
 #' interaction a saddle -- which is what the convolutional statistic reads.
+#'
+#' Ties among covariate values, as with binary, categorical or rounded covariates, are
+#' broken at random. The random order is drawn once per call and used for the observed map
+#' and for every bootstrap map, so the p-value does not depend on the order of the rows in
+#' the data. With heavily tied axes the p-value can vary noticeably from one seed to the
+#' next; report the seed.
 #'
 #' The test is a small-sample instrument. Against the classical partition tests it gains
 #' most at \eqn{n} of 50 to 200 and the gain decays as \eqn{n} grows; because the grid uses
@@ -129,7 +145,9 @@
 #' @section Reproducibility:
 #' A bootstrap refit that fails to converge is scored \code{+Inf}, so it counts against
 #' rejection -- the conservative direction. Set a seed before calling for a reproducible
-#' p-value.
+#' p-value. When some covariate column has tied values, the random tie-breaking uses the
+#' same seed, so from version 2.8.0 such calls give a different p-value for a given seed
+#' than earlier versions did; calls without ties give the same p-value as before.
 #'
 #' @references
 #' Ebrahim EK (2026). "DeepGOF-1: A Pretrained Convolutional Goodness-of-Fit Test for
@@ -166,7 +184,15 @@ deepgof1 <- function(fit, B = 199L, K = 6L) {
   M <- deepgof1_weights
   score <- function(m) .dg_score((m - M$mu) / M$sd, M)
 
-  obs  <- .dg_map(fit, K)
+  ## Ties among covariate values are broken at random, once per call: the same permutation
+  ## serves the observed map and every bootstrap map, so the bootstrap reproduces the tie
+  ## structure and the row order of the data cannot enter the statistic. Nothing is drawn
+  ## when no covariate column has a tie, so results for continuous covariates are unchanged.
+  mm <- stats::model.matrix(fit)
+  tied <- any(apply(mm[, -1, drop = FALSE], 2, anyDuplicated) > 0L)
+  tb <- if (tied) sample.int(nrow(mm)) else NULL
+
+  obs  <- .dg_map(fit, K, tb)
   Sobs <- score(obs$map)
 
   ph  <- as.numeric(stats::fitted(fit))
@@ -179,7 +205,7 @@ deepgof1 <- function(fit, B = 199L, K = 6L) {
     fb <- tryCatch(suppressWarnings(stats::glm(frm, data = dat, family = stats::binomial())),
                    error = function(e) NULL)
     ## a failed refit counts AGAINST rejection (conservative); -Inf would deflate p
-    Sb[b] <- if (is.null(fb)) Inf else score(.dg_map(fb, K)$map)
+    Sb[b] <- if (is.null(fb)) Inf else score(.dg_map(fb, K, tb)$map)
   }
   structure(list(statistic = Sobs,
                  p.value   = (1 + sum(Sb >= Sobs)) / (B + 1),

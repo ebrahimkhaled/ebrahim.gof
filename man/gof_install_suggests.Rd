@@ -28,8 +28,9 @@ Invisibly, the character vector of packages that were installed or
 \description{
 The slow tests in \code{\link{run.all.gof}} rely on optional packages that
 live in \code{Suggests} (\pkg{givitiR} and \pkg{callr} for the GiViTI
-calibration test, \pkg{mgcv} for the GAM tests, \pkg{BAGofT} for the adaptive
-test, and \pkg{ResourceSelection} for the Lai-Liu test). Per CRAN policy the
+calibration test, \pkg{mgcv} for the GAM tests, \pkg{randomForest} and
+\pkg{dcov} for the adaptive BAGofT test (\pkg{BAGofT} itself is used only on
+request), and \pkg{ResourceSelection} for the Lai-Liu test). Per CRAN policy the
 package never installs them on its own; this helper installs the missing ones
 for you, asking first.
 }

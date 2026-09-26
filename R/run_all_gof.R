@@ -168,8 +168,21 @@
 #'     tests on the other. Its behaviour depends strongly on how many splits and
 #'     resamples it is given; set them with
 #'     \code{control = list(BAGofT = list(nsim = ...))} and be aware that the
-#'     published default is far more expensive than a single split. Needs the
-#'     \pkg{BAGofT} package.
+#'     published default is far more expensive than a single split. By default
+#'     the row is computed by \code{\link{bagoft.fast}}, which returns the same
+#'     p-value as the \pkg{BAGofT} package for the same seed and needs only
+#'     \pkg{randomForest} (and \pkg{dcov} above five covariates);
+#'     \code{control = list(BAGofT = list(engine = "package"))} calls
+#'     \pkg{BAGofT} itself.
+#'   \item \code{Projection} -- the projection test of Escanciano (2006) as
+#'     defined for logistic regression by Liu et al. (2024): the cumulative
+#'     residual process is taken along every direction of the covariate space,
+#'     not only along the fitted linear predictor as in \code{Stute-Zhu}, so it
+#'     also sees departures such as an omitted interaction. Model-based
+#'     bootstrap with \code{B = 1000} refits by default; see
+#'     \code{\link{projection.gof}}. Its weight matrix costs \eqn{O(n^3)} time and
+#'     \eqn{O(n^2)} memory, so the row is skipped above \eqn{n = 3000}. Set
+#'     \code{control = list(Projection = list(B = ..., max_n = ...))}.
 #' }
 #'
 #' \strong{Calibration tests} (\code{Family} "Calibration"). These come from clinical prediction, and ask
@@ -250,7 +263,7 @@
 #'   the same number of groups; the directed rows record it in \code{Note}.
 #' @param include_slow Logical; when \code{TRUE} (the default) the full battery
 #'   runs, including the slow tests: le Cessie-van Houwelingen smoothing
-#'   (O(n^2)-O(n^3)), the GAM tests, Stute-Zhu, eHL, BAGofT, and GiViTI. Set
+#'   (O(n^2)-O(n^3)), the GAM tests, Stute-Zhu, eHL, BAGofT, Projection, and GiViTI. Set
 #'   \code{FALSE} for a quick run with the fast tests only. A one-time message
 #'   notes this whenever slow tests are included.
 #' @param parallel Logical; when \code{TRUE}, the resampling loops of the slow
@@ -286,8 +299,12 @@
 #'   \code{nsim} (resampling iterations; default 100), \code{nsplits}, \code{ne}
 #'   (the estimation-split size), and the random-forest partitioner's tuning
 #'   \code{Kmax} (maximum number of adaptive partition cells), \code{ntree},
-#'   \code{nmin}, \code{mtry}, \code{maxnodes}. Example:
-#'   \code{list(BAGofT = list(nsim = 200, Kmax = 8, ntree = 500))}.
+#'   \code{nmin}, \code{mtry}, \code{maxnodes}, and \code{engine}
+#'   (\code{"auto"}, \code{"fast"} or \code{"package"}; see \code{\link{bagoft.fast}}).
+#'   Example: \code{list(BAGofT = list(nsim = 200, Kmax = 8, ntree = 500))}; and
+#'   \code{Projection = list(B = ..., scale = FALSE, max_n = 3000)} (bootstrap refits,
+#'   standardized covariates, and the sample size above which the row is skipped; see
+#'   \code{\link{projection.gof}}).
 #'
 #' @return A \code{data.frame} (of class \code{gof_battery}) with columns
 #'   \code{Test}, \code{Family}, \code{Statistic}, \code{df}, \code{p_value},
@@ -334,14 +351,15 @@
 #'
 #' \donttest{
 #' ## The full battery (include_slow = TRUE by default). The slow tests need the
-#' ## suggested packages mgcv, BAGofT, givitiR and callr; in an interactive
+#' ## suggested packages mgcv, randomForest, givitiR and callr; in an interactive
 #' ## session run.all.gof() offers to install any that are missing
 #' ## (install = "ask"). See also gof_install_suggests().
 #' ## The control= list forwards options to the individual tests; the reductions
 #' ## here keep the example quick without changing what it demonstrates.
 #' run.all.gof(fit, install = "no",
 #'             control = list("Stute-Zhu" = list(B = 50),
-#'                            BAGofT = list(nsim = 20)))
+#'                            BAGofT = list(nsim = 20),
+#'                            Projection = list(B = 99)))
 #'
 #' ## The GiViTI calibration belt shows WHERE on the risk scale a model drifts,
 #' ## which a single p-value cannot.
@@ -420,6 +438,14 @@
 #' \emph{Scandinavian Journal of Statistics}, \strong{29}(3), 535--545.
 #' \doi{10.1111/1467-9469.00304}
 #'
+#' Escanciano JC (2006). "A Consistent Diagnostic Test for Regression Models
+#' Using Projections." \emph{Econometric Theory}, \strong{22}(6), 1030--1051.
+#' \doi{10.1017/S0266466606060506}
+#'
+#' Liu H, Li X, Chen F, Haerdle W, Liang H (2024). "A Comprehensive Comparison of
+#' Goodness-of-Fit Tests for Logistic Regression Models." \emph{Statistics and
+#' Computing}, \strong{34}, 175. \doi{10.1007/s11222-024-10487-5}
+#'
 #' Tsiatis AA (1980). "A Note on a Goodness-of-Fit Test for the Logistic
 #' Regression Model." \emph{Biometrika}, \strong{67}(1), 250--251.
 #' \doi{10.1093/biomet/67.1.250}
@@ -437,10 +463,6 @@
 #' Reappraisal of the Calibration Belt for the Assessment of Prediction Models
 #' Based on Dichotomous Outcomes." \emph{Statistics in Medicine}, \strong{33}(14),
 #' 2390--2407. \doi{10.1002/sim.6100}
-#'
-#' Zhang J, Ding J, Yang Y (2021). "Is a Classification Procedure Good Enough? A
-#' Goodness-of-Fit Assessment Tool for Classification Learning." \emph{Journal of
-#' the American Statistical Association}. \doi{10.1080/01621459.2021.1979010}
 #'
 #'
 #' Pigeon JG, Heyse JF (1999). "An Improved Goodness of Fit Statistic for
@@ -472,10 +494,10 @@
 #' Based on Dichotomous Outcomes." \emph{Statistics in Medicine}, \strong{33}(14),
 #' 2390--2407. \doi{10.1002/sim.6100}
 #'
-#' Zhang J, Ding J, Yang Y (2021). "Is a Classification Procedure Good Enough?
+#' Zhang J, Ding J, Yang Y (2023). "Is a Classification Procedure Good Enough?
 #' A Goodness-of-Fit Assessment Tool for Classification Learning."
-#' \emph{Journal of the American Statistical Association}, \strong{118}(541),
-#' 194--206. \doi{10.1080/01621459.2021.1979010}
+#' \emph{Journal of the American Statistical Association}, \strong{118}(542),
+#' 1115--1125. \doi{10.1080/01621459.2021.1979010}
 #'
 #' Liu Y, Xie J (2020). "Cauchy Combination Test: A Powerful Test with Analytic
 #' p-Value Calculation under Arbitrary Dependency Structures." \emph{Journal of
@@ -572,7 +594,7 @@ run.all.gof <- function(object, predicted_probs = NULL, X = NULL,
   if (isTRUE(include_slow) &&
       any(vapply(sel, function(nm) isTRUE(.GOF_REGISTRY[[nm]]$slow), logical(1))))
     message("run.all.gof: running the full battery, including the slow tests ",
-            "(le-Cessie, the GAM tests, Stute-Zhu, eHL, BAGofT, GiViTI). ",
+            "(le-Cessie, the GAM tests, Stute-Zhu, eHL, BAGofT, Projection, GiViTI). ",
             "For a quick run with the fast tests only, set include_slow = FALSE.")
 
   rows <- list(); skipped_model <- FALSE
@@ -1479,15 +1501,16 @@ gof_ehl <- function(ctx, opts = list()) {
        Note = "e-value test (reported as p = min(1, 1/e))")
 }
 
-# BAGofT (binary-adaptive GOF test) via the BAGofT package. The random-forest
+# BAGofT (binary-adaptive GOF test). The random-forest
 # partitioner needs at least two predictors; for a single-predictor model we add
 # a constant helper column to the data (not the formula), the workaround
 # documented in Kuss (2002) / the thesis, so the test runs instead of erroring.
+# Two engines give the same p-value for the same seed: "fast" (bagoft.fast's core,
+# needs randomForest, and dcov above five covariates) and "package" (BAGofT itself).
+# The default "auto" takes the fast one when its packages are installed.
 gof_bagoft <- function(ctx, opts = list()) {
   if (!ctx$has_model || is.null(ctx$data))
     return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not applicable: needs a fitted glm"))
-  if (!requireNamespace("BAGofT", quietly = TRUE))
-    return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: install the 'BAGofT' package"))
   nsim  <- if (is.null(opts$nsim)) 100L else as.integer(opts$nsim)
   dat   <- ctx$data
   attr(dat, "terms") <- NULL                       # a model.frame's terms attr breaks BAGofT
@@ -1498,6 +1521,34 @@ gof_bagoft <- function(ctx, opts = list()) {
     preds <- c(preds, ".bagoft_const")
     added_const <- TRUE
   }
+  engine <- if (is.null(opts$engine)) "auto" else match.arg(opts$engine, c("auto", "fast", "package"))
+  fast_ok <- requireNamespace("randomForest", quietly = TRUE) &&
+    (length(preds) <= 5L || requireNamespace("dcov", quietly = TRUE))
+  if (identical(engine, "auto"))
+    engine <- if (fast_ok) "fast" else "package"
+  extra <- paste0(if (!is.null(opts$Kmax)) paste0(", Kmax=", opts$Kmax) else "",
+                  if (!is.null(opts$nsplits)) paste0(", nsplits=", opts$nsplits) else "")
+  if (identical(engine, "fast")) {
+    if (!fast_ok)
+      return(list(Statistic = NA, df = NA, p_value = NA,
+                  Note = "Not run: the fast engine needs 'randomForest' (and 'dcov' above five covariates)"))
+    if (!is.null(ctx$model$offset) && any(ctx$model$offset != 0))
+      return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: offsets are not supported"))
+    r <- tryCatch(suppressWarnings(.bagoft_core(
+      ctx$X, ctx$y, dat[-1L], link = ctx$model$family$link,
+      nsplits = if (is.null(opts$nsplits)) 100L else as.integer(opts$nsplits),
+      nsim = nsim, ne = opts$ne, ntree = if (is.null(opts$ntree)) 60 else opts$ntree,
+      Kmax = opts$Kmax, nmin = opts$nmin, mtry = opts$mtry, maxnodes = opts$maxnodes)),
+      error = function(e) NULL)
+    if (is.null(r) || is.null(r$p.value))
+      return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: BAGofT computation failed"))
+    return(list(Statistic = NA_real_, df = NA_real_, p_value = as.numeric(r$p.value),
+                Note = paste0("adaptive RF partition; nsim=", nsim, extra,
+                              if (added_const) "; constant column added (single predictor)" else "",
+                              "; fast engine")))
+  }
+  if (!requireNamespace("BAGofT", quietly = TRUE))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: install the 'BAGofT' package"))
   link  <- ctx$model$family$link
   # Adaptive random-forest partitioner: pass through any tuning the caller sets
   # via control = list(BAGofT = list(...)). parRF knobs: Kmax (max number of
@@ -1518,11 +1569,10 @@ gof_bagoft <- function(ctx, opts = list()) {
                   error = function(e) NULL))))
   if (is.null(r) || is.null(r$p.value))
     return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: BAGofT computation failed"))
-  extra <- paste0(if (!is.null(opts$Kmax)) paste0(", Kmax=", opts$Kmax) else "",
-                  if (!is.null(opts$nsplits)) paste0(", nsplits=", opts$nsplits) else "")
   list(Statistic = NA_real_, df = NA_real_, p_value = as.numeric(r$p.value),
        Note = paste0("adaptive RF partition; nsim=", nsim, extra,
-                     if (added_const) "; constant column added (single predictor)" else ""))
+                     if (added_const) "; constant column added (single predictor)" else "",
+                     "; BAGofT package"))
 }
 
 # McCullagh (1985) exact-conditional-moments standardization of the Pearson
@@ -1767,5 +1817,6 @@ gof_ftest <- function(ctx, opts = list()) {
   "GiViTI-external"     = list(fn = function(ctx, opts) gof_giviti(ctx, list(devel = "external")),
                                                        family = "Calibration",  needs_model = FALSE, slow = TRUE),
   "BAGofT"              = list(fn = gof_bagoft,     family = "Bootstrap",      needs_model = TRUE,  slow = TRUE),
-  "Lai-Liu-HL"          = list(fn = gof_lailiu,     family = "Bootstrap",      needs_model = TRUE,  slow = TRUE)
+  "Lai-Liu-HL"          = list(fn = gof_lailiu,     family = "Bootstrap",      needs_model = TRUE,  slow = TRUE),
+  "Projection"          = list(fn = gof_proj,       family = "Bootstrap",      needs_model = TRUE,  slow = TRUE)
 )

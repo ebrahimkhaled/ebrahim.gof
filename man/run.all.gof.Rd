@@ -38,7 +38,7 @@ the same number of groups; the directed rows record it in \code{Note}.}
 
 \item{include_slow}{Logical; when \code{TRUE} (the default) the full battery
 runs, including the slow tests: le Cessie-van Houwelingen smoothing
-(O(n^2)-O(n^3)), the GAM tests, Stute-Zhu, eHL, BAGofT, and GiViTI. Set
+(O(n^2)-O(n^3)), the GAM tests, Stute-Zhu, eHL, BAGofT, Projection, and GiViTI. Set
 \code{FALSE} for a quick run with the fast tests only. A one-time message
 notes this whenever slow tests are included.}
 
@@ -79,8 +79,12 @@ default, the likelihood-ratio refit, or the pre-2.8.0 marginal sum);
 \code{nsim} (resampling iterations; default 100), \code{nsplits}, \code{ne}
 (the estimation-split size), and the random-forest partitioner's tuning
 \code{Kmax} (maximum number of adaptive partition cells), \code{ntree},
-\code{nmin}, \code{mtry}, \code{maxnodes}. Example:
-\code{list(BAGofT = list(nsim = 200, Kmax = 8, ntree = 500))}.}
+\code{nmin}, \code{mtry}, \code{maxnodes}, and \code{engine}
+(\code{"auto"}, \code{"fast"} or \code{"package"}; see \code{\link{bagoft.fast}}).
+Example: \code{list(BAGofT = list(nsim = 200, Kmax = 8, ntree = 500))}; and
+\code{Projection = list(B = ..., scale = FALSE, max_n = 3000)} (bootstrap refits,
+standardized covariates, and the sample size above which the row is skipped; see
+\code{\link{projection.gof}}).}
 }
 \value{
 A \code{data.frame} (of class \code{gof_battery}) with columns
@@ -257,8 +261,21 @@ reference, these build one by simulation.
     tests on the other. Its behaviour depends strongly on how many splits and
     resamples it is given; set them with
     \code{control = list(BAGofT = list(nsim = ...))} and be aware that the
-    published default is far more expensive than a single split. Needs the
-    \pkg{BAGofT} package.
+    published default is far more expensive than a single split. By default
+    the row is computed by \code{\link{bagoft.fast}}, which returns the same
+    p-value as the \pkg{BAGofT} package for the same seed and needs only
+    \pkg{randomForest} (and \pkg{dcov} above five covariates);
+    \code{control = list(BAGofT = list(engine = "package"))} calls
+    \pkg{BAGofT} itself.
+  \item \code{Projection} -- the projection test of Escanciano (2006) as
+    defined for logistic regression by Liu et al. (2024): the cumulative
+    residual process is taken along every direction of the covariate space,
+    not only along the fitted linear predictor as in \code{Stute-Zhu}, so it
+    also sees departures such as an omitted interaction. Model-based
+    bootstrap with \code{B = 1000} refits by default; see
+    \code{\link{projection.gof}}. Its weight matrix costs \eqn{O(n^3)} time and
+    \eqn{O(n^2)} memory, so the row is skipped above \eqn{n = 3000}. Set
+    \code{control = list(Projection = list(B = ..., max_n = ...))}.
 }
 
 \strong{Calibration tests} (\code{Family} "Calibration"). These come from clinical prediction, and ask
@@ -392,14 +409,15 @@ for (g in c(5, 10, 20))
 
 \donttest{
 ## The full battery (include_slow = TRUE by default). The slow tests need the
-## suggested packages mgcv, BAGofT, givitiR and callr; in an interactive
+## suggested packages mgcv, randomForest, givitiR and callr; in an interactive
 ## session run.all.gof() offers to install any that are missing
 ## (install = "ask"). See also gof_install_suggests().
 ## The control= list forwards options to the individual tests; the reductions
 ## here keep the example quick without changing what it demonstrates.
 run.all.gof(fit, install = "no",
             control = list("Stute-Zhu" = list(B = 50),
-                           BAGofT = list(nsim = 20)))
+                           BAGofT = list(nsim = 20),
+                           Projection = list(B = 99)))
 
 ## The GiViTI calibration belt shows WHERE on the risk scale a model drifts,
 ## which a single p-value cannot.
@@ -448,6 +466,14 @@ Stute W, Zhu LX (2002). "Model Checks for Generalized Linear Models."
 \emph{Scandinavian Journal of Statistics}, \strong{29}(3), 535--545.
 \doi{10.1111/1467-9469.00304}
 
+Escanciano JC (2006). "A Consistent Diagnostic Test for Regression Models
+Using Projections." \emph{Econometric Theory}, \strong{22}(6), 1030--1051.
+\doi{10.1017/S0266466606060506}
+
+Liu H, Li X, Chen F, Haerdle W, Liang H (2024). "A Comprehensive Comparison of
+Goodness-of-Fit Tests for Logistic Regression Models." \emph{Statistics and
+Computing}, \strong{34}, 175. \doi{10.1007/s11222-024-10487-5}
+
 Tsiatis AA (1980). "A Note on a Goodness-of-Fit Test for the Logistic
 Regression Model." \emph{Biometrika}, \strong{67}(1), 250--251.
 \doi{10.1093/biomet/67.1.250}
@@ -465,10 +491,6 @@ Nattino G, Finazzi S, Bertolini G (2014). "A New Calibration Test and a
 Reappraisal of the Calibration Belt for the Assessment of Prediction Models
 Based on Dichotomous Outcomes." \emph{Statistics in Medicine}, \strong{33}(14),
 2390--2407. \doi{10.1002/sim.6100}
-
-Zhang J, Ding J, Yang Y (2021). "Is a Classification Procedure Good Enough? A
-Goodness-of-Fit Assessment Tool for Classification Learning." \emph{Journal of
-the American Statistical Association}. \doi{10.1080/01621459.2021.1979010}
 
 
 Pigeon JG, Heyse JF (1999). "An Improved Goodness of Fit Statistic for
@@ -500,10 +522,10 @@ Reappraisal of the Calibration Belt for the Assessment of Prediction Models
 Based on Dichotomous Outcomes." \emph{Statistics in Medicine}, \strong{33}(14),
 2390--2407. \doi{10.1002/sim.6100}
 
-Zhang J, Ding J, Yang Y (2021). "Is a Classification Procedure Good Enough?
+Zhang J, Ding J, Yang Y (2023). "Is a Classification Procedure Good Enough?
 A Goodness-of-Fit Assessment Tool for Classification Learning."
-\emph{Journal of the American Statistical Association}, \strong{118}(541),
-194--206. \doi{10.1080/01621459.2021.1979010}
+\emph{Journal of the American Statistical Association}, \strong{118}(542),
+1115--1125. \doi{10.1080/01621459.2021.1979010}
 
 Liu Y, Xie J (2020). "Cauchy Combination Test: A Powerful Test with Analytic
 p-Value Calculation under Arbitrary Dependency Structures." \emph{Journal of

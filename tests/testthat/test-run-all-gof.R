@@ -158,12 +158,13 @@ test_that("Tier-2 tests are opt-in and return valid results", {
   x1 <- runif(n, -3, 3); x2 <- rnorm(n); d <- factor(sample(c("A", "B"), n, replace = TRUE))
   y <- rbinom(n, 1, plogis(0.3 + 0.7 * x1 - 0.4 * x2 + ifelse(d == "B", 0.5, 0)))
   fit <- glm(y ~ x1 + x2 + d, family = binomial())
-  slow_names <- c("HL-GAM", "PR-GAM", "Xie-GAM", "Stute-Zhu", "eHL", "BAGofT", "Lai-Liu-HL")
+  slow_names <- c("HL-GAM", "PR-GAM", "Xie-GAM", "Stute-Zhu", "eHL", "BAGofT", "Lai-Liu-HL",
+                  "Projection")
   expect_false(any(slow_names %in% run.all.gof(fit, include_slow = FALSE)$Test))   # not in default battery
   set.seed(1)
   res <- run.all.gof(fit, include_slow = TRUE,
                      control = list("Stute-Zhu" = list(B = 30), "BAGofT" = list(nsim = 10),
-                                    "Lai-Liu-HL" = list(k = 30)))
+                                    "Lai-Liu-HL" = list(k = 30), "Projection" = list(B = 30)))
   for (tt in slow_names) {
     p <- res$p_value[res$Test == tt]
     expect_true(length(p) == 1 && (is.na(p) || (p >= 0 && p <= 1)))

@@ -2,11 +2,18 @@ Package: ebrahim.gof
 Type: Package
 Title: Goodness-of-Fit and Calibration Tests for Logistic Regression
 Version: 2.8.0
-Date: 2026-09-13
-Authors@R: person(given = "Ebrahim Khaled", family = "Ebrahim",
-                  email = "ebrahimkhaled@alexu.edu.eg",
-                  role = c("aut", "cre"),
-                  comment = c(ORCID = "0009-0006-7839-8778"))
+Date: 2026-09-26
+Authors@R: c(
+    person(given = "Ebrahim Khaled", family = "Ebrahim",
+           email = "ebrahimkhaled@alexu.edu.eg",
+           role = c("aut", "cre"),
+           comment = c(ORCID = "0009-0006-7839-8778")),
+    person(given = "Jiawei", family = "Zhang", role = c("ctb", "cph"),
+           comment = "author of the BAGofT package code adapted in R/bagoft_fast.R"),
+    person(given = "Jie", family = "Ding", role = c("ctb", "cph"),
+           comment = "author of the BAGofT package code adapted in R/bagoft_fast.R"),
+    person(given = "Yuhong", family = "Yang", role = c("ctb", "cph"),
+           comment = "author of the BAGofT package code adapted in R/bagoft_fast.R"))
 Maintainer: Ebrahim Khaled Ebrahim <ebrahimkhaled@alexu.edu.eg>
 Description: Provides a unified battery of goodness-of-fit and calibration
     tests for binary logistic regression, runnable in a single call via
@@ -50,6 +57,8 @@ Suggests:
     statmod,
     mgcv,
     BAGofT,
+    randomForest,
+    dcov,
     givitiR,
     callr,
     TH.data

@@ -36,6 +36,12 @@ standardized residual sum, approximately standard normal under a correct model. 
 therefore has a location on the map -- an omitted quadratic paints a stripe, an omitted
 interaction a saddle -- which is what the convolutional statistic reads.
 
+Ties among covariate values, as with binary, categorical or rounded covariates, are
+broken at random. The random order is drawn once per call and used for the observed map
+and for every bootstrap map, so the p-value does not depend on the order of the rows in
+the data. With heavily tied axes the p-value can vary noticeably from one seed to the
+next; report the seed.
+
 The test is a small-sample instrument. Against the classical partition tests it gains
 most at \eqn{n} of 50 to 200 and the gain decays as \eqn{n} grows; because the grid uses
 only two covariates, misfit that lives off those axes is harder for it to see than for
@@ -48,7 +54,9 @@ the classical battery.
 
 A bootstrap refit that fails to converge is scored \code{+Inf}, so it counts against
 rejection -- the conservative direction. Set a seed before calling for a reproducible
-p-value.
+p-value. When some covariate column has tied values, the random tie-breaking uses the
+same seed, so from version 2.8.0 such calls give a different p-value for a given seed
+than earlier versions did; calls without ties give the same p-value as before.
 }
 
 \examples{

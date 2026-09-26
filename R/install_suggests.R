@@ -13,20 +13,23 @@
   "HL-GAM"          = "mgcv",
   "PR-GAM"          = "mgcv",
   "Xie-GAM"         = "mgcv",
-  "BAGofT"          = "BAGofT",
+  "BAGofT"          = c("randomForest", "dcov"),   # the fast engine (bagoft.fast)
   "Lai-Liu-HL"      = "ResourceSelection"
 )
 
 # The full optional set, including the ones that only improve (not gate) a test.
-.GOF_ALL_SUGGESTS <- c("givitiR", "callr", "mgcv", "BAGofT",
+# BAGofT itself is optional too: the BAGofT row falls back to it only when
+# randomForest is missing, or when control asks for engine = "package".
+.GOF_ALL_SUGGESTS <- c("givitiR", "callr", "mgcv", "randomForest", "dcov", "BAGofT",
                        "ResourceSelection", "statmod", "CompQuadForm")
 
 #' Install the optional packages used by \code{run.all.gof()}
 #'
 #' The slow tests in \code{\link{run.all.gof}} rely on optional packages that
 #' live in \code{Suggests} (\pkg{givitiR} and \pkg{callr} for the GiViTI
-#' calibration test, \pkg{mgcv} for the GAM tests, \pkg{BAGofT} for the adaptive
-#' test, and \pkg{ResourceSelection} for the Lai-Liu test). Per CRAN policy the
+#' calibration test, \pkg{mgcv} for the GAM tests, \pkg{randomForest} and
+#' \pkg{dcov} for the adaptive BAGofT test (\pkg{BAGofT} itself is used only on
+#' request), and \pkg{ResourceSelection} for the Lai-Liu test). Per CRAN policy the
 #' package never installs them on its own; this helper installs the missing ones
 #' for you, asking first.
 #'

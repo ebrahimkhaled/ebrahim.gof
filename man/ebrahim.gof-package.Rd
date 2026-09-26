@@ -92,6 +92,13 @@ The vignette
 \author{
 \strong{Maintainer}: Ebrahim Khaled Ebrahim \email{ebrahimkhaled@alexu.edu.eg} (\href{https://orcid.org/0009-0006-7839-8778}{ORCID})
 
+Other contributors:
+\itemize{
+  \item Jiawei Zhang (author of the BAGofT package code adapted in R/bagoft_fast.R) [contributor, copyright holder]
+  \item Jie Ding (author of the BAGofT package code adapted in R/bagoft_fast.R) [contributor, copyright holder]
+  \item Yuhong Yang (author of the BAGofT package code adapted in R/bagoft_fast.R) [contributor, copyright holder]
+}
+
 }
 \concept{Hosmer-Lemeshow}
 \concept{binary classification}

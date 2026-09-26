@@ -2,6 +2,17 @@
 
 ## Bug fix
 
+* `deepgof1()` put covariate values that are tied into cells of its residual map by row order.
+  When the rows of the data are sorted by the outcome, as clinical files often are, tied rows were
+  then placed by their outcome, while the bootstrap outcomes were not sorted, so a correct model
+  could be rejected. On `aplore3::glow500`, sorted with all fractures last, the model with the
+  interactions AGE x PRIORFRAC and MOMFRAC x ARMASSIST gave p = .005 in file order and a median
+  p of .54 over 30 random row orders. Ties among covariate values are now broken at random. The
+  random order is drawn once per call and used for the observed map and for every bootstrap map, so
+  the p-value no longer depends on the order of the rows. For rows in random order the test has
+  the same distribution as before. When no covariate column has a tie nothing extra is drawn, and
+  the p-value for a given seed is the same as in 2.7.0.
+
 * The `Stukel` row of `run.all.gof()` squared and summed the two marginal score statistics of
   Stukel's two tail directions and referred the sum to chi-squared on 2 degrees of freedom. That is
   the statistic of `LogisticDx::gof.glm()` ("SstBoth"), which the battery was built to reproduce,
@@ -60,6 +71,36 @@
   every row, the EF and ensemble rows included, uses the same number of groups, and the directed rows
   record it in `Note`. Any other non-numeric `G` is now an error rather than a failure of each row.
 
+* `projection.gof()` is the projection test of Escanciano (2006), as defined for logistic
+  regression by Liu et al. (2024, Statistics and Computing 34:175), also in the battery as the slow
+  row `"Projection"` (family "Bootstrap"). The residual process is taken along every direction of the
+  covariate space rather than only along the fitted linear predictor, as in `Stute-Zhu`, so the test
+  also sees departures such as an omitted interaction. The weight is the closed form of the integral
+  over the sphere, (pi - angle) / (2 pi), on the raw covariates, and the p-value comes from Liu et
+  al.'s model-based bootstrap with B = 1000 refits by default, the number they use in their data
+  examples. The weight costs O(n^3) time and O(n^2) memory, in pure R; the battery row is skipped
+  above n = 3000 unless `control = list(Projection = list(max_n = ...))` raises it. The tests check
+  the weight against a Monte Carlo over random directions, and exactly in the one-covariate case.
+  Timing with two covariates and B = 1000: 1.1 s at n = 200 and 6.4 s at n = 500, of which the
+  weight takes 0.2 s and 4.4 s.
+
+* `bagoft.fast()` computes the BAGofT test of Zhang, Ding and Yang (2023, JASA) and returns the same
+  p-values as the BAGofT package 1.0.0 for the same seed, identical to the last bit, including the
+  distance-correlation pre-selection that BAGofT runs above five covariates. It draws every random
+  number by the same call, in the same order, and removes the package's per-split overhead (formula
+  parsing, model frames, `xtabs()`, `cut()` labels, the `predict()` wrappers). Timing with the
+  package defaults (nsplits = 100, nsim = 100), two covariates: 99 s against 239 s for the package at
+  n = 200, and 188 s at n = 500, where the package is estimated at about 360 s (39 s against 20 s
+  measured with nsim = 10). The rest of the time is the forests themselves. It also runs where
+  BAGofT 1.0.0 stops: a single covariate, and formulas with transformed terms. The code is adapted
+  from BAGofT (GPL-3); its authors are credited in `DESCRIPTION` as contributors and copyright
+  holders. It needs `randomForest`, and `dcov` above five covariates, both now in Suggests.
+
+* The `BAGofT` row of `run.all.gof()` now uses `bagoft.fast()` by default when `randomForest` is
+  installed. The p-value is the same as before for the same seed; only the time changes.
+  `control = list(BAGofT = list(engine = "package"))` calls the BAGofT package as before, and `Note`
+  says which engine ran.
+
 ## Behaviour changes
 
 * `def.gof()`, and so `edge.gof()` and `def.ensemble.gof()`, now warn when there are fewer events,
@@ -80,10 +121,23 @@
   noise, and inverting it could give a p-value of zero. When no column is left, `def.gof()` returns
   `NA` with a warning of class `def_no_information`, and the `Stukel` row returns `NA` with a note.
 
+* `deepgof1()`: when some covariate column has tied values, the random tie-breaking draws from the
+  random-number stream, so for a given seed such calls give a different p-value than in 2.7.0.
+  Calls without ties give the same p-value as before. The map still uses the two covariates selected
+  by the fitted coefficients, as in 2.7.0.
+
+* The full battery of `run.all.gof()` (`include_slow = TRUE`) has one more slow row, `Projection`.
+  The `BAGofT` row no longer needs the BAGofT package when `randomForest` is installed, and
+  `gof_install_suggests()` now offers `randomForest` and `dcov` for it.
+
 ## Documentation
 
 * `?run.all.gof` said that Stukel's two-parameter form does not always hold its nominal level. That
   was a property of the summed statistic, not of the test, and the sentence has been replaced.
+
+* The reference to Zhang, Ding and Yang in `?run.all.gof` gave the wrong issue and pages; it is now
+  JASA 118(542), 1115-1125 (2023), and a second, incomplete entry for the same paper has been
+  removed.
 
 # ebrahim.gof 2.7.0
 
