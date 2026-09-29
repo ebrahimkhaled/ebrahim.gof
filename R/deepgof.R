@@ -215,7 +215,9 @@
 #' misfit lies; \code{covariates} restricts the pairs to a chosen set.
 #'
 #' With one covariate there is no pair to choose, and both readings are the same map of 36
-#' quantile cells along its ranks.
+#' quantile cells along its ranks. The shipped network was trained on two-covariate maps
+#' only: on such models the bootstrap still gives it its level, but it has less power than
+#' a network trained on this map would.
 #'
 #' Ties among covariate values, as with binary, categorical or rounded covariates, are
 #' broken at random. The random order is drawn once per call and used for the observed map

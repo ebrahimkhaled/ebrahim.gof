@@ -35,8 +35,9 @@
   argument `covariates` restricts the pairs to a chosen set.
 
 * A model with one covariate is now accepted: the map is 36 quantile cells along its ranks, the
-  construction of the benchmark above for its one-covariate setting, where it has power .735 at
-  matched level .05. Earlier versions stopped with an error.
+  construction of the benchmark above for its one-covariate setting. The shipped network was trained
+  on two-covariate maps only; on that setting it holds its level (.055) and has power .735 at matched
+  level .05, about .10 below networks trained on this map. Earlier versions stopped with an error.
 
 * The result now also holds `map`, the 6 x 6 map that gave the statistic (rows follow the first
   axis), and, for the all-pairs reading, `pairs`, the observed score of every pair, so the test says
