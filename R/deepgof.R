@@ -3,9 +3,10 @@
 #
 # The test statistic is a small convolutional network (18,273 frozen parameters) that
 # reads the fitted model's RESIDUAL MAP -- a 6x6 grid of standardized residual sums over
-# the ranks of the two strongest covariates -- and the p-value is the rank of the observed
-# score inside the analyst's own parametric bootstrap. The level is therefore a property
-# of the calibration, not of what the network learned.
+# the ranks of two covariates (the two strongest by default, or every pair in turn with
+# reading = "allpairs") -- and the p-value is the rank of the observed score inside the
+# analyst's own parametric bootstrap. The level is therefore a property of the
+# calibration, not of what the network learned.
 #
 # The network was trained ONCE, offline, on simulated departures and ships frozen in
 # R/sysdata.rda. Nothing is trained here: the forward pass is a handful of small matrix
@@ -80,16 +81,19 @@
 ## were continuous, so it had no ties). Row order must not be used on real data: a file
 ## sorted by the outcome then puts tied rows into cells by their outcome, the bootstrap
 ## outcomes are not sorted, and a correct model can be rejected.
-.dg_map <- function(fit, K = 6L, tb = NULL) {
-  d  <- stats::model.frame(fit)
-  mm <- stats::model.matrix(fit)
+.dg_map <- function(fit, K = 6L, tb = NULL)
+  .dg_map_core(stats::model.matrix(fit), fit$y, as.numeric(stats::fitted(fit)),
+               stats::coef(fit), K, tb)
+
+## the same map from a design matrix, outcome, fitted risks and coefficients, so a bootstrap
+## refit by glm.fit() needs no model frame
+.dg_map_core <- function(mm, y, ph, coefs, K = 6L, tb = NULL) {
   vars <- colnames(mm)[-1]
   if (length(vars) < 2L) stop("deepgof1() needs at least two covariates", call. = FALSE)
-  b  <- stats::coef(fit)[vars]
+  b  <- coefs[vars]
   sc <- abs(b) * apply(mm[, vars, drop = FALSE], 2, stats::sd)
   ax <- vars[sort(order(sc, decreasing = TRUE)[1:2])]
-  ph <- as.numeric(stats::fitted(fit))
-  r  <- stats::model.response(d) - ph
+  r  <- y - ph
   n  <- length(r)
   rk <- function(v) {
     if (is.null(tb)) return(rank(v, ties.method = "first"))
@@ -102,6 +106,78 @@
   list(map = as.numeric(s) / sqrt(pmax(as.numeric(vv), 1e-8)), axes = ax)
 }
 
+## ---- the all-pairs reading ------------------------------------------------------------------
+## The maps are drawn over the model's COVARIATES, not its model-matrix columns: a covariate that
+## enters as ns(x, 3), poly(x, 2) or I(x^2) is ranked by x itself, and an interaction adds no axis
+## of its own. Ranking by a spline basis column or by x^2 would fold the axis. Covariates that the
+## model uses untransformed are read from the model frame; transformed ones are fetched from the
+## data the model was fitted to, on the rows the fit kept. Factors and logicals enter by their
+## codes. Returns NULL when some covariate cannot be recovered; deepgof1() then falls back to the
+## model-matrix columns.
+.dg_covariates <- function(fit) {
+  mf <- stats::model.frame(fit)
+  tl <- attr(stats::terms(mf), "term.labels")
+  vars <- unique(unlist(lapply(tl, function(l) all.vars(str2lang(l)))))
+  if (!length(vars)) return(matrix(numeric(0), nrow(mf), 0L))
+  src <- fit$data
+  get1 <- function(v) {
+    if (v %in% names(mf) && is.null(dim(mf[[v]]))) return(mf[[v]])
+    if (is.data.frame(src) && v %in% names(src)) {
+      if (nrow(src) == nrow(mf) && is.null(fit$na.action)) return(src[[v]])
+      ids <- rownames(mf)
+      if (!anyDuplicated(rownames(src)) && all(ids %in% rownames(src)))
+        return(src[ids, v, drop = TRUE])
+    }
+    ## a model fitted without 'data': look where the formula was written
+    if (is.null(fit$na.action)) {
+      e <- tryCatch(get(v, envir = environment(stats::formula(fit))), error = function(e) NULL)
+      if (is.atomic(e) && is.null(dim(e)) && length(e) == nrow(mf)) return(e)
+    }
+    NULL
+  }
+  cols <- lapply(vars, get1)
+  if (any(vapply(cols, is.null, TRUE))) return(NULL)
+  X <- vapply(cols, function(v) {
+    if (is.character(v)) v <- factor(v)
+    as.numeric(if (is.factor(v)) as.integer(v) else v)
+  }, numeric(nrow(mf)))
+  X <- matrix(X, nrow(mf), dimnames = list(NULL, vars))
+  ## a covariate constant on the fitted rows has no ranks to read
+  X[, apply(X, 2, function(v) length(unique(v)) > 1L), drop = FALSE]
+}
+
+## The cells depend only on the covariate ranks, which the bootstrap does not change, so they are
+## found once per call: one integer cell index per row for every pair of columns (or, with a
+## single column, 36 quantile cells along it). Each replicate then needs only the cell sums of its
+## own residuals. The cell order is the one .dg_map emits, so the network sees the same layout.
+.dg_cells <- function(X, K = 6L, tb = NULL) {
+  n <- nrow(X)
+  rk <- function(v) {
+    if (is.null(tb)) return(rank(v, ties.method = "first"))
+    o <- order(v, tb); rr <- integer(n); rr[o] <- seq_len(n); rr
+  }
+  if (ncol(X) == 1L) {
+    ## one covariate: the map is 36 quantile cells along its ranks, read row by row
+    i <- pmin(K * K, 1L + floor(K * K * (rk(X[, 1]) - 1) / n))
+    return(list(idx = list(as.integer(i)), pairs = matrix(colnames(X), 1L, 2L)))
+  }
+  bins <- apply(X, 2, function(v) pmin(K, 1L + floor(K * (rk(v) - 1) / n)))
+  prs <- utils::combn(colnames(X), 2L)
+  list(idx = lapply(seq_len(ncol(prs)), function(j)
+         as.integer((bins[, prs[1L, j]] - 1L) * K + bins[, prs[2L, j]])),
+       pairs = t(prs))
+}
+
+## the standardized map of one pair, from its precomputed cell index. The sums go through
+## sum(), as in .dg_map's tapply(), so the two builders agree to the last bit; rowsum()
+## accumulates differently and moves the score by about 1e-15.
+.dg_cellmap <- function(i, r, ph, K = 6L) {
+  f <- factor(i, levels = seq_len(K * K))
+  s  <- vapply(split(r, f), sum, 0)
+  vv <- vapply(split(ph * (1 - ph), f), sum, 0)
+  s / sqrt(pmax(vv, 1e-8))
+}
+
 #' DeepGOF-1: a pretrained goodness-of-fit test for logistic regression
 #'
 #' Tests whether a fitted binomial \code{glm} is correctly specified, using a
@@ -111,11 +187,35 @@
 #' analyst's own parametric bootstrap, so the level does not depend on what the network
 #' learned.
 #'
-#' The residual map is a \code{K} by \code{K} grid over the empirical ranks of the two
-#' covariates with the largest \eqn{|\hat\beta_j| \hat\sigma_j}; each cell holds a
-#' standardized residual sum, approximately standard normal under a correct model. Misfit
-#' therefore has a location on the map -- an omitted quadratic paints a stripe, an omitted
-#' interaction a saddle -- which is what the convolutional statistic reads.
+#' A residual map is a \code{K} by \code{K} grid over the empirical ranks of two
+#' covariates; each cell holds a standardized residual sum, approximately standard normal
+#' under a correct model. Misfit therefore has a location on the map -- an omitted
+#' quadratic paints a stripe, an omitted interaction a saddle -- which is what the
+#' convolutional statistic reads.
+#'
+#' Two readings of the map are offered. The default, \code{reading = "v1"}, draws one map,
+#' over the two model-matrix columns with the largest \eqn{|\hat\beta_j| \hat\sigma_j}, and
+#' chooses them again in every bootstrap replicate. When the misfit lies on the covariates
+#' with the strongest linear effects, among others that carry little signal, this rule finds
+#' them almost every time and has the most power. It reads a covariate by its linear effect,
+#' so it can pass over a covariate whose effect is U-shaped, and after a spline repair it can
+#' choose two basis columns of the same covariate.
+#'
+#' \code{reading = "allpairs"} scores the map of every pair of covariates and takes the
+#' largest score as the statistic. The same maximum is taken in every bootstrap replicate, so
+#' the p-value needs no correction for the choice of pair. It does not depend on the linear
+#' effects, so it finds a U-shaped covariate, and with few covariates (three or so) it has
+#' more power than the default; with many covariates the maximum over \eqn{p(p-1)/2} pairs
+#' costs power when one pair carries the misfit. The maps are drawn over the covariates
+#' themselves, not over the columns of the model matrix: a covariate that enters as
+#' \code{ns(x, 3)}, \code{poly(x, 2)} or \code{I(x^2)} is ranked by \code{x}, and an
+#' interaction adds no axis of its own. Transformed covariates are read from the data the
+#' model was fitted to; factors enter by their level codes. The pair that reaches the maximum
+#' is returned as \code{axes}, and its map as \code{map}, so the result also says where the
+#' misfit lies; \code{covariates} restricts the pairs to a chosen set.
+#'
+#' With one covariate there is no pair to choose, and both readings are the same map of 36
+#' quantile cells along its ranks.
 #'
 #' Ties among covariate values, as with binary, categorical or rounded covariates, are
 #' broken at random. The random order is drawn once per call and used for the observed map
@@ -124,23 +224,32 @@
 #' next; report the seed.
 #'
 #' The test is a small-sample instrument. Against the classical partition tests it gains
-#' most at \eqn{n} of 50 to 200 and the gain decays as \eqn{n} grows; because the grid uses
-#' only two covariates, misfit that lives off those axes is harder for it to see than for
-#' covariate-space or smoothing tests. It is not one of the tests
+#' most at \eqn{n} of 50 to 200 and the gain decays as \eqn{n} grows; because each map uses
+#' two covariates at a time, misfit that depends on three or more covariates jointly is
+#' harder for it to see than for covariate-space or smoothing tests. It is not one of the tests
 #' \code{\link{run.all.gof}} selects: call it directly on the same fitted model and read its
 #' p-value beside the panel. See \code{\link{run.all.gof}} for
 #' the classical battery.
 #'
-#' @param fit a fitted \code{glm} with \code{family = binomial()} and at least two
-#'   covariates.
+#' @param fit a fitted \code{glm} with \code{family = binomial()}, a 0/1 outcome and at
+#'   least one covariate.
 #' @param B number of parametric-bootstrap replicates. The p-value lies on a grid of
 #'   \code{1/(B+1)}, so \code{B = 199} makes the nominal .05 attainable exactly.
 #' @param K grid resolution. Leave at 6: the shipped weights were trained at \code{K = 6}
 #'   and are not valid at any other resolution.
+#' @param reading \code{"v1"} (the default) reads one map over the two columns with the
+#'   largest \eqn{|\hat\beta_j| \hat\sigma_j}; \code{"allpairs"} takes the largest score over
+#'   all pairs of covariates. See Details for when to use which.
+#' @param covariates optional character vector naming the covariates to form the pairs
+#'   from, for \code{reading = "allpairs"}. By default every covariate of the model that is
+#'   not constant is used.
 #'
 #' @return An object of class \code{"deepgof1"}: a list with \code{statistic} (the observed
-#'   score), \code{p.value}, \code{B}, \code{K}, \code{axes} (the two covariates the grid
-#'   was built on), \code{boot} (the \code{B} bootstrap scores) and \code{method}.
+#'   score), \code{p.value}, \code{B}, \code{K}, \code{reading}, \code{axes} (the
+#'   covariates of the map that gave the statistic), \code{map} (that map, a \code{K} by \code{K}
+#'   matrix of standardized residual sums whose rows follow the first axis), \code{pairs}
+#'   (for \code{"allpairs"}, the observed score of every pair), \code{boot} (the \code{B}
+#'   bootstrap statistics) and \code{method}.
 #'
 #' @section Reproducibility:
 #' A bootstrap refit that fails to converge is scored \code{+Inf}, so it counts against
@@ -148,6 +257,11 @@
 #' p-value. When some covariate column has tied values, the random tie-breaking uses the
 #' same seed, so from version 2.8.0 such calls give a different p-value for a given seed
 #' than earlier versions did; calls without ties give the same p-value as before.
+#' Version 2.9.0 refits each bootstrap sample on the fitted model's design matrix. Earlier
+#' versions refitted the formula on the model frame, which fails for every term that
+#' transforms a covariate (\code{log(x)}, \code{ns(x, 3)}, \code{poly(x, 2)}): each
+#' replicate was then scored \code{+Inf} and the p-value was 1. For models without such
+#' terms the default reading gives the same p-value as in 2.8.0.
 #'
 #' @references
 #' Ebrahim EK (2026). "DeepGOF-1: A Pretrained Convolutional Goodness-of-Fit Test for
@@ -165,6 +279,8 @@
 #' y  <- rbinom(n, 1, plogis(0.3 + 0.8 * x1 - 0.5 * x2 + 0.9 * (x1^2 - mean(x1^2))))
 #' fit <- glm(y ~ x1 + x2, family = binomial())
 #' deepgof1(fit, B = 49)   # B = 49 to keep the example fast; use the default in practice
+#' # every pair of covariates, with the pair where the misfit is largest
+#' deepgof1(fit, B = 49, reading = "allpairs")$axes
 #'
 #' @seealso \code{\link{run.all.gof}}, \code{\link{ef.gof}}, \code{\link{legoft}}
 #' @concept goodness-of-fit
@@ -175,41 +291,102 @@
 #' @concept convolutional neural network
 #' @concept pretrained
 #' @export
-deepgof1 <- function(fit, B = 199L, K = 6L) {
+deepgof1 <- function(fit, B = 199L, K = 6L, reading = c("v1", "allpairs"), covariates = NULL) {
   if (!inherits(fit, "glm") || fit$family$family != "binomial")
     stop("deepgof1() expects a glm fitted with family = binomial()", call. = FALSE)
   if (K != deepgof1_weights$K)
     stop("the shipped DeepGOF-1 weights are valid only at K = ", deepgof1_weights$K,
          call. = FALSE)
+  ## the bootstrap draws one Bernoulli outcome per row, so grouped or weighted fits are not served
+  if (any(fit$prior.weights != 1) || !all(fit$y %in% c(0, 1)))
+    stop("deepgof1() needs a 0/1 outcome, one row per observation, without prior weights",
+         call. = FALSE)
+  reading <- match.arg(reading)
+  if (!is.null(covariates) && reading == "v1")
+    stop("'covariates' applies to reading = \"allpairs\" only", call. = FALSE)
   M <- deepgof1_weights
   score <- function(m) .dg_score((m - M$mu) / M$sd, M)
+
+  mm <- stats::model.matrix(fit)
+  if (reading == "allpairs") {
+    X <- .dg_covariates(fit)
+    if (is.null(X)) {
+      ## the raw covariates are not recoverable (e.g. the data are gone): use the columns
+      warning("deepgof1(): could not recover the covariates from the data the model was ",
+              "fitted to; the maps are drawn over model-matrix columns instead", call. = FALSE)
+      v <- colnames(mm)[colnames(mm) != "(Intercept)"]
+      X <- mm[, v[!is.na(stats::coef(fit)[v])], drop = FALSE]
+    }
+    if (!is.null(covariates)) {
+      bad <- setdiff(covariates, colnames(X))
+      if (length(bad))
+        stop("'covariates' must name covariates of 'fit': ", paste(bad, collapse = ", "),
+             call. = FALSE)
+      X <- X[, covariates, drop = FALSE]
+    }
+    if (ncol(X) < 1L) stop("deepgof1() needs at least one covariate", call. = FALSE)
+  } else {
+    v <- colnames(mm)[colnames(mm) != "(Intercept)"]
+    if (length(v) < 1L) stop("deepgof1() needs at least one covariate", call. = FALSE)
+    X <- mm[, v, drop = FALSE]
+  }
+  ## with one covariate there is no pair to choose: both readings are the 36-cell map along it
+  pairs_path <- reading == "allpairs" || ncol(X) == 1L
 
   ## Ties among covariate values are broken at random, once per call: the same permutation
   ## serves the observed map and every bootstrap map, so the bootstrap reproduces the tie
   ## structure and the row order of the data cannot enter the statistic. Nothing is drawn
-  ## when no covariate column has a tie, so results for continuous covariates are unchanged.
-  mm <- stats::model.matrix(fit)
-  tied <- any(apply(mm[, -1, drop = FALSE], 2, anyDuplicated) > 0L)
+  ## when no covariate has a tie, so results for continuous covariates are unchanged.
+  tied <- any(apply(X, 2, anyDuplicated) > 0L)
   tb <- if (tied) sample.int(nrow(mm)) else NULL
 
-  obs  <- .dg_map(fit, K, tb)
-  Sobs <- score(obs$map)
-
   ph  <- as.numeric(stats::fitted(fit))
-  dat <- stats::model.frame(fit)
-  yn  <- names(dat)[1]
-  frm <- stats::formula(fit)
+  y   <- as.numeric(fit$y)                       # 0/1, also for a factor or logical response
+  if (pairs_path) {
+    ## the maximum score over every pair of covariates; the same maximum is taken in every
+    ## replicate, so choosing the pair needs no correction to the p-value
+    vars  <- colnames(X)
+    cells <- .dg_cells(X, K, tb)
+    stat_all <- function(r, p) vapply(cells$idx, function(i) score(.dg_cellmap(i, r, p, K)), 0)
+    so   <- stat_all(y - ph, ph)
+    Sobs <- max(so)
+    top  <- which.max(so)
+    axes <- if (length(vars) == 1L) vars else cells$pairs[top, ]
+    map  <- .dg_cellmap(cells$idx[[top]], y - ph, ph, K)
+    pairs <- data.frame(axis1 = cells$pairs[, 1L], axis2 = cells$pairs[, 2L], score = so,
+                        stringsAsFactors = FALSE)
+    if (length(vars) == 1L) pairs$axis2 <- NA_character_
+  } else {
+    obs  <- .dg_map(fit, K, tb)
+    Sobs <- score(obs$map)
+    axes <- obs$axes
+    map  <- obs$map
+    pairs <- NULL
+  }
+
+  ## The refits use the fitted model's own design matrix. Refitting the formula on the model
+  ## frame, as versions up to 2.8.0 did, fails for every term that transforms a covariate
+  ## (log(x), ns(x, 3), poly(x, 2)), because the model frame holds the transformed column and
+  ## not x; every replicate was then scored +Inf and the p-value was 1. The design matrix also
+  ## keeps a spline basis fixed, which is what a parametric bootstrap under the fit requires.
+  itc <- attr(stats::terms(fit), "intercept") > 0L
   Sb  <- numeric(B)
   for (b in seq_len(B)) {
-    dat[[yn]] <- stats::rbinom(length(ph), 1L, ph)
-    fb <- tryCatch(suppressWarnings(stats::glm(frm, data = dat, family = stats::binomial())),
+    ys <- stats::rbinom(length(ph), 1L, ph)
+    fb <- tryCatch(suppressWarnings(stats::glm.fit(mm, ys, weights = fit$prior.weights,
+                                                   offset = fit$offset, family = stats::binomial(),
+                                                   control = fit$control, intercept = itc)),
                    error = function(e) NULL)
     ## a failed refit counts AGAINST rejection (conservative); -Inf would deflate p
-    Sb[b] <- if (is.null(fb)) Inf else score(.dg_map(fb, K, tb)$map)
+    Sb[b] <- if (is.null(fb)) Inf else if (pairs_path) {
+      pb <- as.numeric(fb$fitted.values)
+      max(stat_all(ys - pb, pb))
+    } else score(.dg_map_core(mm, ys, as.numeric(fb$fitted.values), fb$coefficients, K, tb)$map)
   }
   structure(list(statistic = Sobs,
                  p.value   = (1 + sum(Sb >= Sobs)) / (B + 1),
-                 B = B, K = K, axes = obs$axes, boot = Sb,
+                 B = B, K = K, reading = reading, axes = axes,
+                 map = matrix(map, K, K, byrow = TRUE), pairs = pairs, boot = Sb,
                  method    = "DeepGOF-1: pretrained residual-map goodness-of-fit test",
                  data.name = deparse(substitute(fit))),
             class = "deepgof1")
@@ -227,7 +404,15 @@ print.deepgof1 <- function(x, ...) {
   cat("\n\t", x$method, "\n\n", sep = "")
   cat("data:  ", x$data.name, "\n", sep = "")
   cat(sprintf("S = %.4f, B = %d, p-value = %.4f\n", x$statistic, x$B, x$p.value))
-  cat(sprintf("grid: %d x %d over ranks of %s and %s\n", x$K, x$K, x$axes[1], x$axes[2]))
+  if (length(x$axes) == 1L) {
+    cat(sprintf("map: %d quantile cells over ranks of %s\n", x$K * x$K, x$axes))
+  } else if (identical(x$reading, "allpairs")) {
+    cat(sprintf("map: %d x %d, maximum over %d pair%s of columns, reached at %s and %s\n",
+                x$K, x$K, nrow(x$pairs), if (nrow(x$pairs) == 1L) "" else "s",
+                x$axes[1], x$axes[2]))
+  } else {
+    cat(sprintf("grid: %d x %d over ranks of %s and %s\n", x$K, x$K, x$axes[1], x$axes[2]))
+  }
   cat("alternative hypothesis: the logistic model is misspecified\n\n")
   invisible(x)
 }

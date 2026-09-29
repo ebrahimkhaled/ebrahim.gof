@@ -1,3 +1,47 @@
+# ebrahim.gof 2.9.0
+
+## Bug fix
+
+* `deepgof1()` refitted each bootstrap sample by evaluating the model formula on the model frame.
+  For a term that transforms a covariate, such as `log(x)`, `ns(x, 3)` or `poly(x, 2)`, the model
+  frame holds the transformed column and not `x`, so every refit failed, every replicate was scored
+  `+Inf`, and the p-value was 1 whatever the data. The bootstrap now refits on the fitted model's
+  design matrix with `glm.fit()`, which also keeps a spline basis fixed, as a parametric bootstrap
+  under the fitted model requires. For models without such terms the p-value for a given seed is
+  the same as in 2.8.0.
+
+* `deepgof1()` now stops with a clear message for a grouped (`cbind(successes, failures)`) or
+  weighted binomial fit. The bootstrap draws one Bernoulli outcome per row, so such fits were never
+  served correctly.
+
+## New features
+
+* `deepgof1(reading = "allpairs")` scores the residual map of every pair of covariates and takes
+  the largest score as its statistic. The same maximum is taken in every bootstrap replicate, so the
+  p-value needs no correction for the choice of pair. The default rule (`reading = "v1"`, unchanged)
+  reads one map, over the two columns with the largest |b| * sd; it reads covariates by their linear
+  effects, so it can pass over a covariate whose effect is U-shaped. The two readings suit different
+  designs. With few covariates the maximum over pairs has more power: on the benchmark of Liu et al.
+  (2024, Statistics and Computing 34:175), whose settings have at most three covariates, with B = 199
+  and matched level .05, it has power .640 against .580 for the default, and a null rejection rate
+  of .050. With many covariates the maximum pays for the number of pairs: with two active covariates
+  among ten, the default rule finds the active pair in 93 to 100 per cent of datasets and has more
+  power than the all-pairs reading in all twelve settings studied (.453 against .286 on average).
+
+* In the all-pairs reading the maps are drawn over the covariates, not over the columns of the model
+  matrix: a covariate that enters as `ns(x, 3)`, `poly(x, 2)` or `I(x^2)` is ranked by `x` itself, and
+  an interaction adds no axis of its own. Transformed covariates are read from the data the model was
+  fitted to, on the rows the fit kept. A factor is one covariate, entered by its level codes. The
+  argument `covariates` restricts the pairs to a chosen set.
+
+* A model with one covariate is now accepted: the map is 36 quantile cells along its ranks, the
+  construction of the benchmark above for its one-covariate setting, where it has power .735 at
+  matched level .05. Earlier versions stopped with an error.
+
+* The result now also holds `map`, the 6 x 6 map that gave the statistic (rows follow the first
+  axis), and, for the all-pairs reading, `pairs`, the observed score of every pair, so the test says
+  where the misfit lies as well as whether it is there.
+
 # ebrahim.gof 2.8.0
 
 ## Bug fix

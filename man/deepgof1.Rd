@@ -4,22 +4,39 @@
 \alias{deepgof1}
 \title{DeepGOF-1: a pretrained goodness-of-fit test for logistic regression}
 \usage{
-deepgof1(fit, B = 199L, K = 6L)
+deepgof1(
+  fit,
+  B = 199L,
+  K = 6L,
+  reading = c("v1", "allpairs"),
+  covariates = NULL
+)
 }
 \arguments{
-\item{fit}{a fitted \code{glm} with \code{family = binomial()} and at least two
-covariates.}
+\item{fit}{a fitted \code{glm} with \code{family = binomial()}, a 0/1 outcome and at
+least one covariate.}
 
 \item{B}{number of parametric-bootstrap replicates. The p-value lies on a grid of
 \code{1/(B+1)}, so \code{B = 199} makes the nominal .05 attainable exactly.}
 
 \item{K}{grid resolution. Leave at 6: the shipped weights were trained at \code{K = 6}
 and are not valid at any other resolution.}
+
+\item{reading}{\code{"v1"} (the default) reads one map over the two columns with the
+largest \eqn{|\hat\beta_j| \hat\sigma_j}; \code{"allpairs"} takes the largest score over
+all pairs of covariates. See Details for when to use which.}
+
+\item{covariates}{optional character vector naming the covariates to form the pairs
+from, for \code{reading = "allpairs"}. By default every covariate of the model that is
+not constant is used.}
 }
 \value{
 An object of class \code{"deepgof1"}: a list with \code{statistic} (the observed
-  score), \code{p.value}, \code{B}, \code{K}, \code{axes} (the two covariates the grid
-  was built on), \code{boot} (the \code{B} bootstrap scores) and \code{method}.
+  score), \code{p.value}, \code{B}, \code{K}, \code{reading}, \code{axes} (the
+  covariates of the map that gave the statistic), \code{map} (that map, a \code{K} by \code{K}
+  matrix of standardized residual sums whose rows follow the first axis), \code{pairs}
+  (for \code{"allpairs"}, the observed score of every pair), \code{boot} (the \code{B}
+  bootstrap statistics) and \code{method}.
 }
 \description{
 Tests whether a fitted binomial \code{glm} is correctly specified, using a
@@ -30,11 +47,35 @@ analyst's own parametric bootstrap, so the level does not depend on what the net
 learned.
 }
 \details{
-The residual map is a \code{K} by \code{K} grid over the empirical ranks of the two
-covariates with the largest \eqn{|\hat\beta_j| \hat\sigma_j}; each cell holds a
-standardized residual sum, approximately standard normal under a correct model. Misfit
-therefore has a location on the map -- an omitted quadratic paints a stripe, an omitted
-interaction a saddle -- which is what the convolutional statistic reads.
+A residual map is a \code{K} by \code{K} grid over the empirical ranks of two
+covariates; each cell holds a standardized residual sum, approximately standard normal
+under a correct model. Misfit therefore has a location on the map -- an omitted
+quadratic paints a stripe, an omitted interaction a saddle -- which is what the
+convolutional statistic reads.
+
+Two readings of the map are offered. The default, \code{reading = "v1"}, draws one map,
+over the two model-matrix columns with the largest \eqn{|\hat\beta_j| \hat\sigma_j}, and
+chooses them again in every bootstrap replicate. When the misfit lies on the covariates
+with the strongest linear effects, among others that carry little signal, this rule finds
+them almost every time and has the most power. It reads a covariate by its linear effect,
+so it can pass over a covariate whose effect is U-shaped, and after a spline repair it can
+choose two basis columns of the same covariate.
+
+\code{reading = "allpairs"} scores the map of every pair of covariates and takes the
+largest score as the statistic. The same maximum is taken in every bootstrap replicate, so
+the p-value needs no correction for the choice of pair. It does not depend on the linear
+effects, so it finds a U-shaped covariate, and with few covariates (three or so) it has
+more power than the default; with many covariates the maximum over \eqn{p(p-1)/2} pairs
+costs power when one pair carries the misfit. The maps are drawn over the covariates
+themselves, not over the columns of the model matrix: a covariate that enters as
+\code{ns(x, 3)}, \code{poly(x, 2)} or \code{I(x^2)} is ranked by \code{x}, and an
+interaction adds no axis of its own. Transformed covariates are read from the data the
+model was fitted to; factors enter by their level codes. The pair that reaches the maximum
+is returned as \code{axes}, and its map as \code{map}, so the result also says where the
+misfit lies; \code{covariates} restricts the pairs to a chosen set.
+
+With one covariate there is no pair to choose, and both readings are the same map of 36
+quantile cells along its ranks.
 
 Ties among covariate values, as with binary, categorical or rounded covariates, are
 broken at random. The random order is drawn once per call and used for the observed map
@@ -43,9 +84,9 @@ the data. With heavily tied axes the p-value can vary noticeably from one seed t
 next; report the seed.
 
 The test is a small-sample instrument. Against the classical partition tests it gains
-most at \eqn{n} of 50 to 200 and the gain decays as \eqn{n} grows; because the grid uses
-only two covariates, misfit that lives off those axes is harder for it to see than for
-covariate-space or smoothing tests. It is not one of the tests
+most at \eqn{n} of 50 to 200 and the gain decays as \eqn{n} grows; because each map uses
+two covariates at a time, misfit that depends on three or more covariates jointly is
+harder for it to see than for covariate-space or smoothing tests. It is not one of the tests
 \code{\link{run.all.gof}} selects: call it directly on the same fitted model and read its
 p-value beside the panel. See \code{\link{run.all.gof}} for
 the classical battery.
@@ -57,6 +98,11 @@ rejection -- the conservative direction. Set a seed before calling for a reprodu
 p-value. When some covariate column has tied values, the random tie-breaking uses the
 same seed, so from version 2.8.0 such calls give a different p-value for a given seed
 than earlier versions did; calls without ties give the same p-value as before.
+Version 2.9.0 refits each bootstrap sample on the fitted model's design matrix. Earlier
+versions refitted the formula on the model frame, which fails for every term that
+transforms a covariate (\code{log(x)}, \code{ns(x, 3)}, \code{poly(x, 2)}): each
+replicate was then scored \code{+Inf} and the p-value was 1. For models without such
+terms the default reading gives the same p-value as in 2.8.0.
 }
 
 \examples{
@@ -67,6 +113,8 @@ x1 <- runif(n, -3, 3); x2 <- rnorm(n)
 y  <- rbinom(n, 1, plogis(0.3 + 0.8 * x1 - 0.5 * x2 + 0.9 * (x1^2 - mean(x1^2))))
 fit <- glm(y ~ x1 + x2, family = binomial())
 deepgof1(fit, B = 49)   # B = 49 to keep the example fast; use the default in practice
+# every pair of covariates, with the pair where the misfit is largest
+deepgof1(fit, B = 49, reading = "allpairs")$axes
 
 }
 \references{

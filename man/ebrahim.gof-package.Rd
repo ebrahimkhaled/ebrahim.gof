@@ -36,7 +36,8 @@ know something about what you are looking for.
     evidence carries the misfit, with familywise error control.}
   \item{Willing to spend a bootstrap for more power}{\code{\link{deepgof1}} ---
     a pretrained convolutional statistic whose level comes from your own
-    parametric bootstrap rather than from the network.}
+    parametric bootstrap rather than from the network; its map shows where
+    the misfit lies.}
   \item{A penalized (ridge) fit}{\code{\link{calm.gof}} for a closed-form
     reference from a single fit, or \code{\link{shrink.gof}} for the same
     correction referred to a prepivoting bootstrap. Under a penalty the usual
