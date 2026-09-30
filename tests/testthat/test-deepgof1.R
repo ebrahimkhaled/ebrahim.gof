@@ -91,7 +91,7 @@ test_that("deepgof1() rejects calls it cannot serve", {
   f2 <- glm(y ~ x1 + x2, family = binomial())
   expect_error(deepgof1(f2, K = 8), "valid only at K")
   expect_error(deepgof1(f2, reading = "allpairs", covariates = c("x1", "x9")), "must name covariates")
-  expect_error(deepgof1(f2, covariates = "x1"), "allpairs")
+  expect_error(deepgof1(f2, covariates = "x1"), "all-pairs and combined")
 })
 
 ## ---- the all-pairs reading (2.9.0) -------------------------------------------------------
@@ -206,13 +206,42 @@ test_that("transformed terms refit in every bootstrap replicate", {
   d$y <- rbinom(n, 1, plogis(0.5 * d$x1 + 1.2 * (d$x1^2 - 3) - 0.5 * d$x2))
   f_log <- glm(y ~ log(x1 + 4) + x2, data = d, family = binomial())
   f_ns  <- glm(y ~ splines::ns(x2, 3) + x1, data = d, family = binomial())
-  for (f in list(f_log, f_ns)) for (rd in c("allpairs", "v1")) {
+  for (f in list(f_log, f_ns)) for (rd in c("axes", "allpairs", "combined", "columns")) {
     r <- deepgof1(f, B = 19, reading = rd)
     expect_true(all(is.finite(r$boot)))
-    ## both models omit the quadratic in x1; the v1 rule can choose two spline columns of x2
-    ## and miss it, which is its documented weakness, so power is asserted for all-pairs only
-    if (rd == "allpairs") expect_lt(r$p.value, 0.1)
+    ## both models omit the quadratic in x1. The 2.8.0 column rule ("columns") can choose two spline
+    ## columns of x2 and miss it; the axis rule over covariates reads x1 and x2 themselves
+    if (rd != "columns") expect_lt(r$p.value, 0.1)
   }
+})
+
+test_that("the axis rule reads covariates, not spline or dummy columns", {
+  set.seed(39)
+  n <- 250
+  d <- data.frame(x1 = runif(n, -3, 3), x2 = rnorm(n), g = factor(sample(letters[1:3], n, TRUE)))
+  d$y <- rbinom(n, 1, plogis(0.4 * d$x1 - 0.8 * d$x2))
+  f <- glm(y ~ splines::ns(x2, 3) + x1 + g, data = d, family = binomial())
+  r <- deepgof1(f, B = 9)
+  expect_true(all(r$axes %in% c("x1", "x2", "g")))
+  ## on a model with untransformed numeric covariates the axis rule is the 2.8.0 rule, bit for bit
+  f2 <- glm(y ~ x1 + x2, data = d, family = binomial())
+  set.seed(40); a <- deepgof1(f2, B = 19)
+  set.seed(40); b <- deepgof1(f2, B = 19, reading = "columns")
+  expect_identical(a$boot, b$boot)
+  expect_identical(a$p.value, b$p.value)
+})
+
+test_that("the combined reading returns a valid p-value and its two components", {
+  set.seed(41)
+  n <- 150
+  x1 <- rnorm(n); x2 <- rnorm(n); x3 <- rnorm(n)
+  y <- rbinom(n, 1, plogis(0.5 * x1 - 0.5 * x2))
+  r <- deepgof1(glm(y ~ x1 + x2 + x3, family = binomial()), B = 19, reading = "combined")
+  expect_true(r$p.value >= 1 / 20 && r$p.value <= 1)
+  expect_equal(r$p.value * 20, round(r$p.value * 20))
+  expect_named(r$components, c("axes", "allpairs"))
+  ## the minimum of two p-values is never below the smaller of them after calibration
+  expect_gte(r$p.value, min(r$components))
 })
 
 test_that("grouped or weighted binomial fits are refused", {

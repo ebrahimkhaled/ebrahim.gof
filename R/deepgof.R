@@ -168,6 +168,101 @@
        pairs = t(prs))
 }
 
+## ---- one engine for every reading ---------------------------------------------------------------
+## For each covariate, the model-matrix columns of its main-effect terms: the columns of every term whose
+## only variable is that covariate (x, ns(x, 3), poly(x, 2), I(x^2), a factor's dummies). Interaction
+## terms belong to no single covariate and are left out.
+.dg_term_cols <- function(fit, mm, vars) {
+  tl <- attr(stats::terms(fit), "term.labels")
+  tv <- lapply(tl, function(l) all.vars(str2lang(l)))
+  asg <- attr(mm, "assign")
+  stats::setNames(lapply(vars, function(v)
+    which(asg %in% which(vapply(tv, function(z) length(z) == 1L && z == v, TRUE)))), vars)
+}
+
+## The axis rule over covariates: each covariate is scored by the standard deviation of its terms'
+## total contribution to the linear predictor, and the two largest give the axes, in model order. For a
+## covariate that enters as one untransformed column this is |b| sd(x), the rule of versions 2.7.0 and
+## 2.8.0, so for such models the axes, the map and the p-value are unchanged.
+.dg_pick_axes <- function(mm, tcols, coefs) {
+  sc <- vapply(tcols, function(cl) {
+    if (!length(cl)) return(0)
+    b <- coefs[cl]; b[is.na(b)] <- 0
+    stats::sd(as.numeric(mm[, cl, drop = FALSE] %*% b))
+  }, 0)
+  names(tcols)[sort(order(sc, decreasing = TRUE)[1:2])]
+}
+
+## Every statistic of one call from ONE set of bootstrap refits:
+##   axes     the network score of the map over the two axes of the axis rule (chosen again per refit)
+##   allpairs the largest network score over the maps of every pair of covariates
+##   ss, max  the sum of squared cells and the largest |cell| of the axis-rule map (comparison
+##            statistics; not offered by deepgof1())
+## Returns the observed values, the B x 4 matrix of bootstrap values, and the observed maps.
+.dg_engine <- function(fit, B, K, X, mm, tb, score, need = c("axes", "allpairs"), tcols = NULL) {
+  ph <- as.numeric(stats::fitted(fit)); y <- as.numeric(fit$y); n <- length(y)
+  rk <- function(v) {
+    if (is.null(tb)) return(rank(v, ties.method = "first"))
+    o <- order(v, tb); rr <- integer(n); rr[o] <- seq_len(n); rr
+  }
+  one_d <- ncol(X) == 1L
+  bins <- if (one_d) NULL else apply(X, 2, function(v) pmin(K, 1L + floor(K * (rk(v) - 1) / n)))
+  cells <- if ("allpairs" %in% need || one_d) .dg_cells(X, K, tb) else NULL
+  if (is.null(tcols))            # X holds model-matrix columns: each is its own term
+    tcols <- stats::setNames(lapply(colnames(X), function(v) match(v, colnames(mm))), colnames(X))
+  stats_of <- function(r, p, coefs) {
+    out <- c(axes = NA_real_, allpairs = NA_real_, ss = NA_real_, max = NA_real_)
+    if (one_d) {
+      m <- .dg_cellmap(cells$idx[[1]], r, p, K); s <- score(m)
+      return(list(v = c(axes = s, allpairs = s, ss = sum(m^2), max = max(abs(m))), map = m,
+                  axes = colnames(X), top = 1L))
+    }
+    ax <- NULL; mA <- NULL
+    if (any(c("axes", "ss", "max") %in% need)) {
+      ax <- .dg_pick_axes(mm, tcols, coefs)
+      mA <- .dg_cellmap(as.integer((bins[, ax[1]] - 1L) * K + bins[, ax[2]]), r, p, K)
+      out[c("axes", "ss", "max")] <- c(score(mA), sum(mA^2), max(abs(mA)))
+    }
+    top <- NA_integer_
+    if ("allpairs" %in% need) {
+      so <- vapply(cells$idx, function(i) score(.dg_cellmap(i, r, p, K)), 0)
+      out["allpairs"] <- max(so); top <- which.max(so)
+      attr(out, "pairscores") <- so
+    }
+    list(v = out, map = mA, axes = ax, top = top)
+  }
+  obs <- stats_of(y - ph, ph, stats::coef(fit))
+  itc <- attr(stats::terms(fit), "intercept") > 0L
+  boot <- matrix(NA_real_, B, 4L, dimnames = list(NULL, c("axes", "allpairs", "ss", "max")))
+  for (b in seq_len(B)) {
+    ys <- stats::rbinom(n, 1L, ph)
+    fb <- tryCatch(suppressWarnings(stats::glm.fit(mm, ys, weights = fit$prior.weights,
+                                                   offset = fit$offset, family = stats::binomial(),
+                                                   control = fit$control, intercept = itc)),
+                   error = function(e) NULL)
+    ## a failed refit counts AGAINST rejection (conservative); -Inf would deflate p
+    boot[b, ] <- if (is.null(fb)) Inf else {
+      pb <- as.numeric(fb$fitted.values)
+      stats_of(ys - pb, pb, fb$coefficients)$v[c("axes", "allpairs", "ss", "max")]
+    }
+  }
+  list(obs = obs, boot = boot, cells = cells)
+}
+
+## rank p-value of each statistic, and the p-value of the smaller of the axes and all-pairs p-values,
+## calibrated exactly: the observed data and the B replicates are exchangeable under the null, so each
+## of the B + 1 is given its own rank p-value within the set, and the observed minimum is ranked
+## among the B + 1 minima
+.dg_pvalues <- function(obs, boot) {
+  B <- nrow(boot)
+  p1 <- function(k) (1 + sum(boot[, k] >= obs[[k]])) / (B + 1)
+  out <- vapply(colnames(boot), p1, 0)
+  all_a <- c(obs[["axes"]], boot[, "axes"]); all_p <- c(obs[["allpairs"]], boot[, "allpairs"])
+  within <- function(v) vapply(seq_along(v), function(i) sum(v >= v[i]) / length(v), 0)
+  mins <- pmin(within(all_a), within(all_p))
+  c(out, combined = sum(mins <= mins[1]) / (B + 1))
+}
+
 ## the standardized map of one pair, from its precomputed cell index. The sums go through
 ## sum(), as in .dg_map's tapply(), so the two builders agree to the last bit; rowsum()
 ## accumulates differently and moves the score by about 1e-15.
@@ -193,28 +288,38 @@
 #' quadratic paints a stripe, an omitted interaction a saddle -- which is what the
 #' convolutional statistic reads.
 #'
-#' Two readings of the map are offered. The default, \code{reading = "v1"}, draws one map,
-#' over the two model-matrix columns with the largest \eqn{|\hat\beta_j| \hat\sigma_j}, and
-#' chooses them again in every bootstrap replicate. When the misfit lies on the covariates
-#' with the strongest linear effects, among others that carry little signal, this rule finds
-#' them almost every time and has the most power. It reads a covariate by its linear effect,
-#' so it can pass over a covariate whose effect is U-shaped, and after a spline repair it can
-#' choose two basis columns of the same covariate.
+#' Four readings of the map are offered. The default, \code{reading = "axes"}, draws one map,
+#' over the two covariates whose terms contribute most to the linear predictor (the standard
+#' deviation of each covariate's total contribution; for a covariate that enters as one
+#' untransformed column this is \eqn{|\hat\beta_j| \hat\sigma_j}), and chooses them again in
+#' every bootstrap replicate. A covariate that enters as \code{ns(x, 3)}, \code{poly(x, 2)},
+#' \code{I(x^2)} or a factor is one covariate, and the map is drawn over the ranks of \code{x}
+#' itself. When the misfit lies on the covariates with the strongest effects, among others that
+#' carry little signal, this rule finds them almost every time and has the most power. It reads
+#' a covariate by its effect in the fitted model, so it can pass over a covariate whose effect is
+#' a pure U-shape with no linear slope.
 #'
 #' \code{reading = "allpairs"} scores the map of every pair of covariates and takes the
 #' largest score as the statistic. The same maximum is taken in every bootstrap replicate, so
-#' the p-value needs no correction for the choice of pair. It does not depend on the linear
+#' the p-value needs no correction for the choice of pair. It does not depend on the fitted
 #' effects, so it finds a U-shaped covariate, and with few covariates (three or so) it has
 #' more power than the default; with many covariates the maximum over \eqn{p(p-1)/2} pairs
-#' costs power when one pair carries the misfit. The maps are drawn over the covariates
-#' themselves, not over the columns of the model matrix: a covariate that enters as
-#' \code{ns(x, 3)}, \code{poly(x, 2)} or \code{I(x^2)} is ranked by \code{x}, and an
-#' interaction adds no axis of its own. Transformed covariates are read from the data the
-#' model was fitted to; factors enter by their level codes. The pair that reaches the maximum
-#' is returned as \code{axes}, and its map as \code{map}, so the result also says where the
-#' misfit lies; \code{covariates} restricts the pairs to a chosen set.
+#' costs power when one pair carries the misfit. The pair that reaches the maximum is returned
+#' as \code{axes}, and its map as \code{map}, so the result also says where the misfit lies;
+#' \code{covariates} restricts the pairs to a chosen set.
 #'
-#' With one covariate there is no pair to choose, and both readings are the same map of 36
+#' \code{reading = "combined"} runs both from the same bootstrap refits and reports the
+#' smaller of their two p-values, calibrated exactly: the observed data and the \code{B}
+#' replicates are exchangeable under the null, so the observed minimum is ranked among the
+#' \code{B + 1} minima. It costs no more than the all-pairs reading. \code{reading = "columns"}
+#' is the rule of versions 2.7.0 and 2.8.0, over two model-matrix columns, kept to reproduce
+#' earlier results; for models whose covariates all enter as one untransformed column it gives
+#' the same p-value as the default.
+#'
+#' Transformed covariates are read from the data the model was fitted to; factors enter by
+#' their level codes.
+#'
+#' With one covariate there is no pair to choose, and every reading is the same map of 36
 #' quantile cells along its ranks. The shipped network was trained on two-covariate maps
 #' only: on such models the bootstrap still gives it its level, but it has less power than
 #' a network trained on this map would.
@@ -239,19 +344,19 @@
 #'   \code{1/(B+1)}, so \code{B = 199} makes the nominal .05 attainable exactly.
 #' @param K grid resolution. Leave at 6: the shipped weights were trained at \code{K = 6}
 #'   and are not valid at any other resolution.
-#' @param reading \code{"v1"} (the default) reads one map over the two columns with the
-#'   largest \eqn{|\hat\beta_j| \hat\sigma_j}; \code{"allpairs"} takes the largest score over
-#'   all pairs of covariates. See Details for when to use which.
+#' @param reading \code{"axes"} (the default), \code{"allpairs"}, \code{"combined"} or
+#'   \code{"columns"} (the rule of versions 2.7.0 and 2.8.0). See Details for when to use which.
 #' @param covariates optional character vector naming the covariates to form the pairs
-#'   from, for \code{reading = "allpairs"}. By default every covariate of the model that is
+#'   from, for the all-pairs and combined readings. By default every covariate of the model that is
 #'   not constant is used.
 #'
 #' @return An object of class \code{"deepgof1"}: a list with \code{statistic} (the observed
 #'   score), \code{p.value}, \code{B}, \code{K}, \code{reading}, \code{axes} (the
 #'   covariates of the map that gave the statistic), \code{map} (that map, a \code{K} by \code{K}
 #'   matrix of standardized residual sums whose rows follow the first axis), \code{pairs}
-#'   (for \code{"allpairs"}, the observed score of every pair), \code{boot} (the \code{B}
-#'   bootstrap statistics) and \code{method}.
+#'   (for the all-pairs and combined readings, the observed score of every pair), \code{components}
+#'   (for \code{"combined"}, the p-values of the axis rule and the all-pairs reading), \code{boot} (the \code{B}
+#'   bootstrap statistics of the reported statistic) and \code{method}.
 #'
 #' @section Reproducibility:
 #' A bootstrap refit that fails to converge is scored \code{+Inf}, so it counts against
@@ -293,7 +398,8 @@
 #' @concept convolutional neural network
 #' @concept pretrained
 #' @export
-deepgof1 <- function(fit, B = 199L, K = 6L, reading = c("v1", "allpairs"), covariates = NULL) {
+deepgof1 <- function(fit, B = 199L, K = 6L, reading = c("axes", "allpairs", "combined", "columns"),
+                     covariates = NULL) {
   if (!inherits(fit, "glm") || fit$family$family != "binomial")
     stop("deepgof1() expects a glm fitted with family = binomial()", call. = FALSE)
   if (K != deepgof1_weights$K)
@@ -304,13 +410,14 @@ deepgof1 <- function(fit, B = 199L, K = 6L, reading = c("v1", "allpairs"), covar
     stop("deepgof1() needs a 0/1 outcome, one row per observation, without prior weights",
          call. = FALSE)
   reading <- match.arg(reading)
-  if (!is.null(covariates) && reading == "v1")
-    stop("'covariates' applies to reading = \"allpairs\" only", call. = FALSE)
+  if (!is.null(covariates) && reading %in% c("axes", "columns"))
+    stop("'covariates' applies to the all-pairs and combined readings only", call. = FALSE)
   M <- deepgof1_weights
   score <- function(m) .dg_score((m - M$mu) / M$sd, M)
 
   mm <- stats::model.matrix(fit)
-  if (reading == "allpairs") {
+  tcols <- NULL
+  if (reading != "columns") {
     X <- .dg_covariates(fit)
     if (is.null(X)) {
       ## the raw covariates are not recoverable (e.g. the data are gone): use the columns
@@ -318,6 +425,8 @@ deepgof1 <- function(fit, B = 199L, K = 6L, reading = c("v1", "allpairs"), covar
               "fitted to; the maps are drawn over model-matrix columns instead", call. = FALSE)
       v <- colnames(mm)[colnames(mm) != "(Intercept)"]
       X <- mm[, v[!is.na(stats::coef(fit)[v])], drop = FALSE]
+    } else {
+      tcols <- .dg_term_cols(fit, mm, colnames(X))
     }
     if (!is.null(covariates)) {
       bad <- setdiff(covariates, colnames(X))
@@ -325,6 +434,7 @@ deepgof1 <- function(fit, B = 199L, K = 6L, reading = c("v1", "allpairs"), covar
         stop("'covariates' must name covariates of 'fit': ", paste(bad, collapse = ", "),
              call. = FALSE)
       X <- X[, covariates, drop = FALSE]
+      if (!is.null(tcols)) tcols <- tcols[covariates]
     }
     if (ncol(X) < 1L) stop("deepgof1() needs at least one covariate", call. = FALSE)
   } else {
@@ -332,7 +442,7 @@ deepgof1 <- function(fit, B = 199L, K = 6L, reading = c("v1", "allpairs"), covar
     if (length(v) < 1L) stop("deepgof1() needs at least one covariate", call. = FALSE)
     X <- mm[, v, drop = FALSE]
   }
-  ## with one covariate there is no pair to choose: both readings are the 36-cell map along it
+  ## with one covariate there is no pair to choose: every reading is the 36-cell map along it
   pairs_path <- reading == "allpairs" || ncol(X) == 1L
 
   ## Ties among covariate values are broken at random, once per call: the same permutation
@@ -344,49 +454,62 @@ deepgof1 <- function(fit, B = 199L, K = 6L, reading = c("v1", "allpairs"), covar
 
   ph  <- as.numeric(stats::fitted(fit))
   y   <- as.numeric(fit$y)                       # 0/1, also for a factor or logical response
-  if (pairs_path) {
-    ## the maximum score over every pair of covariates; the same maximum is taken in every
-    ## replicate, so choosing the pair needs no correction to the p-value
-    vars  <- colnames(X)
-    cells <- .dg_cells(X, K, tb)
-    stat_all <- function(r, p) vapply(cells$idx, function(i) score(.dg_cellmap(i, r, p, K)), 0)
-    so   <- stat_all(y - ph, ph)
-    Sobs <- max(so)
-    top  <- which.max(so)
-    axes <- if (length(vars) == 1L) vars else cells$pairs[top, ]
-    map  <- .dg_cellmap(cells$idx[[top]], y - ph, ph, K)
-    pairs <- data.frame(axis1 = cells$pairs[, 1L], axis2 = cells$pairs[, 2L], score = so,
-                        stringsAsFactors = FALSE)
-    if (length(vars) == 1L) pairs$axis2 <- NA_character_
-  } else {
+  itc <- attr(stats::terms(fit), "intercept") > 0L
+
+  if (reading == "columns" && !pairs_path) {
+    ## The rule of versions 2.7.0 and 2.8.0, kept as it was for reproducing their results: one map
+    ## over the two model-matrix columns with the largest |b| sd, chosen again in every replicate.
     obs  <- .dg_map(fit, K, tb)
     Sobs <- score(obs$map)
     axes <- obs$axes
     map  <- obs$map
     pairs <- NULL
-  }
-
-  ## The refits use the fitted model's own design matrix. Refitting the formula on the model
-  ## frame, as versions up to 2.8.0 did, fails for every term that transforms a covariate
-  ## (log(x), ns(x, 3), poly(x, 2)), because the model frame holds the transformed column and
-  ## not x; every replicate was then scored +Inf and the p-value was 1. The design matrix also
-  ## keeps a spline basis fixed, which is what a parametric bootstrap under the fit requires.
-  itc <- attr(stats::terms(fit), "intercept") > 0L
-  Sb  <- numeric(B)
-  for (b in seq_len(B)) {
-    ys <- stats::rbinom(length(ph), 1L, ph)
-    fb <- tryCatch(suppressWarnings(stats::glm.fit(mm, ys, weights = fit$prior.weights,
-                                                   offset = fit$offset, family = stats::binomial(),
-                                                   control = fit$control, intercept = itc)),
-                   error = function(e) NULL)
-    ## a failed refit counts AGAINST rejection (conservative); -Inf would deflate p
-    Sb[b] <- if (is.null(fb)) Inf else if (pairs_path) {
-      pb <- as.numeric(fb$fitted.values)
-      max(stat_all(ys - pb, pb))
-    } else score(.dg_map_core(mm, ys, as.numeric(fb$fitted.values), fb$coefficients, K, tb)$map)
+    ## The refits use the fitted model's own design matrix. Refitting the formula on the model
+    ## frame, as versions up to 2.8.0 did, fails for every term that transforms a covariate
+    ## (log(x), ns(x, 3), poly(x, 2)), because the model frame holds the transformed column and
+    ## not x; every replicate was then scored +Inf and the p-value was 1. The design matrix also
+    ## keeps a spline basis fixed, which is what a parametric bootstrap under the fit requires.
+    Sb <- numeric(B)
+    for (b in seq_len(B)) {
+      ys <- stats::rbinom(length(ph), 1L, ph)
+      fb <- tryCatch(suppressWarnings(stats::glm.fit(mm, ys, weights = fit$prior.weights,
+                                                     offset = fit$offset, family = stats::binomial(),
+                                                     control = fit$control, intercept = itc)),
+                     error = function(e) NULL)
+      ## a failed refit counts AGAINST rejection (conservative); -Inf would deflate p
+      Sb[b] <- if (is.null(fb)) Inf else
+        score(.dg_map_core(mm, ys, as.numeric(fb$fitted.values), fb$coefficients, K, tb)$map)
+    }
+    pval <- (1 + sum(Sb >= Sobs)) / (B + 1)
+  } else {
+    need <- switch(reading, axes = "axes", allpairs = "allpairs", combined = c("axes", "allpairs"),
+                   columns = "allpairs")
+    E <- .dg_engine(fit, B, K, X, mm, tb, score, need = need, tcols = tcols)
+    P <- .dg_pvalues(E$obs$v, E$boot)
+    key <- if (reading == "combined") "combined" else if (pairs_path) "allpairs" else "axes"
+    pval <- P[[key]]
+    Sobs <- if (reading == "combined") E$obs$v[["axes"]] else E$obs$v[[if (pairs_path) "allpairs" else "axes"]]
+    Sb   <- E$boot[, if (key == "combined") "axes" else key]
+    if (pairs_path) {
+      top <- E$obs$top
+      axes <- if (ncol(X) == 1L) colnames(X) else E$cells$pairs[top, ]
+      map  <- .dg_cellmap(E$cells$idx[[top]], y - ph, ph, K)
+    } else {
+      axes <- E$obs$axes
+      map  <- E$obs$map
+    }
+    pairs <- NULL
+    if ("allpairs" %in% need && ncol(X) > 1L) {
+      so <- attr(E$obs$v, "pairscores")
+      pairs <- data.frame(axis1 = E$cells$pairs[, 1L], axis2 = E$cells$pairs[, 2L], score = so,
+                          stringsAsFactors = FALSE)
+    }
+    if (reading == "combined")
+      attr(pval, "components") <- c(axes = P[["axes"]], allpairs = P[["allpairs"]])
   }
   structure(list(statistic = Sobs,
-                 p.value   = (1 + sum(Sb >= Sobs)) / (B + 1),
+                 p.value   = as.numeric(pval),
+                 components = attr(pval, "components"),
                  B = B, K = K, reading = reading, axes = axes,
                  map = matrix(map, K, K, byrow = TRUE), pairs = pairs, boot = Sb,
                  method    = "DeepGOF-1: pretrained residual-map goodness-of-fit test",
@@ -409,12 +532,15 @@ print.deepgof1 <- function(x, ...) {
   if (length(x$axes) == 1L) {
     cat(sprintf("map: %d quantile cells over ranks of %s\n", x$K * x$K, x$axes))
   } else if (identical(x$reading, "allpairs")) {
-    cat(sprintf("map: %d x %d, maximum over %d pair%s of columns, reached at %s and %s\n",
+    cat(sprintf("map: %d x %d, maximum over %d pair%s of covariates, reached at %s and %s\n",
                 x$K, x$K, nrow(x$pairs), if (nrow(x$pairs) == 1L) "" else "s",
                 x$axes[1], x$axes[2]))
   } else {
     cat(sprintf("grid: %d x %d over ranks of %s and %s\n", x$K, x$K, x$axes[1], x$axes[2]))
   }
+  if (identical(x$reading, "combined") && !is.null(x$components))
+    cat(sprintf("combined reading: axis rule p = %.4f, all-pairs p = %.4f\n",
+                x$components[["axes"]], x$components[["allpairs"]]))
   cat("alternative hypothesis: the logistic model is misspecified\n\n")
   invisible(x)
 }

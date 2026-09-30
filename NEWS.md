@@ -14,23 +14,37 @@
   weighted binomial fit. The bootstrap draws one Bernoulli outcome per row, so such fits were never
   served correctly.
 
+## Change to the default reading
+
+* The axis rule of `deepgof1()` now works on covariates, not on columns of the model matrix. Each
+  covariate is scored by the standard deviation of its terms' total contribution to the linear
+  predictor, and the map is drawn over the ranks of the covariate itself. Up to 2.8.0 the rule scored
+  model-matrix columns, so after a repair such as `ns(x, 3)` it could choose two spline columns of the
+  same covariate and draw a map that shows no other covariate; a factor entered through its dummy
+  columns. For a model whose covariates all enter as one untransformed column the score is |b| * sd,
+  the earlier rule, and the axes, the map and the p-value for a given seed are the same as in 2.8.0.
+  The earlier rule is kept as `reading = "columns"`, for reproducing results.
+
 ## New features
 
 * `deepgof1(reading = "allpairs")` scores the residual map of every pair of covariates and takes
   the largest score as its statistic. The same maximum is taken in every bootstrap replicate, so the
-  p-value needs no correction for the choice of pair. The default rule (`reading = "v1"`, unchanged)
-  reads one map, over the two columns with the largest |b| * sd; it reads covariates by their linear
-  effects, so it can pass over a covariate whose effect is U-shaped. The two readings suit different
-  designs. With few covariates the maximum over pairs has more power: on the benchmark of Liu et al.
-  (2024, Statistics and Computing 34:175), whose settings have at most three covariates, with B = 199
-  and matched level .05, it has power .640 against .580 for the default, and a null rejection rate
-  of .050. With many covariates the maximum pays for the number of pairs: with two active covariates
-  among ten, the default rule finds the active pair in 93 to 100 per cent of datasets and has more
-  power than the all-pairs reading in all twelve settings studied (.453 against .286 on average).
+  p-value needs no correction for the choice of pair. The default axis rule reads covariates by their
+  fitted effects, so it can pass over a covariate whose effect is a pure U-shape. The two readings suit
+  different designs. With few covariates the maximum over pairs has more power: on the benchmark of
+  Liu et al. (2024, Statistics and Computing 34:175), whose settings have at most three covariates, with
+  B = 199 and matched level .05, it has power .640 against .580 for the axis rule, and a null rejection
+  rate of .050. With many covariates the maximum pays for the number of pairs: with two active
+  covariates among ten, the axis rule finds the active pair in 93 to 100 per cent of datasets and has
+  more power than the all-pairs reading in all twelve settings studied (.453 against .286 on average).
 
-* In the all-pairs reading the maps are drawn over the covariates, not over the columns of the model
-  matrix: a covariate that enters as `ns(x, 3)`, `poly(x, 2)` or `I(x^2)` is ranked by `x` itself, and
-  an interaction adds no axis of its own. Transformed covariates are read from the data the model was
+* `deepgof1(reading = "combined")` computes both from the same bootstrap refits and reports the
+  smaller of their two p-values, calibrated exactly by ranking the observed minimum among the B + 1
+  minima; the two p-values are returned as `components`.
+
+* In the all-pairs and combined readings the maps are drawn over the covariates, as in the axis rule:
+  a covariate that enters as `ns(x, 3)`, `poly(x, 2)` or `I(x^2)` is ranked by `x` itself, and an
+  interaction adds no axis of its own. Transformed covariates are read from the data the model was
   fitted to, on the rows the fit kept. A factor is one covariate, entered by its level codes. The
   argument `covariates` restricts the pairs to a chosen set.
 
@@ -40,8 +54,8 @@
   level .05, about .10 below networks trained on this map. Earlier versions stopped with an error.
 
 * The result now also holds `map`, the 6 x 6 map that gave the statistic (rows follow the first
-  axis), and, for the all-pairs reading, `pairs`, the observed score of every pair, so the test says
-  where the misfit lies as well as whether it is there.
+  axis), and, for the all-pairs and combined readings, `pairs`, the observed score of every pair, so
+  the test says where the misfit lies as well as whether it is there.
 
 # ebrahim.gof 2.8.0
 

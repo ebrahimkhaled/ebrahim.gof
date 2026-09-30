@@ -8,7 +8,7 @@ deepgof1(
   fit,
   B = 199L,
   K = 6L,
-  reading = c("v1", "allpairs"),
+  reading = c("axes", "allpairs", "combined", "columns"),
   covariates = NULL
 )
 }
@@ -22,12 +22,11 @@ least one covariate.}
 \item{K}{grid resolution. Leave at 6: the shipped weights were trained at \code{K = 6}
 and are not valid at any other resolution.}
 
-\item{reading}{\code{"v1"} (the default) reads one map over the two columns with the
-largest \eqn{|\hat\beta_j| \hat\sigma_j}; \code{"allpairs"} takes the largest score over
-all pairs of covariates. See Details for when to use which.}
+\item{reading}{\code{"axes"} (the default), \code{"allpairs"}, \code{"combined"} or
+\code{"columns"} (the rule of versions 2.7.0 and 2.8.0). See Details for when to use which.}
 
 \item{covariates}{optional character vector naming the covariates to form the pairs
-from, for \code{reading = "allpairs"}. By default every covariate of the model that is
+from, for the all-pairs and combined readings. By default every covariate of the model that is
 not constant is used.}
 }
 \value{
@@ -35,8 +34,9 @@ An object of class \code{"deepgof1"}: a list with \code{statistic} (the observed
   score), \code{p.value}, \code{B}, \code{K}, \code{reading}, \code{axes} (the
   covariates of the map that gave the statistic), \code{map} (that map, a \code{K} by \code{K}
   matrix of standardized residual sums whose rows follow the first axis), \code{pairs}
-  (for \code{"allpairs"}, the observed score of every pair), \code{boot} (the \code{B}
-  bootstrap statistics) and \code{method}.
+  (for the all-pairs and combined readings, the observed score of every pair), \code{components}
+  (for \code{"combined"}, the p-values of the axis rule and the all-pairs reading), \code{boot} (the \code{B}
+  bootstrap statistics of the reported statistic) and \code{method}.
 }
 \description{
 Tests whether a fitted binomial \code{glm} is correctly specified, using a
@@ -53,28 +53,38 @@ under a correct model. Misfit therefore has a location on the map -- an omitted
 quadratic paints a stripe, an omitted interaction a saddle -- which is what the
 convolutional statistic reads.
 
-Two readings of the map are offered. The default, \code{reading = "v1"}, draws one map,
-over the two model-matrix columns with the largest \eqn{|\hat\beta_j| \hat\sigma_j}, and
-chooses them again in every bootstrap replicate. When the misfit lies on the covariates
-with the strongest linear effects, among others that carry little signal, this rule finds
-them almost every time and has the most power. It reads a covariate by its linear effect,
-so it can pass over a covariate whose effect is U-shaped, and after a spline repair it can
-choose two basis columns of the same covariate.
+Four readings of the map are offered. The default, \code{reading = "axes"}, draws one map,
+over the two covariates whose terms contribute most to the linear predictor (the standard
+deviation of each covariate's total contribution; for a covariate that enters as one
+untransformed column this is \eqn{|\hat\beta_j| \hat\sigma_j}), and chooses them again in
+every bootstrap replicate. A covariate that enters as \code{ns(x, 3)}, \code{poly(x, 2)},
+\code{I(x^2)} or a factor is one covariate, and the map is drawn over the ranks of \code{x}
+itself. When the misfit lies on the covariates with the strongest effects, among others that
+carry little signal, this rule finds them almost every time and has the most power. It reads
+a covariate by its effect in the fitted model, so it can pass over a covariate whose effect is
+a pure U-shape with no linear slope.
 
 \code{reading = "allpairs"} scores the map of every pair of covariates and takes the
 largest score as the statistic. The same maximum is taken in every bootstrap replicate, so
-the p-value needs no correction for the choice of pair. It does not depend on the linear
+the p-value needs no correction for the choice of pair. It does not depend on the fitted
 effects, so it finds a U-shaped covariate, and with few covariates (three or so) it has
 more power than the default; with many covariates the maximum over \eqn{p(p-1)/2} pairs
-costs power when one pair carries the misfit. The maps are drawn over the covariates
-themselves, not over the columns of the model matrix: a covariate that enters as
-\code{ns(x, 3)}, \code{poly(x, 2)} or \code{I(x^2)} is ranked by \code{x}, and an
-interaction adds no axis of its own. Transformed covariates are read from the data the
-model was fitted to; factors enter by their level codes. The pair that reaches the maximum
-is returned as \code{axes}, and its map as \code{map}, so the result also says where the
-misfit lies; \code{covariates} restricts the pairs to a chosen set.
+costs power when one pair carries the misfit. The pair that reaches the maximum is returned
+as \code{axes}, and its map as \code{map}, so the result also says where the misfit lies;
+\code{covariates} restricts the pairs to a chosen set.
 
-With one covariate there is no pair to choose, and both readings are the same map of 36
+\code{reading = "combined"} runs both from the same bootstrap refits and reports the
+smaller of their two p-values, calibrated exactly: the observed data and the \code{B}
+replicates are exchangeable under the null, so the observed minimum is ranked among the
+\code{B + 1} minima. It costs no more than the all-pairs reading. \code{reading = "columns"}
+is the rule of versions 2.7.0 and 2.8.0, over two model-matrix columns, kept to reproduce
+earlier results; for models whose covariates all enter as one untransformed column it gives
+the same p-value as the default.
+
+Transformed covariates are read from the data the model was fitted to; factors enter by
+their level codes.
+
+With one covariate there is no pair to choose, and every reading is the same map of 36
 quantile cells along its ranks. The shipped network was trained on two-covariate maps
 only: on such models the bootstrap still gives it its level, but it has less power than
 a network trained on this map would.
