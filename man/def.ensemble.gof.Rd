@@ -36,7 +36,7 @@ is appended to the components. Default \code{FALSE}.}
 \item{combine}{One of \code{"cct"} (default), \code{"minp"}, \code{"fisher"}.}
 
 \item{G}{Integer number of groups passed to \code{def.gof}/\code{ef.gof} (default 10),
-or \code{"auto"} for \code{max(10, round(n / 25))} as in \code{\link{def.gof}}.}
+or \code{"auto"} for \code{max(10, ceiling(n / 25))} as in \code{\link{def.gof}}.}
 
 \item{extra_pvalues}{Optional named numeric vector of additional p-values to
 include (e.g. a Tsiatis test computed elsewhere). Default \code{NULL}.}

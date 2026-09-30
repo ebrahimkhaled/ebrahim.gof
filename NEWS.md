@@ -25,7 +25,22 @@
   the earlier rule, and the axes, the map and the p-value for a given seed are the same as in 2.8.0.
   The earlier rule is kept as `reading = "columns"`, for reproducing results.
 
+## Behaviour change
+
+* `G = "auto"` in `edge.gof()`, `def.gof()`, `def.ensemble.gof()` and `run.all.gof()` now uses
+  `max(10, ceiling(n / 25))` groups, the rule as published in the EDGE paper; up to 2.8.0 it used
+  `round(n / 25)`. The number of groups moves by at most one, and only when the fractional part of
+  `n / 25` is between 0 and 0.5 (for example n = 610 now gives 25 groups, not 24). A numeric `G` is
+  unchanged.
+
 ## New features
+
+* `edge.gof()` and `def.gof()` gain `external = FALSE`. With `external = TRUE` the predicted
+  probabilities are taken as frozen, as when a published model is checked on new data: the
+  covariance of the grouped residuals is the identity, a constant column joins the basis because no
+  score equation absorbs the overall level, and the statistic is referred to chi-squared on d + 1
+  degrees of freedom, with no "conservative" warning. Given a glm, its fitted probabilities are the
+  frozen predictions. Only `weights = "unit"` is supported. The default is unchanged.
 
 * `deepgof1(reading = "allpairs")` scores the residual map of every pair of covariates and takes
   the largest score as its statistic. The same maximum is taken in every bootstrap replicate, so the

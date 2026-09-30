@@ -49,6 +49,23 @@
 #' the score form keeps a shape on the logit scale from losing its signal when the
 #' group variances differ strongly, as they do at high discrimination.
 #'
+#' \strong{External mode.} With \code{external = TRUE} the predicted probabilities
+#' are taken as frozen, as when a published model is checked on new data with its
+#' coefficients fixed. Nothing is estimated from these data, so \eqn{\Omega = I}
+#' exactly, and no score equation absorbs the overall level, so a column of ones
+#' is added to the basis before redundant columns are dropped. The statistic
+#' \eqn{S = r'P_Z r} is then referred to \eqn{\chi^2} on the number of columns
+#' kept: \eqn{d + 1} for a \eqn{d}-column basis (4 for \code{"poly3"} and
+#' \code{"stukel"}, 3 for \code{"poly2"}, 2 for \code{"sym"}; one fewer for
+#' \code{"stukel"} when every group lies on one side of 0.5). The groups are the
+#' same equal-frequency groups as in the default mode. No "conservative" warning
+#' is given, since \eqn{\Omega = I} is exact here, and \code{Method} is
+#' \code{"external"}. Only \code{weights = "unit"} is available: the score form is a
+#' different projection, and it has not been validated for frozen predictions.
+#' When \code{object} is a glm, its response and fitted probabilities are used as
+#' the frozen predictions; the fit is not otherwise used, so this is a test of
+#' those predictions and not the estimation-adjusted test of the model.
+#'
 #' With fewer events (or fewer non-events) than groups, the grouped reference
 #' distribution is unreliable. The p-value is still returned, with a warning;
 #' a smaller \code{G} avoids it. With no event, or no non-event, the model has no
@@ -62,9 +79,10 @@
 #' @param X Optional design matrix, used only with the \code{y}/\code{predicted_probs}
 #'   form: it enables the exact estimation-adjusted (\eqn{\Omega}) calibration
 #'   (logit working weights assumed). Without it the conservative \eqn{\chi^2_k}
-#'   reference is used and a warning is issued. Ignored when \code{object} is a glm.
+#'   reference is used and a warning is issued. Ignored when \code{object} is a glm,
+#'   and ignored (with a warning) when \code{external = TRUE}.
 #' @param G Integer number of equal-frequency groups (default 10; must be >= 3),
-#'   or \code{"auto"} for \code{max(10, round(n / 25))}, the partition rule of the
+#'   or \code{"auto"} for \code{max(10, ceiling(n / 25))}, the partition rule of the
 #'   EDGE paper.
 #' @param basis One of \code{"poly3"} (default), \code{"poly2"}, \code{"stukel"},
 #'   \code{"sym"}, or \code{"ensemble"}. \code{"sym"} is one column,
@@ -80,11 +98,20 @@
 #'   the model (a score-type test for other links). It is referred to chi-squared on
 #'   the rank of its information matrix, which is the number of columns unless one
 #'   is redundant (see Details).
+#' @param external Logical, default \code{FALSE}. \code{TRUE} treats the predicted
+#'   probabilities as frozen (external validation of a fixed model): \eqn{\Omega = I},
+#'   a constant column joins the basis, and the statistic is referred to
+#'   \eqn{\chi^2} on the number of basis columns (see Details of \code{\link{def.gof}}). Supply \code{y} and
+#'   \code{predicted_probs}, or a glm whose fitted probabilities are then taken as
+#'   frozen. Requires \code{weights = "unit"} and a basis other than
+#'   \code{"ensemble"}; \code{method} is not used.
 #'
 #' @return A one-row \code{data.frame} with columns \code{Test}, \code{Basis},
 #'   \code{Test_Statistic} (the statistic \eqn{S}), \code{df}, \code{Method}, and
 #'   \code{p_value}. For \code{weights = "score"}, \code{Method} is \code{"score"}
-#'   and \code{df} is the integer rank the statistic is referred to. When
+#'   and \code{df} is the integer rank the statistic is referred to. For
+#'   \code{external = TRUE}, \code{Method} is \code{"external"} and \code{df} is the
+#'   integer number of basis columns, constant included. When
 #'   \code{basis = "ensemble"}, the return is that of \code{\link{def.ensemble.gof}}.
 #'
 #' @references
@@ -115,6 +142,12 @@
 #'              data = gof_demo, family = binomial())
 #' def.gof(right)
 #'
+#' ## external validation: freeze the model fitted on one half, test it on the other
+#' dev <- gof_demo[1:250, ]; val <- gof_demo[-(1:250), ]
+#' frozen <- glm(outcome ~ age + bmi + sex + treatment, data = dev, family = binomial())
+#' p_val <- predict(frozen, newdata = val, type = "response")
+#' def.gof(val$outcome, predicted_probs = p_val, external = TRUE)
+#'
 #' @seealso \code{\link{ef.gof}}, \code{\link{def.ensemble.gof}}.
 #' @importFrom stats fitted predict model.matrix qlogis poly pchisq
 #' @concept goodness-of-fit
@@ -127,7 +160,8 @@
 def.gof <- function(object, predicted_probs = NULL, X = NULL, G = 10,
                     basis   = c("poly3", "poly2", "stukel", "sym", "ensemble"),
                     method  = c("satterthwaite", "imhof"),
-                    weights = c("unit", "score")) {
+                    weights = c("unit", "score"),
+                    external = FALSE) {
 
   basis   <- match.arg(basis)
   method  <- match.arg(method)
@@ -135,6 +169,12 @@ def.gof <- function(object, predicted_probs = NULL, X = NULL, G = 10,
   if (!identical(G, "auto") && (!is.numeric(G) || length(G) != 1 || G < 3)) {
     stop("'G' must be a single integer >= 3, or 'auto'.")
   }
+  if (!is.logical(external) || length(external) != 1 || is.na(external))
+    stop("'external' must be TRUE or FALSE.")
+
+  if (external)
+    return(.def_external(object, predicted_probs = predicted_probs, X = X, G = G,
+                         basis = basis, weights = weights))
 
   if (basis == "ensemble")
     return(def.ensemble.gof(object, predicted_probs = predicted_probs, X = X, G = G,
@@ -257,6 +297,62 @@ def.gof <- function(object, predicted_probs = NULL, X = NULL, G = 10,
              stringsAsFactors = FALSE)
 }
 
+# Internal: the external mode. The predictions are frozen, so nothing is estimated from these data:
+# Omega is the identity, and no score equation absorbs the overall level, so a column of ones joins
+# the basis. S = r' P_Z r is then chi-square on the rank of Z (d + 1 for a d-column basis).
+.def_external <- function(object, predicted_probs, X, G, basis, weights) {
+  if (basis == "ensemble")
+    stop("external = TRUE supports basis = 'poly3', 'poly2', 'stukel' or 'sym', not 'ensemble'.")
+  if (weights == "score")
+    stop("external = TRUE supports weights = 'unit' only: the external statistic is the unit form ",
+         "with a constant column and Omega = I.")
+  if (inherits(object, "glm")) {
+    if (object$family$family != "binomial")
+      stop("'object' must be a binomial glm (or pass y and predicted_probs).")
+    y  <- as.numeric(object$y)
+    ph <- as.numeric(stats::fitted(object))
+  } else {
+    if (!is.numeric(object))
+      stop("'object' must be a fitted binomial glm or a numeric (0/1) y vector.")
+    if (is.null(predicted_probs))
+      stop("Provide 'predicted_probs' when 'object' is not a glm.")
+    y  <- as.numeric(object)
+    ph <- as.numeric(predicted_probs)
+  }
+  if (!is.null(X))
+    warning("def.gof: 'X' is ignored when external = TRUE; the predictions are taken as frozen.")
+  n <- length(y)
+  if (!all(y %in% c(0, 1))) stop("DEF needs a binary (0/1) response.")
+  if (length(ph) != n) stop("'object' (y) and 'predicted_probs' lengths differ.")
+  if (anyNA(ph)) stop("'predicted_probs' contains missing values.")
+  ph <- pmin(pmax(ph, 1e-6), 1 - 1e-6)
+  if (identical(G, "auto")) G <- .def_auto_G(n)
+  if (G > n) stop("'G' cannot exceed the number of observations.")
+  if (min(sum(y), n - sum(y)) < G) .def_warn_few_events(sum(y), n, G)
+
+  # --- equal-frequency groups by predicted probability, as in the default mode ---
+  V    <- ph * (1 - ph)
+  grp  <- pmin(ceiling(rank(ph, ties.method = "first") / (n / G)), G)
+  og   <- as.numeric(rowsum(y,  grp, reorder = TRUE))
+  eg   <- as.numeric(rowsum(ph, grp, reorder = TRUE))
+  Vg   <- as.numeric(rowsum(V,  grp, reorder = TRUE))
+  pbar <- eg / as.numeric(rowsum(rep(1, n), grp, reorder = TRUE))
+  r    <- (og - eg) / sqrt(Vg)
+
+  # --- basis with the constant column, scaled, then reduced to full column rank ---
+  Z <- cbind(1, .def_basis(pbar, basis))
+  Z <- Z[, colSums(abs(Z)) > 1e-8, drop = FALSE]
+  Z <- Z / rep(sqrt(colSums(Z^2)), each = nrow(Z))
+  Q <- qr(Z)
+  Z <- Z[, Q$pivot[seq_len(Q$rank)], drop = FALSE]
+  k <- ncol(Z)
+  S <- sum(qr.fitted(qr(Z), r)^2)
+
+  data.frame(Test = "Directed Ebrahim-Farrington", Basis = basis, Test_Statistic = S,
+             df = k, Method = "external", p_value = stats::pchisq(S, k, lower.tail = FALSE),
+             stringsAsFactors = FALSE)
+}
+
 # Internal: build the shape-basis matrix Z from the group mean probabilities.
 .def_basis <- function(pbar, basis) {
   if (basis %in% c("poly2", "poly3")) {
@@ -273,7 +369,7 @@ def.gof <- function(object, predicted_probs = NULL, X = NULL, G = 10,
 }
 
 # Internal: the number of groups for G = "auto", the partition rule of the EDGE paper.
-.def_auto_G <- function(n) max(10, round(n / 25))
+.def_auto_G <- function(n) max(10, ceiling(n / 25))
 
 # Internal: warn that the grouped reference is unreliable with fewer events (or non-events)
 # than groups. The warning has its own class, so the battery can put it in Note and the

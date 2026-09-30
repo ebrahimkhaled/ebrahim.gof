@@ -33,7 +33,7 @@
 #'   is appended to the components. Default \code{FALSE}.
 #' @param combine One of \code{"cct"} (default), \code{"minp"}, \code{"fisher"}.
 #' @param G Integer number of groups passed to \code{def.gof}/\code{ef.gof} (default 10),
-#'   or \code{"auto"} for \code{max(10, round(n / 25))} as in \code{\link{def.gof}}.
+#'   or \code{"auto"} for \code{max(10, ceiling(n / 25))} as in \code{\link{def.gof}}.
 #' @param extra_pvalues Optional named numeric vector of additional p-values to
 #'   include (e.g. a Tsiatis test computed elsewhere). Default \code{NULL}.
 #' @param weights \code{"unit"} (default) or \code{"score"}, passed to

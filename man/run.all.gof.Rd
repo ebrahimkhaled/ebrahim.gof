@@ -32,7 +32,7 @@ run.all.gof(
 to run (e.g. \code{c("EF","DEF.poly3","HL")}).}
 
 \item{G}{Integer number of groups passed to the grouping tests (default 10), or
-\code{"auto"} for \code{max(10, round(n / 25))} (see \code{\link{def.gof}}).
+\code{"auto"} for \code{max(10, ceiling(n / 25))} (see \code{\link{def.gof}}).
 \code{"auto"} is resolved once, so every row, the ensemble rows included, uses
 the same number of groups; the directed rows record it in \code{Note}.}
 

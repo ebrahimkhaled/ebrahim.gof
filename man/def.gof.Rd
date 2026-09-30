@@ -11,7 +11,8 @@ def.gof(
   G = 10,
   basis = c("poly3", "poly2", "stukel", "sym", "ensemble"),
   method = c("satterthwaite", "imhof"),
-  weights = c("unit", "score")
+  weights = c("unit", "score"),
+  external = FALSE
 )
 }
 \arguments{
@@ -24,10 +25,11 @@ def.gof(
 \item{X}{Optional design matrix, used only with the \code{y}/\code{predicted_probs}
 form: it enables the exact estimation-adjusted (\eqn{\Omega}) calibration
 (logit working weights assumed). Without it the conservative \eqn{\chi^2_k}
-reference is used and a warning is issued. Ignored when \code{object} is a glm.}
+reference is used and a warning is issued. Ignored when \code{object} is a glm,
+and ignored (with a warning) when \code{external = TRUE}.}
 
 \item{G}{Integer number of equal-frequency groups (default 10; must be >= 3),
-or \code{"auto"} for \code{max(10, round(n / 25))}, the partition rule of the
+or \code{"auto"} for \code{max(10, ceiling(n / 25))}, the partition rule of the
 EDGE paper.}
 
 \item{basis}{One of \code{"poly3"} (default), \code{"poly2"}, \code{"stukel"},
@@ -46,12 +48,22 @@ logit fit makes the statistic the score test for adding the grouped shape to
 the model (a score-type test for other links). It is referred to chi-squared on
 the rank of its information matrix, which is the number of columns unless one
 is redundant (see Details).}
+
+\item{external}{Logical, default \code{FALSE}. \code{TRUE} treats the predicted
+probabilities as frozen (external validation of a fixed model): \eqn{\Omega = I},
+a constant column joins the basis, and the statistic is referred to
+\eqn{\chi^2} on the number of basis columns (see Details of \code{\link{def.gof}}). Supply \code{y} and
+\code{predicted_probs}, or a glm whose fitted probabilities are then taken as
+frozen. Requires \code{weights = "unit"} and a basis other than
+\code{"ensemble"}; \code{method} is not used.}
 }
 \value{
 A one-row \code{data.frame} with columns \code{Test}, \code{Basis},
   \code{Test_Statistic} (the statistic \eqn{S}), \code{df}, \code{Method}, and
   \code{p_value}. For \code{weights = "score"}, \code{Method} is \code{"score"}
-  and \code{df} is the integer rank the statistic is referred to. When
+  and \code{df} is the integer rank the statistic is referred to. For
+  \code{external = TRUE}, \code{Method} is \code{"external"} and \code{df} is the
+  integer number of basis columns, constant included. When
   \code{basis = "ensemble"}, the return is that of \code{\link{def.ensemble.gof}}.
 }
 \description{
@@ -103,6 +115,23 @@ The unit form is the statistic as published;
 the score form keeps a shape on the logit scale from losing its signal when the
 group variances differ strongly, as they do at high discrimination.
 
+\strong{External mode.} With \code{external = TRUE} the predicted probabilities
+are taken as frozen, as when a published model is checked on new data with its
+coefficients fixed. Nothing is estimated from these data, so \eqn{\Omega = I}
+exactly, and no score equation absorbs the overall level, so a column of ones
+is added to the basis before redundant columns are dropped. The statistic
+\eqn{S = r'P_Z r} is then referred to \eqn{\chi^2} on the number of columns
+kept: \eqn{d + 1} for a \eqn{d}-column basis (4 for \code{"poly3"} and
+\code{"stukel"}, 3 for \code{"poly2"}, 2 for \code{"sym"}; one fewer for
+\code{"stukel"} when every group lies on one side of 0.5). The groups are the
+same equal-frequency groups as in the default mode. No "conservative" warning
+is given, since \eqn{\Omega = I} is exact here, and \code{Method} is
+\code{"external"}. Only \code{weights = "unit"} is available: the score form is a
+different projection, and it has not been validated for frozen predictions.
+When \code{object} is a glm, its response and fitted probabilities are used as
+the frozen predictions; the fit is not otherwise used, so this is a test of
+those predictions and not the estimation-adjusted test of the model.
+
 With fewer events (or fewer non-events) than groups, the grouped reference
 distribution is unreliable. The p-value is still returned, with a warning;
 a smaller \code{G} avoids it. With no event, or no non-event, the model has no
@@ -125,6 +154,12 @@ def.gof(wrong, basis = "ensemble")   # combine poly2, poly3 and stukel (CCT)
 right <- glm(outcome ~ poly(age, 2) + bmi + sex + treatment,
              data = gof_demo, family = binomial())
 def.gof(right)
+
+## external validation: freeze the model fitted on one half, test it on the other
+dev <- gof_demo[1:250, ]; val <- gof_demo[-(1:250), ]
+frozen <- glm(outcome ~ age + bmi + sex + treatment, data = dev, family = binomial())
+p_val <- predict(frozen, newdata = val, type = "response")
+def.gof(val$outcome, predicted_probs = p_val, external = TRUE)
 
 }
 \references{

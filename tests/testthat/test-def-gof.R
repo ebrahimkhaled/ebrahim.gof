@@ -131,7 +131,7 @@ test_that("a near-empty Stukel half-column is kept and scaled, not left to a sin
   expect_equal(sc$Test_Statistic, rao$Rao[2], tolerance = 1e-8)
 })
 
-test_that("G = 'auto' is max(10, round(n / 25))", {
+test_that("G = 'auto' partitions as documented (n = 600 and n = 200)", {
   fit <- make_fit()                                                 # n = 600, so G = 24
   expect_identical(def.gof(fit, G = "auto"), def.gof(fit, G = 24))
   expect_identical(edge.gof(fit, G = "auto", basis = "sym"), edge.gof(fit, G = 24, basis = "sym"))

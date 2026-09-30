@@ -122,11 +122,12 @@ grouped residuals onto a small smooth basis.
 def.gof(object, predicted_probs = NULL, X = NULL, G = 10,
         basis = c("poly3", "poly2", "stukel", "sym", "ensemble"),
         method = c("satterthwaite", "imhof"),
-        weights = c("unit", "score"))
+        weights = c("unit", "score"), external = FALSE)
 ```
 
 - `object`: a fitted binary-logistic `glm`, or a 0/1 response vector `y` (then give `predicted_probs`, and `X` to get the exact calibration).
-- `G`: the number of equal-frequency groups (default 10), or `"auto"` for `max(10, round(n / 25))`, the partition rule of the EDGE paper.
+- `external`: `TRUE` checks frozen predictions, as in external validation of a published model on new data: Omega is the identity, a constant column joins the basis, and the statistic is referred to chi-squared on d + 1 degrees of freedom (unit weights only).
+- `G`: the number of equal-frequency groups (default 10), or `"auto"` for `max(10, ceiling(n / 25))`, the partition rule of the EDGE paper.
 - `basis`: `"poly3"` (default), `"poly2"`, `"stukel"`, `"sym"` (one column, eta|eta|, Stukel's symmetric tail direction), or `"ensemble"` (runs poly2, poly3 and stukel and combines them via `def.ensemble.gof()`).
 - `method`: `"satterthwaite"` (default, no extra dependency) or `"imhof"` (exact, needs `CompQuadForm`).
 - `weights`: `"unit"` (default, the published statistic) or `"score"`, which weights each basis column by the square root of its group's variance. For a logit fit this makes the statistic the Rao score test for adding the grouped shape to the model (for other links it is a score-type test). It is referred to chi-squared on the rank of its information matrix, which is the number of columns unless one is redundant.

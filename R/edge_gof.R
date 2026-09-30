@@ -39,7 +39,7 @@
 #' edge.gof(fit, basis = "stukel")    # Stukel-shape basis
 #' edge.gof(fit, basis = "sym")       # Stukel's symmetric direction, one column
 #' edge.gof(fit, basis = "sym", weights = "score")   # its score form
-#' edge.gof(fit, G = "auto")          # G = max(10, round(n / 25)) = 20 here
+#' edge.gof(fit, G = "auto")          # G = max(10, ceiling(n / 25)) = 20 here
 #'
 #' @seealso \code{\link{def.gof}} (legacy name), \code{\link{ef.gof}},
 #'   \code{\link{def.ensemble.gof}}, \code{\link{run.all.gof}}.
@@ -52,9 +52,10 @@
 #' @concept sparse data
 #' @export
 edge.gof <- function(object, predicted_probs = NULL, X = NULL, G = 10,
-                     basis = "poly3", method = "satterthwaite", weights = "unit") {
+                     basis = "poly3", method = "satterthwaite", weights = "unit",
+                     external = FALSE) {
   out <- def.gof(object, predicted_probs = predicted_probs, X = X, G = G,
-                 basis = basis, method = method, weights = weights)
+                 basis = basis, method = method, weights = weights, external = external)
   out$Test <- "EDGE"
   out
 }

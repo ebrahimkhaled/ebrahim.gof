@@ -11,7 +11,8 @@ edge.gof(
   G = 10,
   basis = "poly3",
   method = "satterthwaite",
-  weights = "unit"
+  weights = "unit",
+  external = FALSE
 )
 }
 \arguments{
@@ -24,10 +25,11 @@ edge.gof(
 \item{X}{Optional design matrix, used only with the \code{y}/\code{predicted_probs}
 form: it enables the exact estimation-adjusted (\eqn{\Omega}) calibration
 (logit working weights assumed). Without it the conservative \eqn{\chi^2_k}
-reference is used and a warning is issued. Ignored when \code{object} is a glm.}
+reference is used and a warning is issued. Ignored when \code{object} is a glm,
+and ignored (with a warning) when \code{external = TRUE}.}
 
 \item{G}{Integer number of equal-frequency groups (default 10; must be >= 3),
-or \code{"auto"} for \code{max(10, round(n / 25))}, the partition rule of the
+or \code{"auto"} for \code{max(10, ceiling(n / 25))}, the partition rule of the
 EDGE paper.}
 
 \item{basis}{One of \code{"poly3"} (default), \code{"poly2"}, \code{"stukel"},
@@ -46,6 +48,14 @@ logit fit makes the statistic the score test for adding the grouped shape to
 the model (a score-type test for other links). It is referred to chi-squared on
 the rank of its information matrix, which is the number of columns unless one
 is redundant (see Details).}
+
+\item{external}{Logical, default \code{FALSE}. \code{TRUE} treats the predicted
+probabilities as frozen (external validation of a fixed model): \eqn{\Omega = I},
+a constant column joins the basis, and the statistic is referred to
+\eqn{\chi^2} on the number of basis columns (see Details of \code{\link{def.gof}}). Supply \code{y} and
+\code{predicted_probs}, or a glm whose fitted probabilities are then taken as
+frozen. Requires \code{weights = "unit"} and a basis other than
+\code{"ensemble"}; \code{method} is not used.}
 }
 \value{
 A one-row \code{data.frame} with columns \code{Test} (\code{"EDGE"}),
@@ -74,7 +84,7 @@ edge.gof(fit)                      # default cubic basis, G = 10
 edge.gof(fit, basis = "stukel")    # Stukel-shape basis
 edge.gof(fit, basis = "sym")       # Stukel's symmetric direction, one column
 edge.gof(fit, basis = "sym", weights = "score")   # its score form
-edge.gof(fit, G = "auto")          # G = max(10, round(n / 25)) = 20 here
+edge.gof(fit, G = "auto")          # G = max(10, ceiling(n / 25)) = 20 here
 
 }
 \references{

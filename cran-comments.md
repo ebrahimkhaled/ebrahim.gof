@@ -26,11 +26,17 @@ weighted binomial fit, which its Bernoulli bootstrap never served correctly.
   covariates, taken again in every bootstrap replicate. The default reading is unchanged.
 * `deepgof1()` now accepts a model with one covariate (earlier versions stopped with an error), and
   its result also returns the map that gave the statistic.
+* `edge.gof(external = TRUE)` and `def.gof(external = TRUE)`: the directed test for frozen
+  predictions (external validation of a fixed model). The default is `FALSE`, and the default
+  results are unchanged (checked value for value on 872 calls).
 
 ## Behaviour changes
 
 * `deepgof1()` returns a different (correct) p-value for models with transformed covariates, and an
-  error instead of a p-value for grouped or weighted binomial fits. Nothing else changes by default.
+  error instead of a p-value for grouped or weighted binomial fits.
+* `G = "auto"` in the EDGE functions now uses `max(10, ceiling(n / 25))` groups, the published rule,
+  instead of `round(n / 25)`; the number of groups moves by at most one. A numeric `G`, the default,
+  is unchanged. Nothing else changes by default.
 
 ## Test environments
 
@@ -43,7 +49,7 @@ weighted binomial fit, which its Bernoulli bootstrap never served correctly.
 0 errors | 0 warnings | 2 notes
 
     checking CRAN incoming feasibility ... NOTE
-    Days since last update: 3
+    Days since last update: 4
 
 This update corrects the `deepgof1()` bug described above, which silently returns p = 1 for any
 model with a transformed covariate.
