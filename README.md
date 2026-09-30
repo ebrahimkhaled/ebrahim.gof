@@ -113,6 +113,21 @@ ef.gof(y, predicted_probs, G = 10, model = NULL, m = NULL,
 **Returns:**
 A data frame with test name, test statistic, and p-value.
 
+### `run.all.external()` — external validation in one call
+
+For predictions made without the data at hand, such as a published model checked on new patients or
+any machine-learning model scored on a validation set, pass the outcomes and the predicted
+probabilities. Nothing is refitted, so every test uses its external reference.
+
+```r
+run.all.external(y, p, G = 10, X = NULL, include_slow = FALSE)
+```
+
+It returns the directed test in external mode (ten groups and `G = "auto"`), Cox's recalibration test,
+calibration in the large, Spiegelhalter's z, the GiViTI test (external), the Hosmer-Lemeshow statistic on
+chi-squared(G), Stukel's test on the frozen linear predictor, le Cessie's test when `X` is given and
+`include_slow = TRUE`, and the O/E ratio, calibration slope and c-statistic.
+
 ### `def.gof()` — Directed Ebrahim-Farrington test
 
 Concentrates power on calibration-curve shape directions by projecting the

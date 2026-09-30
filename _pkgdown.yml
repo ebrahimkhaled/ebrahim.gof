@@ -17,6 +17,7 @@ reference:
     test detects. The package page has a table for choosing a single test.
   contents:
   - run.all.gof
+  - run.all.external
   - ebrahim.gof-package
 
 - title: Sparse data

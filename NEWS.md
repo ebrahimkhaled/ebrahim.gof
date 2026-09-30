@@ -35,6 +35,17 @@
 
 ## New features
 
+* `run.all.external(y, p)` runs the external-validation tests at once, for predictions made without the
+  data at hand (a published model, or any model, applied to new patients). It needs only the outcomes
+  and the predicted probabilities, refits nothing, and returns the battery format of `run.all.gof()`:
+  the directed test in external mode at ten groups and at `G = "auto"`, Cox's recalibration test (with
+  the calibration intercept and slope), calibration in the large, Spiegelhalter's z, the GiViTI test in
+  external mode, the Hosmer-Lemeshow statistic referred to chi-squared on G, Stukel's terms on the frozen
+  linear predictor, and, given covariates and `include_slow = TRUE`, le Cessie's kernel statistic with
+  Omega = I; plus the O/E ratio, the calibration slope and the c-statistic. `run.all.gof(y, p)` treats
+  the predictions as fitted to `y` and so uses the internal references, which are conservative on
+  frozen predictions.
+
 * `edge.gof()` and `def.gof()` gain `external = FALSE`. With `external = TRUE` the predicted
   probabilities are taken as frozen, as when a published model is checked on new data: the
   covariance of the grouped residuals is the identity, a constant column joins the basis because no
