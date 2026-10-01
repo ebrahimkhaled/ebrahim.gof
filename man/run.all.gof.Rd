@@ -178,6 +178,15 @@ and compare observed with expected counts group by group.
     no p-value: the statistic is the standardized power and the accept/reject
     decision appears in the \code{Note} column. Tune with
     \code{control = list("Lai-Liu-HL" = list(n0 = ..., k = ...))}.
+  \item \code{HL-largeN} -- Nattino, Pennell and Lemeshow's (2020) large-sample
+    Hosmer-Lemeshow test. Instead of perfect fit it tests whether the misfit,
+    measured by \eqn{\epsilon = \sqrt{\lambda/n}}, exceeds a tolerance \eqn{\epsilon_0}:
+    the ordinary statistic is referred to a noncentral \eqn{\chi^2_{G-2}} with
+    noncentrality \eqn{\epsilon_0^2 n}. By their convention \eqn{\epsilon_0} is the
+    misfit that would be just significant at \code{n0 = 1e6}; change it with
+    \code{control = list("HL-largeN" = list(n0 = ...))}. The \code{Note} gives
+    \eqn{\epsilon_0} and the estimate \eqn{\hat\epsilon}. Meant for samples in the tens of
+    thousands and above; in small samples it is conservative.
 }
 
 \strong{Directed tests} (\code{Family} "Directed"). Rather than asking whether anything is wrong, these

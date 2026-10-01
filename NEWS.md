@@ -58,6 +58,12 @@
 
 ## New features
 
+* `run.all.gof()` gains `HL-largeN`, the large-sample Hosmer-Lemeshow test of Nattino, Pennell and Lemeshow
+  (2020, Biometrics 76:549). It tests whether the misfit exceeds a tolerance rather than whether the model fits
+  perfectly, by referring the ordinary statistic to a noncentral chi-square on G - 2 df with noncentrality
+  eps0^2 n, eps0 being the misfit just significant at n0 = 10^6 (`control = list("HL-largeN" = list(n0 = ...))`).
+  It reproduces their application (C = 25.35, n = 315,828: p = 0.010).
+
 * `edge.stream()` monitors a deployed model as patients arrive. It keeps four sums per risk group, with
   cut points fixed in advance from reference predictions (`p_ref`) or given as `breaks`; `update(s, y, p)`
   adds a batch in constant time per record and `summary(s)` returns the external-mode test without
