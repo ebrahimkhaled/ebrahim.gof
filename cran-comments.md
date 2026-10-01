@@ -26,6 +26,9 @@ weighted binomial fit, which its Bernoulli bootstrap never served correctly.
   covariates, taken again in every bootstrap replicate. The default reading is unchanged.
 * `deepgof1()` now accepts a model with one covariate (earlier versions stopped with an error), and
   its result also returns the map that gave the statistic.
+* `edge.stream()` with `update()`, `summary()` and `print()` methods: calibration monitoring of a frozen
+  model on streaming data. No new dependency.
+
 * `run.all.external()`: a new exported function that runs the external-validation tests on outcomes and
   frozen predicted probabilities. It adds no dependency; GiViTI runs only when the suggested
   'givitiR' and 'callr' are installed, as in `run.all.gof()`.

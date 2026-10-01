@@ -18,6 +18,7 @@ reference:
   contents:
   - run.all.gof
   - run.all.external
+  - edge.stream
   - ebrahim.gof-package
 
 - title: Sparse data

@@ -35,6 +35,14 @@
 
 ## New features
 
+* `edge.stream()` monitors a deployed model as patients arrive. It keeps four sums per risk group, with
+  cut points fixed in advance from reference predictions (`p_ref`) or given as `breaks`; `update(s, y, p)`
+  adds a batch in constant time per record and `summary(s)` returns the external-mode test without
+  revisiting earlier records. The streamed statistic equals the one-shot `def.gof(..., external = TRUE)`
+  statistic on the same groups, whatever the order or batching of the updates, and keeps its reference
+  when the risk distribution of later patients drifts. Testing after every batch needs the level spent
+  over the looks; the help page says how.
+
 * `run.all.external(y, p)` runs the external-validation tests at once, for predictions made without the
   data at hand (a published model, or any model, applied to new patients). It needs only the outcomes
   and the predicted probabilities, refits nothing, and returns the battery format of `run.all.gof()`:

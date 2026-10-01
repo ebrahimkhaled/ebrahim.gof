@@ -128,6 +128,17 @@ calibration in the large, Spiegelhalter's z, the GiViTI test (external), the Hos
 chi-squared(G), Stukel's test on the frozen linear predictor, le Cessie's test when `X` is given and
 `include_slow = TRUE`, and the O/E ratio, calibration slope and c-statistic.
 
+### `edge.stream()` — monitoring a deployed model
+
+```r
+s <- edge.stream(p_ref = p_dev, G = 10)   # cut points from the development predictions
+s <- update(s, y_new, p_new)              # each new batch, constant time per patient
+summary(s)                                # the external-mode test on everything seen so far
+```
+
+The result equals the one-shot external test on the same groups. One test at any time is valid; if you
+test after every batch, spend the level over the looks (for example 0.05 / number of looks).
+
 ### `def.gof()` — Directed Ebrahim-Farrington test
 
 Concentrates power on calibration-curve shape directions by projecting the
