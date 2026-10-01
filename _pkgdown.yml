@@ -51,6 +51,16 @@ reference:
   - legoft
   - legoft.localize
   - deepgof1
+  - deepgof1.external
+
+- title: Comparison tests
+  desc: >
+    Published tests implemented here so the battery can be compared with them
+    on the same data: the projection test of Liu et al. (2024) and a fast
+    implementation of the adaptive-partition test BAGofT.
+  contents:
+  - projection.gof
+  - bagoft.fast
 
 - title: Building your own scorer
   contents:
