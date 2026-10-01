@@ -21,15 +21,21 @@
 #' \code{G = 10}, keep many records in the extreme groups and so tolerate more
 #' corrupted records, at some cost in power. Choose which one decides in the analysis
 #' plan, from what is known about how the data were collected, not after seeing the
-#' results. If only the default partition rejects, the signal sits in the extreme
-#' groups: check those records. Give a single \code{G} to get one row.
+#' results. The first row is marked \code{Role = "verdict"} and the second
+#' \code{Role = "check"}: with the default \code{G} the default partition decides and
+#' ten groups are the robustness check; to let ten groups decide, give
+#' \code{G = c(10, "auto")}. If only the default partition rejects, the signal sits in the
+#' extreme groups: check those records. Give a single \code{G} to get one row.
 #'
 #' @inheritParams def.gof
 #' @param G Number of groups: \code{"auto"}, a number, or a vector of them; the
 #'   default \code{c("auto", 10)} reports both partitions.
+#' @param y Optional alias for \code{object} when frozen predictions are tested:
+#'   \code{edge.gof(y = y, predicted_probs = p, external = TRUE)}.
 #'
 #' @return A \code{data.frame} with one row per partition and columns \code{Test}
-#'   (\code{"EDGE"}), \code{Partition}, \code{Basis}, \code{Test_Statistic},
+#'   (\code{"EDGE"}), \code{Partition}, \code{Role} (\code{"verdict"} for the first
+#'   row, \code{"check"} for the second), \code{Basis}, \code{Test_Statistic},
 #'   \code{df}, \code{Method} and \code{p_value}, as documented in \code{\link{def.gof}}.
 #'
 #' @references
@@ -67,7 +73,11 @@
 #' @export
 edge.gof <- function(object, predicted_probs = NULL, X = NULL, G = c("auto", 10),
                      basis = "poly3", method = "satterthwaite", weights = "unit",
-                     external = FALSE) {
+                     external = FALSE, y = NULL) {
+  if (missing(object)) {
+    if (is.null(y)) stop("supply a fitted glm or the outcome vector")
+    object <- y
+  }
   n <- if (inherits(object, "glm")) length(object$y) else length(object)
   one <- function(g) {
     out <- def.gof(object, predicted_probs = predicted_probs, X = X, G = g,
@@ -83,6 +93,8 @@ edge.gof <- function(object, predicted_probs = NULL, X = NULL, G = c("auto", 10)
   ## when n <= 250 the default partition is itself ten groups: report it once
   if (nrow(out) == 2L && isTRUE(all.equal(out$Test_Statistic[1], out$Test_Statistic[2])))
     out <- out[1, , drop = FALSE]
+  out$Role <- c("verdict", "check", rep("check", max(0L, nrow(out) - 2L)))[seq_len(nrow(out))]
+  out <- out[, c("Test", "Partition", "Role", setdiff(names(out), c("Test", "Partition", "Role")))]
   rownames(out) <- NULL
   out
 }

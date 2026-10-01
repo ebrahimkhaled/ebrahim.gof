@@ -45,6 +45,10 @@
   (`edge.gof(fit, G = 10)` reproduces the earlier default). `def.gof()` is unchanged. `run.all.gof()` gains the
   rows `EDGE` (default partition) and `EDGE.G10` (ten groups), whatever its own `G`.
 
+* A `Role` column marks the first row `"verdict"` and the second `"check"`, so the partition that decides
+  is the one listed first; `G = c(10, "auto")` lets ten groups decide. `edge.gof()` also accepts the
+  outcome as `y =` for frozen predictions, `edge.gof(y = y, predicted_probs = p, external = TRUE)`.
+
 * `G = "auto"` in `edge.gof()`, `def.gof()`, `def.ensemble.gof()` and `run.all.gof()` now uses
   `max(10, ceiling(n / 25))` groups, the rule as published in the EDGE paper; up to 2.8.0 it used
   `round(n / 25)`. The number of groups moves by at most one, and only when the fractional part of

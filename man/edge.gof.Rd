@@ -12,7 +12,8 @@ edge.gof(
   basis = "poly3",
   method = "satterthwaite",
   weights = "unit",
-  external = FALSE
+  external = FALSE,
+  y = NULL
 )
 }
 \arguments{
@@ -55,10 +56,14 @@ a constant column joins the basis, and the statistic is referred to
 \code{predicted_probs}, or a glm whose fitted probabilities are then taken as
 frozen. Requires \code{weights = "unit"} and a basis other than
 \code{"ensemble"}; \code{method} is not used.}
+
+\item{y}{Optional alias for \code{object} when frozen predictions are tested:
+\code{edge.gof(y = y, predicted_probs = p, external = TRUE)}.}
 }
 \value{
 A \code{data.frame} with one row per partition and columns \code{Test}
-  (\code{"EDGE"}), \code{Partition}, \code{Basis}, \code{Test_Statistic},
+  (\code{"EDGE"}), \code{Partition}, \code{Role} (\code{"verdict"} for the first
+  row, \code{"check"} for the second), \code{Basis}, \code{Test_Statistic},
   \code{df}, \code{Method} and \code{p_value}, as documented in \code{\link{def.gof}}.
 }
 \description{
@@ -82,8 +87,11 @@ more power, above all against misfit at the extremes of risk. \emph{Ten groups},
 \code{G = 10}, keep many records in the extreme groups and so tolerate more
 corrupted records, at some cost in power. Choose which one decides in the analysis
 plan, from what is known about how the data were collected, not after seeing the
-results. If only the default partition rejects, the signal sits in the extreme
-groups: check those records. Give a single \code{G} to get one row.
+results. The first row is marked \code{Role = "verdict"} and the second
+\code{Role = "check"}: with the default \code{G} the default partition decides and
+ten groups are the robustness check; to let ten groups decide, give
+\code{G = c(10, "auto")}. If only the default partition rejects, the signal sits in the
+extreme groups: check those records. Give a single \code{G} to get one row.
 }
 \examples{
 set.seed(1)
