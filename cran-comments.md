@@ -5,7 +5,7 @@
 # ebrahim.gof 2.9.0
 
 CRAN has 2.8.0 (published 2026-09-26). This release follows it after a few days because it
-corrects a bug in `deepgof1()` that makes the function return a wrong p-value.
+corrects two bugs in `deepgof1()` that make the function return a wrong p-value.
 
 ## Why this release
 
@@ -17,49 +17,56 @@ the p-value was 1 whatever the data, so the test could never reject such a model
 warning. The refits now use `glm.fit()` on the fitted model's design matrix. For models without
 such terms the p-value for a given seed is the same as in 2.8.0 (checked on the same seeds).
 
-`deepgof1()` also now stops with a clear message for a grouped (`cbind(successes, failures)`) or
-weighted binomial fit, which its Bernoulli bootstrap never served correctly.
+`deepgof1()` also refitted probit and complementary log-log models with the logit link; the refits
+now use the model's own family and link (logit fits are unchanged). It now stops with a clear
+message for a grouped (`cbind(successes, failures)`) or weighted binomial fit, which its Bernoulli
+bootstrap never served correctly.
+
+## New functions
+
+* `deepgof1.external()`: the network test for frozen predictions (external validation of a fixed
+  model), with an exact Monte Carlo p-value.
+* `run.all.external()`: the external-validation tests on outcomes and frozen predicted
+  probabilities, in the battery format of `run.all.gof()`. GiViTI runs only when the suggested
+  'givitiR' and 'callr' are installed, as in `run.all.gof()`.
+* `edge.stream()` with `update()`, `summary()` and `print()` methods: calibration monitoring of a
+  frozen model on streaming data, in constant time per record.
+
+None adds a dependency.
 
 ## New options
 
-* `deepgof1(reading = "allpairs")`: the largest score over the residual maps of every pair of
-  covariates, taken again in every bootstrap replicate. The default reading is unchanged.
-* `deepgof1()` now accepts a model with one covariate (earlier versions stopped with an error), and
-  its result also returns the map that gave the statistic.
-* `edge.stream()` with `update()`, `summary()` and `print()` methods: calibration monitoring of a frozen
-  model on streaming data. No new dependency.
-
-* `run.all.external()`: a new exported function that runs the external-validation tests on outcomes and
-  frozen predicted probabilities. It adds no dependency; GiViTI runs only when the suggested
-  'givitiR' and 'callr' are installed, as in `run.all.gof()`.
-
 * `edge.gof(external = TRUE)` and `def.gof(external = TRUE)`: the directed test for frozen
-  predictions (external validation of a fixed model). The default is `FALSE`, and the default
-  results are unchanged (checked value for value on 872 calls).
+  predictions. The default is `FALSE`.
+* `run.all.gof()` gains `HL-largeN`, the large-sample Hosmer-Lemeshow test of Nattino, Pennell and
+  Lemeshow (2020, Biometrics); it reproduces their published example.
+* `deepgof1(reading = "allpairs")` and `reading = "combined"`; the default reading is unchanged in
+  result for models whose covariates enter as single untransformed columns.
 
 ## Behaviour changes
 
-* `deepgof1()` returns a different (correct) p-value for models with transformed covariates, and an
-  error instead of a p-value for grouped or weighted binomial fits.
+* `edge.gof()` now reports two rows by default, the default partition (the verdict) and ten groups
+  (a robustness check), with new `Partition` and `Role` columns. `edge.gof(fit, G = 10)` reproduces
+  the earlier single-row result. `def.gof()` is unchanged.
 * `G = "auto"` in the EDGE functions now uses `max(10, ceiling(n / 25))` groups, the published rule,
-  instead of `round(n / 25)`; the number of groups moves by at most one. A numeric `G`, the default,
-  is unchanged. Nothing else changes by default.
+  instead of `round(n / 25)`; the number of groups moves by at most one.
+* `deepgof1()` returns a different (correct) p-value for models with transformed covariates or a
+  non-logit link, and an error instead of a p-value for grouped or weighted binomial fits.
 
 ## Test environments
 
 * local: Windows 11 x64 (build 26200), R 4.4.1 (2024-06-14 ucrt), `R CMD check --as-cran` on the
   built tarball -- 0 errors, 0 warnings, 2 notes (see below)
-* win-builder, R-devel and R-release -- to be run on the tarball rebuilt on the day of submission
 
 ## R CMD check results
 
 0 errors | 0 warnings | 2 notes
 
     checking CRAN incoming feasibility ... NOTE
-    Days since last update: 4
+    Days since last update: 5
 
-This update corrects the `deepgof1()` bug described above, which silently returns p = 1 for any
-model with a transformed covariate.
+This update corrects the `deepgof1()` bugs described above; the first silently returns p = 1 for
+any model with a transformed covariate.
 
     checking for future file timestamps ... NOTE
     unable to verify current time
