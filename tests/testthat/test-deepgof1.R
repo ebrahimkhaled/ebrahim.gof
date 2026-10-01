@@ -244,6 +244,51 @@ test_that("the combined reading returns a valid p-value and its two components",
   expect_gte(r$p.value, min(r$components))
 })
 
+test_that("deepgof1.external() tests frozen predictions with an exact Monte Carlo p-value", {
+  set.seed(50)
+  n <- 300
+  X <- data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
+  p <- plogis(-0.5 + 0.2 * X$x1 + 0.9 * X$x2 + 0.6 * X$x3)
+  y <- rbinom(n, 1, p)
+  r <- deepgof1.external(y, p, X, B = 19)
+  expect_s3_class(r, "deepgof1")
+  expect_equal(r$p.value * 20, round(r$p.value * 20))
+  expect_named(r$components, c("axes", "allpairs"))
+  expect_gte(r$p.value, min(r$components))
+  ## without coefficients the axis rule recovers the published model's two strongest covariates
+  expect_identical(unname(deepgof1.external(y, p, X, B = 9, reading = "axes")$axes), c("x2", "x3"))
+  ## fixed axes are honoured, and the all-pairs reading scores every pair
+  expect_identical(unname(deepgof1.external(y, p, X, B = 9, reading = "axes", axes = c("x3", "x1"))$axes),
+                   c("x1", "x3"))
+  expect_equal(nrow(deepgof1.external(y, p, X, B = 9, reading = "allpairs")$pairs), 3L)
+  ## one covariate: the 36-cell map along it
+  expect_identical(deepgof1.external(y, p, X["x2"], B = 9)$axes, "x2")
+  ## a large interaction is detected
+  y2 <- rbinom(n, 1, plogis(qlogis(p) + 1.5 * X$x1 * X$x2))
+  expect_lte(deepgof1.external(y2, p, X, B = 99, reading = "allpairs")$p.value, 0.05)
+})
+
+test_that("deepgof1.external() checks its inputs", {
+  X <- data.frame(x1 = rnorm(20), x2 = rnorm(20))
+  y <- rbinom(20, 1, 0.5)
+  expect_error(deepgof1.external(y, rep(1, 20), X), "strictly between")
+  expect_error(deepgof1.external(y, rep(0.5, 19), X), "strictly between")
+  expect_error(deepgof1.external(y + 1, rep(0.5, 20), X), "0/1")
+  expect_error(deepgof1.external(y, rep(0.5, 20), X, axes = c("x1", "z")), "two different columns")
+  expect_error(deepgof1.external(y, rep(0.5, 20), data.frame(g = letters[1:20])), "numeric")
+})
+
+test_that("a probit fit is refitted with its own link", {
+  set.seed(51)
+  n <- 300
+  x1 <- rnorm(n); x2 <- rnorm(n)
+  y <- rbinom(n, 1, pnorm(-0.3 + 0.6 * x1 + 0.5 * x2))
+  f <- glm(y ~ x1 + x2, family = binomial("probit"))
+  ## under the correct probit model the bootstrap scores sit near the observed one, never all below
+  r <- deepgof1(f, B = 39)
+  expect_gt(r$p.value, 0.05)
+})
+
 test_that("grouped or weighted binomial fits are refused", {
   set.seed(38)
   x1 <- rnorm(40); x2 <- rnorm(40); k <- rbinom(40, 5, 0.4)

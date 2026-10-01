@@ -237,7 +237,7 @@
   for (b in seq_len(B)) {
     ys <- stats::rbinom(n, 1L, ph)
     fb <- tryCatch(suppressWarnings(stats::glm.fit(mm, ys, weights = fit$prior.weights,
-                                                   offset = fit$offset, family = stats::binomial(),
+                                                   offset = fit$offset, family = fit$family,
                                                    control = fit$control, intercept = itc)),
                    error = function(e) NULL)
     ## a failed refit counts AGAINST rejection (conservative); -Inf would deflate p
@@ -473,7 +473,7 @@ deepgof1 <- function(fit, B = 199L, K = 6L, reading = c("axes", "allpairs", "com
     for (b in seq_len(B)) {
       ys <- stats::rbinom(length(ph), 1L, ph)
       fb <- tryCatch(suppressWarnings(stats::glm.fit(mm, ys, weights = fit$prior.weights,
-                                                     offset = fit$offset, family = stats::binomial(),
+                                                     offset = fit$offset, family = fit$family,
                                                      control = fit$control, intercept = itc)),
                      error = function(e) NULL)
       ## a failed refit counts AGAINST rejection (conservative); -Inf would deflate p
@@ -541,6 +541,142 @@ print.deepgof1 <- function(x, ...) {
   if (identical(x$reading, "combined") && !is.null(x$components))
     cat(sprintf("combined reading: axis rule p = %.4f, all-pairs p = %.4f\n",
                 x$components[["axes"]], x$components[["allpairs"]]))
-  cat("alternative hypothesis: the logistic model is misspecified\n\n")
+  alt <- if (is.null(x$alternative)) "the logistic model is misspecified" else x$alternative
+  cat("alternative hypothesis: ", alt, "\n\n", sep = "")
   invisible(x)
+}
+
+#' DeepGOF-1 for frozen predictions: external validation of a risk model
+#'
+#' Tests whether given probabilities are calibrated for given 0/1 outcomes within subgroups of
+#' the covariates, for a model that was fitted elsewhere and is not refitted: a published risk
+#' score checked on new patients, or the predictions of any model, logistic or not, on a
+#' validation set. The null hypothesis is that each \eqn{y_i} is Bernoulli(\eqn{p_i}) with
+#' \eqn{p_i} as given.
+#'
+#' The residual map of \code{\link{deepgof1}} is drawn over the ranks of the covariates and
+#' standardized by the given probabilities, and the shipped network scores it. The reference
+#' distribution is built by drawing \eqn{y^* \sim} Bernoulli(\eqn{p}) and scoring again; with
+#' nothing estimated, the law of the score is the same under the whole null, so the rank
+#' p-value is exactly valid at every sample size (Besag and Clifford 1989).
+#'
+#' Because the map lays the residuals out over the covariates, the test checks calibration
+#' within patient subgroups (strong calibration in the hierarchy of Van Calster et al. 2016).
+#' A wrong overall rate or a wrong calibration slope is the same for every patient and is
+#' found better by tests along the predicted risk, such as the calibration belt
+#' (\code{\link{run.all.gof}} with GiViTI); a miscalibration that differs between patients
+#' with the same predicted risk, a missed U-shape, threshold or interaction, is found better
+#' by this test, which also shows where it lies.
+#'
+#' The axis rule needs a ranking of the covariates by their effect. Without coefficients, it
+#' regresses the logit of \code{p} on the covariates by least squares and scores each
+#' covariate by \eqn{|b_j| \hat\sigma_j}; for a published logistic model in these covariates
+#' this recovers its own coefficients exactly. Name the axes with \code{axes} to fix them in
+#' advance.
+#'
+#' @param y 0/1 outcomes.
+#' @param p the predicted probabilities to be checked, strictly between 0 and 1, one per
+#'   outcome.
+#' @param X a numeric matrix or data frame of covariates, one row per outcome, with column
+#'   names. At least one column.
+#' @param B number of Monte Carlo draws; the p-value lies on a grid of \code{1 / (B + 1)}.
+#' @param K grid resolution; leave at 6, the resolution the shipped weights were trained at.
+#' @param reading \code{"combined"} (the default), \code{"axes"} or \code{"allpairs"}, as in
+#'   \code{\link{deepgof1}}. The combined reading is the exact minimum of the other two,
+#'   calibrated over the same draws.
+#' @param axes optional names of two columns of \code{X} for the axis-rule map, fixing it in
+#'   advance.
+#' @return An object of class \code{"deepgof1"}, as returned by \code{\link{deepgof1}}.
+#' @references
+#' Besag, J. and Clifford, P. (1989). Generalized Monte Carlo significance tests.
+#' \emph{Biometrika}, 76(4), 633--642.
+#'
+#' Van Calster, B., Nieboer, D., Vergouwe, Y., De Cock, B., Pencina, M. J. and Steyerberg,
+#' E. W. (2016). A calibration hierarchy for risk models was defined: from utopia to
+#' empirical data. \emph{Journal of Clinical Epidemiology}, 74, 167--176.
+#' @examples
+#' set.seed(1)
+#' n <- 400
+#' X <- data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
+#' p <- plogis(-0.5 + 0.8 * X$x1 + 0.6 * X$x2)          # the published model
+#' y <- rbinom(n, 1, plogis(qlogis(p) + 0.8 * X$x1 * X$x2)) # the new patients
+#' deepgof1.external(y, p, X, B = 99)
+#' @seealso \code{\link{deepgof1}}
+#' @concept external validation
+#' @concept calibration
+#' @export
+deepgof1.external <- function(y, p, X, B = 199L, K = 6L, reading = c("combined", "axes", "allpairs"),
+                              axes = NULL) {
+  reading <- match.arg(reading)
+  if (K != deepgof1_weights$K)
+    stop("the shipped DeepGOF-1 weights are valid only at K = ", deepgof1_weights$K, call. = FALSE)
+  y <- as.numeric(y); p <- as.numeric(p)
+  if (!all(y %in% c(0, 1))) stop("'y' must be 0/1", call. = FALSE)
+  if (length(p) != length(y) || anyNA(p) || any(p <= 0 | p >= 1))
+    stop("'p' must hold one probability strictly between 0 and 1 per outcome", call. = FALSE)
+  X <- as.data.frame(X)
+  if (nrow(X) != length(y)) stop("'X' must have one row per outcome", call. = FALSE)
+  if (!all(vapply(X, is.numeric, TRUE)))
+    stop("'X' must be numeric; code a factor as numeric columns first", call. = FALSE)
+  X <- as.matrix(X)
+  if (ncol(X) < 1L || is.null(colnames(X)) || anyDuplicated(colnames(X)))
+    stop("'X' needs at least one column, with distinct names", call. = FALSE)
+  if (anyNA(X)) stop("'X' has missing values", call. = FALSE)
+  if (!is.null(axes) && (length(axes) != 2L || !all(axes %in% colnames(X)) || axes[1] == axes[2]))
+    stop("'axes' must name two different columns of 'X'", call. = FALSE)
+  M <- deepgof1_weights
+  score <- function(m) .dg_score((m - M$mu) / M$sd, M)
+  n <- length(y)
+
+  ## ties broken at random once, as in deepgof1(): the same order serves every draw
+  tb <- if (any(apply(X, 2, anyDuplicated) > 0L)) sample.int(n) else NULL
+  cells <- .dg_cells(X, K, tb)
+  one <- ncol(X) == 1L
+  if (one) {
+    kax <- 1L
+  } else {
+    if (is.null(axes)) {
+      ## the axis rule without coefficients: least squares of logit(p) on the covariates
+      b <- stats::coef(stats::lm.fit(cbind(1, X), stats::qlogis(p)))[-1L]
+      b[is.na(b)] <- 0
+      sc <- abs(b) * apply(X, 2, stats::sd)
+      axes <- colnames(X)[sort(order(sc, decreasing = TRUE)[1:2])]
+    }
+    ax <- colnames(X)[sort(match(axes, colnames(X)))]
+    kax <- which(cells$pairs[, 1L] == ax[1] & cells$pairs[, 2L] == ax[2])
+  }
+  need_all <- reading != "axes" && !one
+  stats_of <- function(yy) {
+    e <- yy - p
+    if (!need_all) {
+      s <- score(.dg_cellmap(cells$idx[[kax]], e, p, K))
+      return(c(axes = s, allpairs = s))
+    }
+    s <- vapply(cells$idx, function(i) score(.dg_cellmap(i, e, p, K)), 0)
+    structure(c(axes = s[[kax]], allpairs = max(s)), pairscores = s)
+  }
+  obs <- stats_of(y)
+  boot <- t(vapply(seq_len(B), function(b) as.numeric(stats_of(stats::rbinom(n, 1L, p))), c(0, 0)))
+  colnames(boot) <- c("axes", "allpairs")
+  p1 <- function(k) (1 + sum(boot[, k] >= obs[[k]])) / (B + 1)
+  within <- function(v) vapply(seq_along(v), function(i) sum(v >= v[i]) / length(v), 0)
+  mins <- pmin(within(c(obs[["axes"]], boot[, "axes"])), within(c(obs[["allpairs"]], boot[, "allpairs"])))
+  pv <- c(axes = p1("axes"), allpairs = p1("allpairs"), combined = sum(mins <= mins[1]) / (B + 1))
+
+  key <- if (one) "axes" else reading
+  top <- if (need_all) which.max(attr(obs, "pairscores")) else kax
+  show <- if (reading == "allpairs") top else kax
+  pairs <- if (need_all) data.frame(axis1 = cells$pairs[, 1L], axis2 = cells$pairs[, 2L],
+                                    score = attr(obs, "pairscores"), stringsAsFactors = FALSE) else NULL
+  structure(list(statistic = obs[[if (reading == "allpairs") "allpairs" else "axes"]],
+                 p.value   = as.numeric(pv[[key]]),
+                 components = if (reading == "combined" && !one) pv[c("axes", "allpairs")] else NULL,
+                 B = B, K = K, reading = if (one) "axes" else reading,
+                 axes = if (one) colnames(X) else cells$pairs[show, ],
+                 map = matrix(.dg_cellmap(cells$idx[[show]], y - p, p, K), K, K, byrow = TRUE),
+                 pairs = pairs, boot = boot[, if (reading == "allpairs") "allpairs" else "axes"],
+                 method = "DeepGOF-1 for frozen predictions: exact Monte Carlo calibration test",
+                 data.name = paste(deparse(substitute(y)), "and", deparse(substitute(p))),
+                 alternative = "the probabilities are miscalibrated within covariate subgroups"),
+            class = "deepgof1")
 }

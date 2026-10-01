@@ -14,6 +14,18 @@
   weighted binomial fit. The bootstrap draws one Bernoulli outcome per row, so such fits were never
   served correctly.
 
+* `deepgof1()` accepted a probit or complementary log-log `glm` but refitted every bootstrap sample
+  with the logit link, so the p-value was calibrated against the wrong model. The refits now use the
+  fitted model's own family and link. Logit fits are unchanged.
+
+## New function
+
+* `deepgof1.external(y, p, X)` tests frozen predictions: given probabilities for given 0/1 outcomes,
+  from a published risk model checked on new patients or from any model on a validation set. Nothing
+  is refitted, so the Monte Carlo p-value is exactly valid at every sample size. The map lays the
+  residuals out over the covariates, so the test checks calibration within covariate subgroups, and
+  it shows where the predictions are off. Readings as in `deepgof1()`; the default is `"combined"`.
+
 ## Change to the default reading
 
 * The axis rule of `deepgof1()` now works on covariates, not on columns of the model matrix. Each
