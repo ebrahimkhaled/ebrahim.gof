@@ -1799,6 +1799,9 @@ gof_ftest <- function(ctx, opts = list()) {
   "F-test"        = list(fn = gof_ftest,    family = "Partition",    needs_model = FALSE, slow = FALSE),
   "EF"            = list(fn = gof_ef,       family = "Standardized", needs_model = FALSE, slow = FALSE),
   "EF-normal"     = list(fn = gof_ef_normal, family = "Standardized", needs_model = FALSE, slow = FALSE),
+  ## EDGE, the cubic basis, at both partitions of the EDGE paper whatever the battery's G
+  "EDGE"          = list(fn = function(ctx, opts) gof_def(ctx, list(basis = "poly3", weights = opts$weights, G = "auto")), family = "Directed", needs_model = TRUE, slow = FALSE),
+  "EDGE.G10"      = list(fn = function(ctx, opts) gof_def(ctx, list(basis = "poly3", weights = opts$weights, G = 10)), family = "Directed", needs_model = TRUE, slow = FALSE),
   "DEF.poly2"     = list(fn = function(ctx, opts) gof_def(ctx, list(basis = "poly2",  weights = opts$weights, G = opts$G)), family = "Directed", needs_model = TRUE, slow = FALSE),
   "DEF.poly3"     = list(fn = function(ctx, opts) gof_def(ctx, list(basis = "poly3",  weights = opts$weights, G = opts$G)), family = "Directed", needs_model = TRUE, slow = FALSE),
   "DEF.stukel"    = list(fn = function(ctx, opts) gof_def(ctx, list(basis = "stukel", weights = opts$weights, G = opts$G)), family = "Directed", needs_model = TRUE, slow = FALSE),

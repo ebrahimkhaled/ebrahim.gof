@@ -127,6 +127,6 @@ test_that("G = 'auto' is max(10, ceiling(n / 25))", {
   x <- runif(610, -3, 3); y <- rbinom(610, 1, plogis(0.6 * x))
   fit <- glm(y ~ x, family = binomial())
   expect_identical(def.gof(fit, G = "auto"), def.gof(fit, G = 25))
-  expect_identical(edge.gof(fit, G = "auto", external = TRUE), edge.gof(fit, G = 25, external = TRUE))
+  expect_identical(edge.gof(fit, G = "auto", external = TRUE)[, -2], edge.gof(fit, G = 25, external = TRUE)[, -2])   # all but the Partition label
   expect_identical(def.ensemble.gof(fit, G = "auto"), def.ensemble.gof(fit, G = 25))
 })

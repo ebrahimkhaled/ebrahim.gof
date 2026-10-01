@@ -8,7 +8,7 @@
 #' length of that projection.
 #'
 #' \strong{Naming note:} this test is published under the name \strong{EDGE}
-#' (Ebrahim Directed Goodness-of-fit Evaluation), and \code{\link{edge.gof}} is
+#' (Efficient Directed Grouped Examination), and \code{\link{edge.gof}} is
 #' the primary interface going forward. \code{def.gof()} is retained, unchanged,
 #' as a fully supported legacy name.
 #'

@@ -55,6 +55,22 @@ test_that("a miscalibrated stream is flagged and an empty one is not tested", {
   expect_equal(summary(s)$n, 5000)
 })
 
+test_that("a stream with too few filled groups returns NA rather than an error", {
+  s <- edge.stream(breaks = c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9), G = 10)
+  s <- update(s, c(0, 1, 0, 1), c(0.05, 0.06, 0.15, 0.16))       # two groups filled, poly3 needs four
+  expect_true(is.na(summary(s)$p_value))
+  expect_equal(summary(s)$Test, "EDGE")
+})
+
+test_that("extreme predictions are clamped as in def.gof()", {
+  set.seed(25)
+  p <- c(plogis(rnorm(1990, -1, 1)), rep(1e-9, 10))
+  y <- rbinom(2000, 1, p)
+  br <- rank_breaks(pmin(pmax(p, 1e-6), 1 - 1e-6), 10)
+  ref <- def.gof(y, predicted_probs = p, G = 10, external = TRUE)
+  expect_equal(summary(update(edge.stream(breaks = br), y, p))$Test_Statistic, ref$Test_Statistic, tolerance = 1e-8)
+})
+
 test_that("bad input is refused", {
   expect_error(edge.stream(), "p_ref")
   expect_error(edge.stream(breaks = c(0.2, 1.2)), "between 0 and 1")

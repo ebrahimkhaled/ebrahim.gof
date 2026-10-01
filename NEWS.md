@@ -27,11 +27,22 @@
 
 ## Behaviour change
 
+* `edge.gof()` now reports EDGE at two partitions by default, `G = c("auto", 10)`: the default partition,
+  `max(10, ceiling(n / 25))` groups, which has more power, and ten groups, which tolerate more corrupted
+  records. The result has one row per partition and a new `Partition` column; give a single `G` for one row
+  (`edge.gof(fit, G = 10)` reproduces the earlier default). `def.gof()` is unchanged. `run.all.gof()` gains the
+  rows `EDGE` (default partition) and `EDGE.G10` (ten groups), whatever its own `G`.
+
 * `G = "auto"` in `edge.gof()`, `def.gof()`, `def.ensemble.gof()` and `run.all.gof()` now uses
   `max(10, ceiling(n / 25))` groups, the rule as published in the EDGE paper; up to 2.8.0 it used
   `round(n / 25)`. The number of groups moves by at most one, and only when the fractional part of
   `n / 25` is between 0 and 0.5 (for example n = 610 now gives 25 groups, not 24). A numeric `G` is
   unchanged.
+
+## Documentation
+
+* EDGE is now expanded as Efficient Directed Grouped Examination, the name used in the EDGE paper;
+  the function names and results are unchanged.
 
 ## New features
 

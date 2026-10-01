@@ -79,9 +79,9 @@ test_that("edge.gof and edges.gof return probabilities on a fitted model", {
   wrong <- glm(outcome ~ age + bmi + sex + treatment,
                data = gof_demo, family = binomial())
   for (f in list(edge.gof, edges.gof)) {
-    p <- f(wrong)$p_value
-    expect_true(is.numeric(p) && length(p) == 1)
-    expect_gte(p, 0); expect_lte(p, 1)
+    p <- f(wrong)$p_value                       # edge.gof reports both partitions by default
+    expect_true(is.numeric(p) && length(p) %in% 1:2)
+    expect_true(all(p >= 0 & p <= 1))
   }
 })
 

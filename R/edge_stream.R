@@ -84,6 +84,7 @@ update.edge_stream <- function(object, y, p, ...) {
   if (!all(y %in% c(0, 1))) stop("'y' must be binary (0/1).")
   if (anyNA(p) || any(p <= 0 | p >= 1)) stop("'p' must lie strictly between 0 and 1.")
   if (!length(y)) return(object)
+  p <- pmin(pmax(p, 1e-6), 1 - 1e-6)                          # the clamp of def.gof(), so the two agree exactly
   g <- findInterval(p, object$breaks, left.open = TRUE) + 1L   # group of each new record
   object$O <- object$O + tabulate_sum(g, y, object$G)
   object$E <- object$E + tabulate_sum(g, p, object$G)
@@ -105,8 +106,9 @@ tabulate_sum <- function(g, x, G) {
 summary.edge_stream <- function(object, ...) {
   keep <- object$m > 0 & object$V > 0
   n <- sum(object$m)
-  if (sum(keep) < 2)
-    return(data.frame(Test = "Directed Ebrahim-Farrington", Basis = object$basis, Test_Statistic = NA_real_,
+  need <- c(poly3 = 4L, poly2 = 3L, stukel = 4L, sym = 2L)[[object$basis]]   # distinct group means the basis needs
+  if (sum(keep) < need)
+    return(data.frame(Test = "EDGE", Basis = object$basis, Test_Statistic = NA_real_,
                       df = NA_integer_, Method = "stream", p_value = NA_real_, n = n,
                       smallest_group = if (any(keep)) min(object$m[keep]) else 0, stringsAsFactors = FALSE))
   r    <- (object$O[keep] - object$E[keep]) / sqrt(object$V[keep])
@@ -119,7 +121,7 @@ summary.edge_stream <- function(object, ...) {
   Z <- Z[, Q$pivot[seq_len(Q$rank)], drop = FALSE]
   k <- ncol(Z)
   S <- sum(qr.fitted(qr(Z), r)^2)
-  data.frame(Test = "Directed Ebrahim-Farrington", Basis = object$basis, Test_Statistic = S, df = k,
+  data.frame(Test = "EDGE", Basis = object$basis, Test_Statistic = S, df = k,
              Method = "stream", p_value = stats::pchisq(S, k, lower.tail = FALSE), n = n,
              smallest_group = min(object$m[keep]), stringsAsFactors = FALSE)
 }
