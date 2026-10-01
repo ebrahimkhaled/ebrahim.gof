@@ -19,7 +19,8 @@ def.ensemble.gof(
   add_ef = FALSE,
   combine = c("cct", "minp", "fisher"),
   G = 10,
-  extra_pvalues = NULL
+  extra_pvalues = NULL,
+  weights = c("unit", "score")
 )
 ```
 
@@ -44,8 +45,9 @@ def.ensemble.gof(
 
 - components:
 
-  Character vector, a subset of `c("poly2","poly3","stukel")`. Default
-  is all three.
+  Character vector, a subset of `c("poly2","poly3","stukel","sym")`.
+  Default is `"poly2"`, `"poly3"` and `"stukel"`, the three bases EDGES
+  is defined on.
 
 - add_ef:
 
@@ -59,12 +61,20 @@ def.ensemble.gof(
 
 - G:
 
-  Integer number of groups passed to `def.gof`/`ef.gof` (default 10).
+  Integer number of groups passed to `def.gof`/`ef.gof` (default 10), or
+  `"auto"` for `max(10, ceiling(n / 25))` as in
+  [`def.gof`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/def.gof.md).
 
 - extra_pvalues:
 
   Optional named numeric vector of additional p-values to include (e.g.
   a Tsiatis test computed elsewhere). Default `NULL`.
+
+- weights:
+
+  `"unit"` (default) or `"score"`, passed to
+  [`def.gof`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/def.gof.md)
+  for every component.
 
 ## Value
 
@@ -80,6 +90,9 @@ needs no calibration. The `"minp"` (Sidak) and `"fisher"` rules assume
 independence and are offered for comparison only; under positive
 dependence `"minp"` is conservative and `"fisher"` is anti-conservative,
 so they should be calibrated by simulation before use (not done here).
+
+With no event, or no non-event, the model has no maximum-likelihood fit:
+the p-value is `NA`, with one warning of class `def_degenerate`.
 
 ## References
 

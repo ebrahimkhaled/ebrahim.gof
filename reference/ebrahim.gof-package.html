@@ -15,7 +15,7 @@ not merely weak but invalid."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">ebrahim.gof</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.9.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -92,7 +92,8 @@ know something about what you are looking for.</p><dl><dt>No prior idea of what 
   <dt>Willing to spend a bootstrap for more power</dt>
 <dd><p><code><a href="deepgof1.html">deepgof1</a></code> —
     a pretrained convolutional statistic whose level comes from your own
-    parametric bootstrap rather than from the network.</p></dd>
+    parametric bootstrap rather than from the network; its map shows where
+    the misfit lies.</p></dd>
 
   <dt>A penalized (ridge) fit</dt>
 <dd><p><code><a href="calm.gof.html">calm.gof</a></code> for a closed-form
@@ -142,7 +143,10 @@ to journal.</p>
     <div class="section level2">
     <h2 id="author">Author<a class="anchor" aria-label="anchor" href="#author"></a></h2>
     <p><strong>Maintainer</strong>: Ebrahim Khaled Ebrahim <a href="mailto:ebrahimkhaled@alexu.edu.eg">ebrahimkhaled@alexu.edu.eg</a> (<a href="https://orcid.org/0009-0006-7839-8778" class="external-link">ORCID</a>)</p>
-    </div>
+<p>Other contributors:</p><ul><li><p>Jiawei Zhang (author of the BAGofT package code adapted in R/bagoft_fast.R) [contributor, copyright holder]</p></li>
+<li><p>Jie Ding (author of the BAGofT package code adapted in R/bagoft_fast.R) [contributor, copyright holder]</p></li>
+<li><p>Yuhong Yang (author of the BAGofT package code adapted in R/bagoft_fast.R) [contributor, copyright holder]</p></li>
+</ul></div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
@@ -159,8 +163,10 @@ to journal.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># the directed test, when misfit is expected in the calibration shape</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="edge.gof.html">edge.gof</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Test Basis Test_Statistic       df        Method   p_value</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 EDGE poly3       2.642516 2.057006 satterthwaite 0.2717296</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Test        Partition    Role Basis Test_Statistic       df        Method</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 EDGE default (G = 10) verdict poly3       2.642516 2.057006 satterthwaite</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     p_value</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 0.2717296</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

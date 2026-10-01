@@ -17,7 +17,7 @@ model. The omnibus EF test can optionally be added to the vote.'></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">ebrahim.gof</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.9.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,7 +67,8 @@ model. The omnibus EF test can optionally be added to the vote.</p>
 <span>  add_ef <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  combine <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"cct"</span>, <span class="st">"minp"</span>, <span class="st">"fisher"</span><span class="op">)</span>,</span>
 <span>  G <span class="op">=</span> <span class="fl">10</span>,</span>
-<span>  extra_pvalues <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  extra_pvalues <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  weights <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"unit"</span>, <span class="st">"score"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -91,8 +92,9 @@ calibration (only used with the <code>y</code>/<code>predicted_probs</code> form
 
 
 <dt id="arg-components">components<a class="anchor" aria-label="anchor" href="#arg-components"></a></dt>
-<dd><p>Character vector, a subset of <code>c("poly2","poly3","stukel")</code>.
-Default is all three.</p></dd>
+<dd><p>Character vector, a subset of
+<code>c("poly2","poly3","stukel","sym")</code>. Default is <code>"poly2"</code>,
+<code>"poly3"</code> and <code>"stukel"</code>, the three bases EDGES is defined on.</p></dd>
 
 
 <dt id="arg-add-ef">add_ef<a class="anchor" aria-label="anchor" href="#arg-add-ef"></a></dt>
@@ -105,12 +107,18 @@ is appended to the components. Default <code>FALSE</code>.</p></dd>
 
 
 <dt id="arg-g">G<a class="anchor" aria-label="anchor" href="#arg-g"></a></dt>
-<dd><p>Integer number of groups passed to <code>def.gof</code>/<code>ef.gof</code> (default 10).</p></dd>
+<dd><p>Integer number of groups passed to <code>def.gof</code>/<code>ef.gof</code> (default 10),
+or <code>"auto"</code> for <code>max(10, ceiling(n / 25))</code> as in <code><a href="def.gof.html">def.gof</a></code>.</p></dd>
 
 
 <dt id="arg-extra-pvalues">extra_pvalues<a class="anchor" aria-label="anchor" href="#arg-extra-pvalues"></a></dt>
 <dd><p>Optional named numeric vector of additional p-values to
 include (e.g. a Tsiatis test computed elsewhere). Default <code>NULL</code>.</p></dd>
+
+
+<dt id="arg-weights">weights<a class="anchor" aria-label="anchor" href="#arg-weights"></a></dt>
+<dd><p><code>"unit"</code> (default) or <code>"score"</code>, passed to
+<code><a href="def.gof.html">def.gof</a></code> for every component.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -127,6 +135,8 @@ calibration. The <code>"minp"</code> (Sidak) and <code>"fisher"</code> rules ass
 independence and are offered for comparison only; under positive dependence
 <code>"minp"</code> is conservative and <code>"fisher"</code> is anti-conservative, so they
 should be calibrated by simulation before use (not done here).</p>
+<p>With no event, or no non-event, the model has no maximum-likelihood fit: the
+p-value is <code>NA</code>, with one warning of class <code>def_degenerate</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>

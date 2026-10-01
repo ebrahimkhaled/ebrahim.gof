@@ -5,6 +5,15 @@
 - **Ebrahim Khaled Ebrahim**. Author, maintainer.
   [](https://orcid.org/0009-0006-7839-8778)
 
+- **Jiawei Zhang**. Contributor, copyright holder.  
+  author of the BAGofT package code adapted in R/bagoft_fast.R
+
+- **Jie Ding**. Contributor, copyright holder.  
+  author of the BAGofT package code adapted in R/bagoft_fast.R
+
+- **Yuhong Yang**. Contributor, copyright holder.  
+  author of the BAGofT package code adapted in R/bagoft_fast.R
+
 ## Citation
 
 Source:
@@ -12,14 +21,14 @@ Source:
 
 Ebrahim, E. K. and El-Kotory, A. (2026). EDGE: A Closed-Form Directed
 Goodness-of-Fit Test for Sparse Logistic Regression. R package
-ebrahim.gof version 2.7.0.
+ebrahim.gof version 2.9.0.
 https://CRAN.R-project.org/package=ebrahim.gof
 
     @Misc{,
       title = {{EDGE}: A Closed-Form Directed Goodness-of-Fit Test for Sparse Logistic Regression},
       author = {Ebrahim Khaled Ebrahim and Ahmed El-Kotory},
       year = {2026},
-      note = {Manuscript; R package ebrahim.gof version 2.7.0},
+      note = {Manuscript; R package ebrahim.gof version 2.9.0},
       url = {https://CRAN.R-project.org/package=ebrahim.gof},
     }
 

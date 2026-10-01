@@ -78,7 +78,7 @@ fit <- glm(outcome ~ age + bmi + sex + treatment,
 # sparse and grouped forms reported side by side:
 run.all.gof(fit, include_slow = FALSE, install = "no")
 #> 
-#> Goodness-of-fit battery: 24 tests  (7 reject at 0.05)
+#> Goodness-of-fit battery: 28 tests  (6 reject at 0.05)
 #> ========================================================
 #>  Test                        Statistic   df  p-value    
 #>  --- Global --------------------------------------------
@@ -96,27 +96,33 @@ run.all.gof(fit, include_slow = FALSE, install = "no")
 #>  EF-normal [b]                   1.038    8   0.1496    
 #>  --- Partition -----------------------------------------
 #>  HL                              11.79    8   0.1610    
+#>  HL-largeN [c]                   11.79    8   0.1614    
 #>  HL-equalwidth                   10.33    7   0.1706    
 #>  Pigeon-Heyse                    11.57    9   0.2387    
-#>  F-test [c]                      1.535    9   0.1312    
+#>  F-test [d]                      1.535    9   0.1312    
 #>  --- Covariate-space -----------------------------------
 #>  Tsiatis                         52.87    8  1.1e-08 ***
 #>  Xie                             48.98    7  2.3e-08 ***
-#>  Pulkstenis-Robinson [d]         84.93   43   0.0001 ***
+#>  Pulkstenis-Robinson [e]         84.93   43   0.0001 ***
 #>  --- Directed ------------------------------------------
+#>  EDGE [f]                        4.759 2.02   0.0906 .  
+#>  EDGE.G10                        4.657 2.08   0.0974 .  
 #>  DEF.poly2                       3.406 1.08   0.0645 .  
 #>  DEF.poly3                       4.657 2.08   0.0974 .  
 #>  DEF.stukel                        3.3 1.61   0.0936 .  
-#>  Stukel                          6.057    2   0.0484 *  
+#>  DEF.sym                        0.9373    1   0.0535 .  
+#>  Stukel                          4.801    2   0.0907 .  
 #>  --- Ensemble ------------------------------------------
-#>  Ensemble.Vote(3DEF) [e]                      0.0824 .  
-#>  Ensemble.Univ(3DEF+EF) [e]                   0.0924 .  
+#>  Ensemble.Vote(3DEF) [g]                      0.0824 .  
+#>  Ensemble.Univ(3DEF+EF) [g]                   0.0924 .  
 #> --------------------------------------------------------
 #>  Signif.:  *** <.001   ** <.01   * <.05   . <.1
 #>  Notes:
 #>    [a] grouped to 328 covariate patterns
 #>    [b] normal reference (thesis)
-#>    [c] deviance residuals ~ groups (ANOVA F)
-#>    [d] split on categorical: age, sex, treatment
-#>    [e] Cauchy combination of the directed tests
+#>    [c] H0: eps <= 2.74e-03 (n0 = 1e+06); eps_hat = 6.88e-02
+#>    [d] deviance residuals ~ groups (ANOVA F)
+#>    [e] split on categorical: age, sex, treatment
+#>    [f] G = 32 (auto)
+#>    [g] Cauchy combination of the directed tests
 ```

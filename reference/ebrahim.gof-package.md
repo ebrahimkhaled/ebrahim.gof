@@ -54,7 +54,8 @@ already know something about what you are looking for.
 
   [`deepgof1`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/deepgof1.md)
   — a pretrained convolutional statistic whose level comes from your own
-  parametric bootstrap rather than from the network.
+  parametric bootstrap rather than from the network; its map shows where
+  the misfit lies.
 
 - A penalized (ridge) fit:
 
@@ -107,6 +108,17 @@ The vignette
 **Maintainer**: Ebrahim Khaled Ebrahim <ebrahimkhaled@alexu.edu.eg>
 ([ORCID](https://orcid.org/0009-0006-7839-8778))
 
+Other contributors:
+
+- Jiawei Zhang (author of the BAGofT package code adapted in
+  R/bagoft_fast.R) \[contributor, copyright holder\]
+
+- Jie Ding (author of the BAGofT package code adapted in
+  R/bagoft_fast.R) \[contributor, copyright holder\]
+
+- Yuhong Yang (author of the BAGofT package code adapted in
+  R/bagoft_fast.R) \[contributor, copyright holder\]
+
 ## Examples
 
 ``` r
@@ -123,6 +135,8 @@ ef.gof(y, fitted(fit))
 
 # the directed test, when misfit is expected in the calibration shape
 edge.gof(fit)
-#>   Test Basis Test_Statistic       df        Method   p_value
-#> 1 EDGE poly3       2.642516 2.057006 satterthwaite 0.2717296
+#>   Test        Partition    Role Basis Test_Statistic       df        Method
+#> 1 EDGE default (G = 10) verdict poly3       2.642516 2.057006 satterthwaite
+#>     p_value
+#> 1 0.2717296
 ```

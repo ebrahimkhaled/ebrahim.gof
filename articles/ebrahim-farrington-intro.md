@@ -175,7 +175,7 @@ the slow tests are shown below):
 
 run.all.gof(model, include_slow = FALSE)
 #> 
-#> Goodness-of-fit battery: 21 tests  (0 reject at 0.05)
+#> Goodness-of-fit battery: 25 tests  (0 reject at 0.05)
 #> ========================================================
 #>  Test                        Statistic   df  p-value    
 #>  --- Global --------------------------------------------
@@ -190,28 +190,34 @@ run.all.gof(model, include_slow = FALSE)
 #>  EF-normal [a]                  -1.251    8   0.8945    
 #>  --- Partition -----------------------------------------
 #>  HL                              2.855    8   0.9431    
+#>  HL-largeN [b]                   2.855    8   0.9432    
 #>  HL-equalwidth                    4.86    8   0.7724    
 #>  Pigeon-Heyse                    2.877    9   0.9690    
-#>  F-test [b]                       1.11    9   0.3536    
+#>  F-test [c]                       1.11    9   0.3536    
 #>  --- Covariate-space -----------------------------------
 #>  Tsiatis                         5.778    9   0.7619    
 #>  Xie                             8.312  8.5   0.4535    
-#>  Pulkstenis-Robinson [c]                           -    
+#>  Pulkstenis-Robinson [d]                           -    
 #>  --- Directed ------------------------------------------
+#>  EDGE [e]                       0.2335 2.02   0.8904    
+#>  EDGE.G10                       0.1334 2.06   0.9395    
 #>  DEF.poly2                     0.06176 1.08   0.8227    
 #>  DEF.poly3                      0.1334 2.06   0.9395    
 #>  DEF.stukel                     0.3191    2   0.8313    
-#>  Stukel                        0.03057    2   0.9848    
+#>  DEF.sym                       0.09206    1   0.5782    
+#>  Stukel                        0.02061    2   0.9897    
 #>  --- Ensemble ------------------------------------------
-#>  Ensemble.Vote(3DEF) [d]                      0.8921    
-#>  Ensemble.Univ(3DEF+EF) [d]                   0.9070    
+#>  Ensemble.Vote(3DEF) [f]                      0.8921    
+#>  Ensemble.Univ(3DEF+EF) [f]                   0.9070    
 #> --------------------------------------------------------
 #>  Signif.:  *** <.001   ** <.01   * <.05   . <.1
 #>  Notes:
 #>    [a] normal reference (thesis)
-#>    [b] deviance residuals ~ groups (ANOVA F)
-#>    [c] Not applicable: needs a categorical covariate
-#>    [d] Cauchy combination of the directed tests
+#>    [b] H0: eps <= 2.74e-03 (n0 = 1e+06); eps_hat = 0.00e+00
+#>    [c] deviance residuals ~ groups (ANOVA F)
+#>    [d] Not applicable: needs a categorical covariate
+#>    [e] G = 20 (auto)
+#>    [f] Cauchy combination of the directed tests
 ```
 
 Add `include_slow = TRUE` to also run the opt-in slow tests (le Cessie,

@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ebrahim.gof</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.9.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -129,7 +129,7 @@ optional package is not present are simply skipped.</p>
 <span><span class="va">battery</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/run.all.gof.html">run.all.gof</a></span><span class="op">(</span><span class="va">fit</span>, include_slow <span class="op">=</span> <span class="cn">FALSE</span>, install <span class="op">=</span> <span class="st">"no"</span><span class="op">)</span></span>
 <span><span class="va">battery</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Goodness-of-fit battery: 21 tests  (16 reject at 0.05)</span></span>
+<span><span class="co">#&gt; Goodness-of-fit battery: 25 tests  (19 reject at 0.05)</span></span>
 <span><span class="co">#&gt; ========================================================</span></span>
 <span><span class="co">#&gt;  Test                        Statistic   df  p-value    </span></span>
 <span><span class="co">#&gt;  --- Global --------------------------------------------</span></span>
@@ -144,36 +144,42 @@ optional package is not present are simply skipped.</p>
 <span><span class="co">#&gt;  EF-normal [a]                   1.988    8   0.0234 *  </span></span>
 <span><span class="co">#&gt;  --- Partition -----------------------------------------</span></span>
 <span><span class="co">#&gt;  HL                              15.52    8   0.0499 *  </span></span>
+<span><span class="co">#&gt;  HL-largeN [b]                   15.52    8   0.0501 .  </span></span>
 <span><span class="co">#&gt;  HL-equalwidth                   22.11    7   0.0024 ** </span></span>
 <span><span class="co">#&gt;  Pigeon-Heyse                    15.58    9   0.0761 .  </span></span>
-<span><span class="co">#&gt;  F-test [b]                      2.088    9   0.0283 *  </span></span>
+<span><span class="co">#&gt;  F-test [c]                      2.088    9   0.0283 *  </span></span>
 <span><span class="co">#&gt;  --- Covariate-space -----------------------------------</span></span>
 <span><span class="co">#&gt;  Tsiatis                         63.53    9  2.8e-10 ***</span></span>
 <span><span class="co">#&gt;  Xie                              51.9    7  6.1e-09 ***</span></span>
-<span><span class="co">#&gt;  Pulkstenis-Robinson [c]         7.282    4   0.1217    </span></span>
+<span><span class="co">#&gt;  Pulkstenis-Robinson [d]         7.282    4   0.1217    </span></span>
 <span><span class="co">#&gt;  --- Directed ------------------------------------------</span></span>
+<span><span class="co">#&gt;  EDGE [e]                        11.21 2.01   0.0035 ** </span></span>
+<span><span class="co">#&gt;  EDGE.G10                         8.33 2.07   0.0150 *  </span></span>
 <span><span class="co">#&gt;  DEF.poly2                       8.299 1.08   0.0036 ** </span></span>
 <span><span class="co">#&gt;  DEF.poly3                        8.33 2.07   0.0150 *  </span></span>
 <span><span class="co">#&gt;  DEF.stukel                        6.5 1.56   0.0118 *  </span></span>
-<span><span class="co">#&gt;  Stukel                          14.24    2   0.0008 ***</span></span>
+<span><span class="co">#&gt;  DEF.sym                         1.519    1   0.0096 ** </span></span>
+<span><span class="co">#&gt;  Stukel                          11.58    2   0.0031 ** </span></span>
 <span><span class="co">#&gt;  --- Ensemble ------------------------------------------</span></span>
-<span><span class="co">#&gt;  Ensemble.Vote(3DEF) [d]                      0.0070 ** </span></span>
-<span><span class="co">#&gt;  Ensemble.Univ(3DEF+EF) [d]                   0.0088 ** </span></span>
+<span><span class="co">#&gt;  Ensemble.Vote(3DEF) [f]                      0.0070 ** </span></span>
+<span><span class="co">#&gt;  Ensemble.Univ(3DEF+EF) [f]                   0.0088 ** </span></span>
 <span><span class="co">#&gt; --------------------------------------------------------</span></span>
 <span><span class="co">#&gt;  Signif.:  *** &lt;.001   ** &lt;.01   * &lt;.05   . &lt;.1</span></span>
 <span><span class="co">#&gt;  Notes:</span></span>
 <span><span class="co">#&gt;    [a] normal reference (thesis)</span></span>
-<span><span class="co">#&gt;    [b] deviance residuals ~ groups (ANOVA F)</span></span>
-<span><span class="co">#&gt;    [c] split on categorical: sex, treatment</span></span>
-<span><span class="co">#&gt;    [d] Cauchy combination of the directed tests</span></span></code></pre></div>
+<span><span class="co">#&gt;    [b] H0: eps &lt;= 2.74e-03 (n0 = 1e+06); eps_hat = 9.69e-02</span></span>
+<span><span class="co">#&gt;    [c] deviance residuals ~ groups (ANOVA F)</span></span>
+<span><span class="co">#&gt;    [d] split on categorical: sex, treatment</span></span>
+<span><span class="co">#&gt;    [e] G = 32 (auto)</span></span>
+<span><span class="co">#&gt;    [f] Cauchy combination of the directed tests</span></span></code></pre></div>
 <p>Read the table by <em>family</em>. The <strong>global
 omnibus</strong> statistics (Pearson, deviance) spread their power over
 hundreds of covariate patterns and tend to <strong>miss</strong> this
 smooth misfit. The <strong>directed</strong> tests —
 <code>DEF.poly2</code>, <code>DEF.poly3</code> (EDGE),
-<code>DEF.stukel</code>, and Stukel’s score test — concentrate their few
-degrees of freedom on the calibration-curve shape and
-<strong>detect</strong> it, as do the EF test and the ensemble. That
+<code>DEF.stukel</code>, <code>DEF.sym</code>, and Stukel’s score test —
+concentrate their few degrees of freedom on the calibration-curve shape
+and <strong>detect</strong> it, as do the EF test and the ensemble. That
 contrast is the whole point of a directed test.</p>
 </div>
 <div class="section level2">
@@ -207,7 +213,7 @@ dropping from 795 to 323:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/run.all.gof.html">run.all.gof</a></span><span class="op">(</span><span class="va">fit_g</span>, include_slow <span class="op">=</span> <span class="cn">FALSE</span>, install <span class="op">=</span> <span class="st">"no"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Goodness-of-fit battery: 24 tests  (7 reject at 0.05)</span></span>
+<span><span class="co">#&gt; Goodness-of-fit battery: 28 tests  (6 reject at 0.05)</span></span>
 <span><span class="co">#&gt; ========================================================</span></span>
 <span><span class="co">#&gt;  Test                        Statistic   df  p-value    </span></span>
 <span><span class="co">#&gt;  --- Global --------------------------------------------</span></span>
@@ -225,29 +231,35 @@ dropping from 795 to 323:</p>
 <span><span class="co">#&gt;  EF-normal [b]                   1.038    8   0.1496    </span></span>
 <span><span class="co">#&gt;  --- Partition -----------------------------------------</span></span>
 <span><span class="co">#&gt;  HL                              11.79    8   0.1610    </span></span>
+<span><span class="co">#&gt;  HL-largeN [c]                   11.79    8   0.1614    </span></span>
 <span><span class="co">#&gt;  HL-equalwidth                   10.33    7   0.1706    </span></span>
 <span><span class="co">#&gt;  Pigeon-Heyse                    11.57    9   0.2387    </span></span>
-<span><span class="co">#&gt;  F-test [c]                      1.535    9   0.1312    </span></span>
+<span><span class="co">#&gt;  F-test [d]                      1.535    9   0.1312    </span></span>
 <span><span class="co">#&gt;  --- Covariate-space -----------------------------------</span></span>
 <span><span class="co">#&gt;  Tsiatis                         52.87    8  1.1e-08 ***</span></span>
 <span><span class="co">#&gt;  Xie                             48.98    7  2.3e-08 ***</span></span>
-<span><span class="co">#&gt;  Pulkstenis-Robinson [d]         84.93   43   0.0001 ***</span></span>
+<span><span class="co">#&gt;  Pulkstenis-Robinson [e]         84.93   43   0.0001 ***</span></span>
 <span><span class="co">#&gt;  --- Directed ------------------------------------------</span></span>
+<span><span class="co">#&gt;  EDGE [f]                        4.759 2.02   0.0906 .  </span></span>
+<span><span class="co">#&gt;  EDGE.G10                        4.657 2.08   0.0974 .  </span></span>
 <span><span class="co">#&gt;  DEF.poly2                       3.406 1.08   0.0645 .  </span></span>
 <span><span class="co">#&gt;  DEF.poly3                       4.657 2.08   0.0974 .  </span></span>
 <span><span class="co">#&gt;  DEF.stukel                        3.3 1.61   0.0936 .  </span></span>
-<span><span class="co">#&gt;  Stukel                          6.057    2   0.0484 *  </span></span>
+<span><span class="co">#&gt;  DEF.sym                        0.9373    1   0.0535 .  </span></span>
+<span><span class="co">#&gt;  Stukel                          4.801    2   0.0907 .  </span></span>
 <span><span class="co">#&gt;  --- Ensemble ------------------------------------------</span></span>
-<span><span class="co">#&gt;  Ensemble.Vote(3DEF) [e]                      0.0824 .  </span></span>
-<span><span class="co">#&gt;  Ensemble.Univ(3DEF+EF) [e]                   0.0924 .  </span></span>
+<span><span class="co">#&gt;  Ensemble.Vote(3DEF) [g]                      0.0824 .  </span></span>
+<span><span class="co">#&gt;  Ensemble.Univ(3DEF+EF) [g]                   0.0924 .  </span></span>
 <span><span class="co">#&gt; --------------------------------------------------------</span></span>
 <span><span class="co">#&gt;  Signif.:  *** &lt;.001   ** &lt;.01   * &lt;.05   . &lt;.1</span></span>
 <span><span class="co">#&gt;  Notes:</span></span>
 <span><span class="co">#&gt;    [a] grouped to 328 covariate patterns</span></span>
 <span><span class="co">#&gt;    [b] normal reference (thesis)</span></span>
-<span><span class="co">#&gt;    [c] deviance residuals ~ groups (ANOVA F)</span></span>
-<span><span class="co">#&gt;    [d] split on categorical: age, sex, treatment</span></span>
-<span><span class="co">#&gt;    [e] Cauchy combination of the directed tests</span></span></code></pre></div>
+<span><span class="co">#&gt;    [c] H0: eps &lt;= 2.74e-03 (n0 = 1e+06); eps_hat = 6.88e-02</span></span>
+<span><span class="co">#&gt;    [d] deviance residuals ~ groups (ANOVA F)</span></span>
+<span><span class="co">#&gt;    [e] split on categorical: age, sex, treatment</span></span>
+<span><span class="co">#&gt;    [f] G = 32 (auto)</span></span>
+<span><span class="co">#&gt;    [g] Cauchy combination of the directed tests</span></span></code></pre></div>
 <p>Same model formula, same test family, opposite verdicts — so handling
 the grouping wrong silently changes conclusions. The package’s answer is
 to never make that choice for you invisibly: both forms are printed side
@@ -263,8 +275,12 @@ grouped standardized residuals onto a small basis of smooth calibration
 shapes:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/edge.gof.html">edge.gof</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span>                 <span class="co"># directed EDGE test (poly3 basis)</span></span>
-<span><span class="co">#&gt;   Test Basis Test_Statistic       df        Method    p_value</span></span>
-<span><span class="co">#&gt; 1 EDGE poly3       8.329512 2.072814 satterthwaite 0.01496412</span></span>
+<span><span class="co">#&gt;   Test           Partition    Role Basis Test_Statistic       df        Method</span></span>
+<span><span class="co">#&gt; 1 EDGE    default (G = 32) verdict poly3      11.208214 2.014108 satterthwaite</span></span>
+<span><span class="co">#&gt; 2 EDGE ten groups (G = 10)   check poly3       8.329512 2.072814 satterthwaite</span></span>
+<span><span class="co">#&gt;       p_value</span></span>
+<span><span class="co">#&gt; 1 0.003451099</span></span>
+<span><span class="co">#&gt; 2 0.014964121</span></span>
 <span><span class="fu"><a href="../reference/def.gof.html">def.gof</a></span><span class="op">(</span><span class="va">fit</span>, basis <span class="op">=</span> <span class="st">"poly2"</span><span class="op">)</span> <span class="co"># a lower-order directed basis</span></span>
 <span><span class="co">#&gt;                          Test Basis Test_Statistic       df        Method</span></span>
 <span><span class="co">#&gt; 1 Directed Ebrahim-Farrington poly2        8.29914 1.076512 satterthwaite</span></span>

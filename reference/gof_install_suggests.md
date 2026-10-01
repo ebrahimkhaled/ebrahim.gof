@@ -3,10 +3,11 @@
 The slow tests in
 [`run.all.gof`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/run.all.gof.md)
 rely on optional packages that live in `Suggests` (givitiR and callr for
-the GiViTI calibration test, mgcv for the GAM tests, BAGofT for the
-adaptive test, and ResourceSelection for the Lai-Liu test). Per CRAN
-policy the package never installs them on its own; this helper installs
-the missing ones for you, asking first.
+the GiViTI calibration test, mgcv for the GAM tests, randomForest and
+dcov for the adaptive BAGofT test (BAGofT itself is used only on
+request), and ResourceSelection for the Lai-Liu test). Per CRAN policy
+the package never installs them on its own; this helper installs the
+missing ones for you, asking first.
 
 ## Usage
 

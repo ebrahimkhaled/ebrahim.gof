@@ -7,6 +7,14 @@ test detects. The package page has a table for choosing a single test.
 
 - [`run.all.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/run.all.gof.md)
   : Run a Battery of Goodness-of-Fit Tests at Once
+- [`run.all.external()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/run.all.external.md)
+  : Run the External-Validation Tests at Once
+- [`edge.stream()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edge.stream.md)
+  [`update(`*`<edge_stream>`*`)`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edge.stream.md)
+  [`summary(`*`<edge_stream>`*`)`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edge.stream.md)
+  [`print(`*`<edge_stream>`*`)`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edge.stream.md)
+  : EDGE for Streaming Data: Calibration Monitoring Without
+  Recomputation
 - [`ebrahim.gof-package`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/ebrahim.gof-package.md)
   [`ebrahim.gof`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/ebrahim.gof-package.md)
   : ebrahim.gof: Goodness-of-Fit and Calibration Tests for Logistic
@@ -58,6 +66,20 @@ same p-value. Nothing is retrained at call time.
   : Localize misspecification with familywise error control
 - [`deepgof1()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/deepgof1.md)
   : DeepGOF-1: a pretrained goodness-of-fit test for logistic regression
+- [`deepgof1.external()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/deepgof1.external.md)
+  : DeepGOF-1 for frozen predictions: external validation of a risk
+  model
+
+## Comparison tests
+
+Published tests implemented here so the battery can be compared with
+them on the same data: the projection test of Liu et al. (2024) and a
+fast implementation of the adaptive-partition test BAGofT.
+
+- [`projection.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/projection.gof.md)
+  : Projection Goodness-of-Fit Test for Binary Regression
+- [`bagoft.fast()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/bagoft.fast.md)
+  : Fast BAGofT: the Binary Adaptive Goodness-of-Fit Test
 
 ## Building your own scorer
 

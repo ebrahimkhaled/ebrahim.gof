@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ebrahim.gof</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.9.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -61,7 +61,7 @@
                         <h4 data-toc-skip class="author">Ebrahim Khaled
 Ebrahim</h4>
             
-            <h4 data-toc-skip class="date">2026-09-08</h4>
+            <h4 data-toc-skip class="date">2026-10-01</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/ebrahimkhaled/ebrahim.gof/blob/main/vignettes/ebrahim-farrington-intro.Rmd" class="external-link"><code>vignettes/ebrahim-farrington-intro.Rmd</code></a></small>
       <div class="d-none name"><code>ebrahim-farrington-intro.Rmd</code></div>
@@ -236,7 +236,7 @@ test (here the fast battery; the slow tests are shown below):</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/run.all.gof.html">run.all.gof</a></span><span class="op">(</span><span class="va">model</span>, include_slow <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Goodness-of-fit battery: 21 tests  (0 reject at 0.05)</span></span>
+<span><span class="co">#&gt; Goodness-of-fit battery: 25 tests  (0 reject at 0.05)</span></span>
 <span><span class="co">#&gt; ========================================================</span></span>
 <span><span class="co">#&gt;  Test                        Statistic   df  p-value    </span></span>
 <span><span class="co">#&gt;  --- Global --------------------------------------------</span></span>
@@ -251,28 +251,34 @@ test (here the fast battery; the slow tests are shown below):</p>
 <span><span class="co">#&gt;  EF-normal [a]                  -1.251    8   0.8945    </span></span>
 <span><span class="co">#&gt;  --- Partition -----------------------------------------</span></span>
 <span><span class="co">#&gt;  HL                              2.855    8   0.9431    </span></span>
+<span><span class="co">#&gt;  HL-largeN [b]                   2.855    8   0.9432    </span></span>
 <span><span class="co">#&gt;  HL-equalwidth                    4.86    8   0.7724    </span></span>
 <span><span class="co">#&gt;  Pigeon-Heyse                    2.877    9   0.9690    </span></span>
-<span><span class="co">#&gt;  F-test [b]                       1.11    9   0.3536    </span></span>
+<span><span class="co">#&gt;  F-test [c]                       1.11    9   0.3536    </span></span>
 <span><span class="co">#&gt;  --- Covariate-space -----------------------------------</span></span>
 <span><span class="co">#&gt;  Tsiatis                         5.778    9   0.7619    </span></span>
 <span><span class="co">#&gt;  Xie                             8.312  8.5   0.4535    </span></span>
-<span><span class="co">#&gt;  Pulkstenis-Robinson [c]                           -    </span></span>
+<span><span class="co">#&gt;  Pulkstenis-Robinson [d]                           -    </span></span>
 <span><span class="co">#&gt;  --- Directed ------------------------------------------</span></span>
+<span><span class="co">#&gt;  EDGE [e]                       0.2335 2.02   0.8904    </span></span>
+<span><span class="co">#&gt;  EDGE.G10                       0.1334 2.06   0.9395    </span></span>
 <span><span class="co">#&gt;  DEF.poly2                     0.06176 1.08   0.8227    </span></span>
 <span><span class="co">#&gt;  DEF.poly3                      0.1334 2.06   0.9395    </span></span>
 <span><span class="co">#&gt;  DEF.stukel                     0.3191    2   0.8313    </span></span>
-<span><span class="co">#&gt;  Stukel                        0.03057    2   0.9848    </span></span>
+<span><span class="co">#&gt;  DEF.sym                       0.09206    1   0.5782    </span></span>
+<span><span class="co">#&gt;  Stukel                        0.02061    2   0.9897    </span></span>
 <span><span class="co">#&gt;  --- Ensemble ------------------------------------------</span></span>
-<span><span class="co">#&gt;  Ensemble.Vote(3DEF) [d]                      0.8921    </span></span>
-<span><span class="co">#&gt;  Ensemble.Univ(3DEF+EF) [d]                   0.9070    </span></span>
+<span><span class="co">#&gt;  Ensemble.Vote(3DEF) [f]                      0.8921    </span></span>
+<span><span class="co">#&gt;  Ensemble.Univ(3DEF+EF) [f]                   0.9070    </span></span>
 <span><span class="co">#&gt; --------------------------------------------------------</span></span>
 <span><span class="co">#&gt;  Signif.:  *** &lt;.001   ** &lt;.01   * &lt;.05   . &lt;.1</span></span>
 <span><span class="co">#&gt;  Notes:</span></span>
 <span><span class="co">#&gt;    [a] normal reference (thesis)</span></span>
-<span><span class="co">#&gt;    [b] deviance residuals ~ groups (ANOVA F)</span></span>
-<span><span class="co">#&gt;    [c] Not applicable: needs a categorical covariate</span></span>
-<span><span class="co">#&gt;    [d] Cauchy combination of the directed tests</span></span></code></pre></div>
+<span><span class="co">#&gt;    [b] H0: eps &lt;= 2.74e-03 (n0 = 1e+06); eps_hat = 0.00e+00</span></span>
+<span><span class="co">#&gt;    [c] deviance residuals ~ groups (ANOVA F)</span></span>
+<span><span class="co">#&gt;    [d] Not applicable: needs a categorical covariate</span></span>
+<span><span class="co">#&gt;    [e] G = 20 (auto)</span></span>
+<span><span class="co">#&gt;    [f] Cauchy combination of the directed tests</span></span></code></pre></div>
 <p>Add <code>include_slow = TRUE</code> to also run the opt-in slow
 tests (le Cessie, the GAM-based tests, Stute-Zhu, eHL, BAGofT, and the
 Lai &amp; Liu standardized-power test), or pass

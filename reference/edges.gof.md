@@ -23,7 +23,7 @@ edges.gof(...)
   Arguments passed on to
   [`def.ensemble.gof`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/def.ensemble.gof.md)
   (e.g. `object`, `predicted_probs`, `X`, `components`, `add_ef`,
-  `combine`, `G`, `extra_pvalues`).
+  `combine`, `G`, `extra_pvalues`, `weights`).
 
 ## Value
 

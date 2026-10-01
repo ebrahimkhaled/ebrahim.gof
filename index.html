@@ -24,7 +24,7 @@
 
     <a class="navbar-brand me-2" href="index.html">ebrahim.gof</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.9.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -72,7 +72,7 @@
 <li>
 <strong>Ebrahim-Farrington Test</strong> (<code><a href="reference/ef.gof.html">ef.gof()</a></code>): omnibus test for binary data with automatic grouping (chi-square or normal reference)</li>
 <li>
-<strong>Directed EF Test</strong> (<code><a href="reference/def.gof.html">def.gof()</a></code>): targets calibration-shape departures (poly2/poly3/stukel bases or their ensemble)</li>
+<strong>Directed EF Test</strong> (<code><a href="reference/def.gof.html">def.gof()</a></code>): targets calibration-shape departures (poly2/poly3/stukel/sym bases or their ensemble)</li>
 <li>
 <strong>Ensemble</strong> (<code><a href="reference/def.ensemble.gof.html">def.ensemble.gof()</a></code>): combines the DEF bases via the Cauchy combination test</li>
 <li>
@@ -158,33 +158,60 @@
 <p><strong>Returns:</strong> A data frame with test name, test statistic, and p-value.</p>
 </div>
 <div class="section level3">
+<h3 id="runallexternal--external-validation-in-one-call">
+<code>run.all.external()</code> — external validation in one call<a class="anchor" aria-label="anchor" href="#runallexternal--external-validation-in-one-call"></a>
+</h3>
+<p>For predictions made without the data at hand, such as a published model checked on new patients or any machine-learning model scored on a validation set, pass the outcomes and the predicted probabilities. Nothing is refitted, so every test uses its external reference.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/run.all.external.html">run.all.external</a></span><span class="op">(</span><span class="va">y</span>, <span class="va">p</span>, G <span class="op">=</span> <span class="fl">10</span>, X <span class="op">=</span> <span class="cn">NULL</span>, include_slow <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+<p>It returns the directed test in external mode (ten groups and <code>G = "auto"</code>), Cox’s recalibration test, calibration in the large, Spiegelhalter’s z, the GiViTI test (external), the Hosmer-Lemeshow statistic on chi-squared(G), Stukel’s test on the frozen linear predictor, le Cessie’s test when <code>X</code> is given and <code>include_slow = TRUE</code>, and the O/E ratio, calibration slope and c-statistic.</p>
+</div>
+<div class="section level3">
+<h3 id="edgestream--monitoring-a-deployed-model">
+<code>edge.stream()</code> — monitoring a deployed model<a class="anchor" aria-label="anchor" href="#edgestream--monitoring-a-deployed-model"></a>
+</h3>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">s</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/edge.stream.html">edge.stream</a></span><span class="op">(</span>p_ref <span class="op">=</span> <span class="va">p_dev</span>, G <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>   <span class="co"># cut points from the development predictions</span></span>
+<span><span class="va">s</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span><span class="va">s</span>, <span class="va">y_new</span>, <span class="va">p_new</span><span class="op">)</span>              <span class="co"># each new batch, constant time per patient</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">s</span><span class="op">)</span>                                <span class="co"># the external-mode test on everything seen so far</span></span></code></pre></div>
+<p>The result equals the one-shot external test on the same groups. One test at any time is valid; if you test after every batch, spend the level over the looks (for example 0.05 / number of looks).</p>
+</div>
+<div class="section level3">
 <h3 id="defgof--directed-ebrahim-farrington-test">
 <code>def.gof()</code> — Directed Ebrahim-Farrington test<a class="anchor" aria-label="anchor" href="#defgof--directed-ebrahim-farrington-test"></a>
 </h3>
 <p>Concentrates power on calibration-curve shape directions by projecting the grouped residuals onto a small smooth basis.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/def.gof.html">def.gof</a></span><span class="op">(</span><span class="va">object</span>, predicted_probs <span class="op">=</span> <span class="cn">NULL</span>, X <span class="op">=</span> <span class="cn">NULL</span>, G <span class="op">=</span> <span class="fl">10</span>,</span>
-<span>        basis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"poly3"</span>, <span class="st">"poly2"</span>, <span class="st">"stukel"</span>, <span class="st">"ensemble"</span><span class="op">)</span>,</span>
-<span>        method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"satterthwaite"</span>, <span class="st">"imhof"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span>        basis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"poly3"</span>, <span class="st">"poly2"</span>, <span class="st">"stukel"</span>, <span class="st">"sym"</span>, <span class="st">"ensemble"</span><span class="op">)</span>,</span>
+<span>        method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"satterthwaite"</span>, <span class="st">"imhof"</span><span class="op">)</span>,</span>
+<span>        weights <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"unit"</span>, <span class="st">"score"</span><span class="op">)</span>, external <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 <ul>
 <li>
 <code>object</code>: a fitted binary-logistic <code>glm</code>, or a 0/1 response vector <code>y</code> (then give <code>predicted_probs</code>, and <code>X</code> to get the exact calibration).</li>
 <li>
-<code>basis</code>: <code>"poly3"</code> (default), <code>"poly2"</code>, <code>"stukel"</code>, or <code>"ensemble"</code> (runs all three and combines them via <code><a href="reference/def.ensemble.gof.html">def.ensemble.gof()</a></code>).</li>
+<code>external</code>: <code>TRUE</code> checks frozen predictions, as in external validation of a published model on new data: Omega is the identity, a constant column joins the basis, and the statistic is referred to chi-squared on d + 1 degrees of freedom (unit weights only).</li>
+<li>
+<code>G</code>: the number of equal-frequency groups (default 10), or <code>"auto"</code> for <code>max(10, ceiling(n / 25))</code>, the partition rule of the EDGE paper.</li>
+<li>
+<code>basis</code>: <code>"poly3"</code> (default), <code>"poly2"</code>, <code>"stukel"</code>, <code>"sym"</code> (one column, eta|eta|, Stukel’s symmetric tail direction), or <code>"ensemble"</code> (runs poly2, poly3 and stukel and combines them via <code><a href="reference/def.ensemble.gof.html">def.ensemble.gof()</a></code>).</li>
 <li>
 <code>method</code>: <code>"satterthwaite"</code> (default, no extra dependency) or <code>"imhof"</code> (exact, needs <code>CompQuadForm</code>).</li>
+<li>
+<code>weights</code>: <code>"unit"</code> (default, the published statistic) or <code>"score"</code>, which weights each basis column by the square root of its group’s variance. For a logit fit this makes the statistic the Rao score test for adding the grouped shape to the model (for other links it is a score-type test). It is referred to chi-squared on the rank of its information matrix, which is the number of columns unless one is redundant.</li>
 </ul>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">+</span> <span class="va">x2</span>, family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">binomial</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="reference/def.gof.html">def.gof</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span>                      <span class="co"># default poly3 basis</span></span>
-<span><span class="fu"><a href="reference/def.gof.html">def.gof</a></span><span class="op">(</span><span class="va">fit</span>, basis <span class="op">=</span> <span class="st">"ensemble"</span><span class="op">)</span>  <span class="co"># combined Cauchy decision</span></span></code></pre></div>
+<span><span class="fu"><a href="reference/def.gof.html">def.gof</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span>                                   <span class="co"># default poly3 basis</span></span>
+<span><span class="fu"><a href="reference/def.gof.html">def.gof</a></span><span class="op">(</span><span class="va">fit</span>, basis <span class="op">=</span> <span class="st">"sym"</span>, weights <span class="op">=</span> <span class="st">"score"</span><span class="op">)</span> <span class="co"># symmetric tail direction, score form</span></span>
+<span><span class="fu"><a href="reference/def.gof.html">def.gof</a></span><span class="op">(</span><span class="va">fit</span>, basis <span class="op">=</span> <span class="st">"ensemble"</span><span class="op">)</span>               <span class="co"># combined Cauchy decision</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="defensemblegof--combine-the-def-bases">
 <code>def.ensemble.gof()</code> — combine the DEF bases<a class="anchor" aria-label="anchor" href="#defensemblegof--combine-the-def-bases"></a>
 </h3>
 <p>Combines the three DEF basis tests (optionally the omnibus EF, or extra p-values) into one decision via the Cauchy combination test (CCT).</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/def.ensemble.gof.html">def.ensemble.gof</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span>                <span class="co"># CCT of poly2 + poly3 + stukel</span></span>
 <span><span class="fu"><a href="reference/def.ensemble.gof.html">def.ensemble.gof</a></span><span class="op">(</span><span class="va">fit</span>, add_ef <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="co"># add the omnibus EF</span></span></code></pre></div>
 </div>
@@ -193,19 +220,19 @@
 <code>run.all.gof()</code> — the whole battery in one call<a class="anchor" aria-label="anchor" href="#runallgof--the-whole-battery-in-one-call"></a>
 </h3>
 <p>Runs a large battery of goodness-of-fit tests and returns one tidy data frame (one row per test). A failing test never aborts the run.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">low</span> <span class="op">~</span> <span class="va">age</span> <span class="op">+</span> <span class="va">lwt</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">race</span><span class="op">)</span>, data <span class="op">=</span> <span class="fu">MASS</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/MASS/man/birthwt.html" class="external-link">birthwt</a></span>, family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">binomial</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/run.all.gof.html">run.all.gof</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span>                       <span class="co"># the default (fast) battery + ensemble rows</span></span>
 <span><span class="fu"><a href="reference/run.all.gof.html">run.all.gof</a></span><span class="op">(</span><span class="va">fit</span>, include_slow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>  <span class="co"># also the opt-in slow tests</span></span>
 <span><span class="fu"><a href="reference/run.all.gof.html">run.all.gof</a></span><span class="op">(</span><span class="va">fit</span>, tests <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"EF"</span>, <span class="st">"DEF.poly3"</span>, <span class="st">"HL"</span><span class="op">)</span><span class="op">)</span>   <span class="co"># a chosen subset</span></span>
 <span><span class="fu"><a href="reference/run.all.gof.html">run.all.gof</a></span><span class="op">(</span><span class="va">y</span>, <span class="fu"><a href="https://rdrr.io/r/stats/fitted.values.html" class="external-link">fitted</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span><span class="op">)</span>            <span class="co"># prediction-only tests (no model)</span></span></code></pre></div>
-<p>Default battery (19 rows): Pearson, Deviance, Osius-Rojek, Copas-RSS, Information-Matrix, Hosmer-Lemeshow (deciles and equal-width), Pigeon-Heyse, EF, EF-normal, the three DEF bases, Stukel, Tsiatis, Xie, Pulkstenis-Robinson, and the two Cauchy-combination ensemble rows. With <code>include_slow = TRUE</code> it also runs le Cessie-van Houwelingen, the GAM-based tests (HL-GAM, PR-GAM, Xie-GAM; need <code>mgcv</code>), Stute-Zhu, eHL, BAGofT, and the Lai &amp; Liu standardized-power HL test. Every test reproduces the implementation used in the original thesis simulation.</p>
+<p>Default fast battery (22 rows on fully sparse data): Pearson, Deviance, Osius-Rojek, McCullagh, Copas-RSS, Information-Matrix, Hosmer-Lemeshow (deciles and equal-width), Pigeon-Heyse, the F-test, EF, EF-normal, the four DEF bases (poly2, poly3, stukel, sym), Stukel’s joint score test, Tsiatis, Xie, Pulkstenis-Robinson, and the two Cauchy-combination ensemble rows. With <code>include_slow = TRUE</code> it also runs le Cessie-van Houwelingen, the GAM-based tests (HL-GAM, PR-GAM, Xie-GAM; need <code>mgcv</code>), Stute-Zhu, eHL, BAGofT (computed by <code><a href="reference/bagoft.fast.html">bagoft.fast()</a></code>), the projection test of Liu et al. (2024) (<code><a href="reference/projection.gof.html">projection.gof()</a></code>), and the Lai &amp; Liu standardized-power HL test. Every test reproduces the implementation used in the original thesis simulation.</p>
 </div>
 <div class="section level3">
 <h3 id="optional-packages-for-the-slow-tests">Optional packages for the slow tests<a class="anchor" aria-label="anchor" href="#optional-packages-for-the-slow-tests"></a>
 </h3>
-<p>The slow tests rely on a few optional packages (<code>givitiR</code> + <code>callr</code> for the GiViTI calibration test and belt, <code>mgcv</code> for the GAM tests, <code>BAGofT</code>, <code>ResourceSelection</code>). They are not required to install <code>ebrahim.gof</code>; a test whose package is missing is simply skipped with a note. CRAN policy forbids a package from installing anything on its own, so <code>ebrahim.gof</code> never does that silently. Instead, in an <strong>interactive</strong> session <code><a href="reference/run.all.gof.html">run.all.gof()</a></code> offers to install any missing package it needs (the default <code>install = "ask"</code>), and you can install them all up front at any time:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<p>The slow tests rely on a few optional packages (<code>givitiR</code> + <code>callr</code> for the GiViTI calibration test and belt, <code>mgcv</code> for the GAM tests, <code>randomForest</code> and <code>dcov</code> for BAGofT, <code>ResourceSelection</code>). They are not required to install <code>ebrahim.gof</code>; a test whose package is missing is simply skipped with a note. CRAN policy forbids a package from installing anything on its own, so <code>ebrahim.gof</code> never does that silently. Instead, in an <strong>interactive</strong> session <code><a href="reference/run.all.gof.html">run.all.gof()</a></code> offers to install any missing package it needs (the default <code>install = "ask"</code>), and you can install them all up front at any time:</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/gof_install_suggests.html">gof_install_suggests</a></span><span class="op">(</span><span class="op">)</span>                 <span class="co"># asks, then installs only the missing ones</span></span>
 <span><span class="fu"><a href="reference/gof_install_suggests.html">gof_install_suggests</a></span><span class="op">(</span>update <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>    <span class="co"># also update any that are out of date</span></span>
 <span><span class="fu"><a href="reference/gof_install_suggests.html">gof_install_suggests</a></span><span class="op">(</span>ask <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span>      <span class="co"># install without a prompt (setup scripts)</span></span>
@@ -312,7 +339,7 @@
 <div class="section level3">
 <h3 id="example-1-basic-usage-with-binary-data">Example 1: Basic Usage with Binary Data<a class="anchor" aria-label="anchor" href="#example-1-basic-usage-with-binary-data"></a>
 </h3>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ebrahimkhaled.github.io/ebrahim.gof/">ebrahim.gof</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Simulate binary data</span></span>
@@ -338,7 +365,7 @@
 <div class="section level3">
 <h3 id="example-2-compare-different-group-numbers">Example 2: Compare Different Group Numbers<a class="anchor" aria-label="anchor" href="#example-2-compare-different-group-numbers"></a>
 </h3>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Test with different numbers of groups</span></span>
 <span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  Groups <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fl">10</span>, <span class="fl">20</span><span class="op">)</span>,</span>
@@ -353,7 +380,7 @@
 <div class="section level3">
 <h3 id="example-3-comparison-with-hosmer-lemeshow-test">Example 3: Comparison with Hosmer-Lemeshow Test<a class="anchor" aria-label="anchor" href="#example-3-comparison-with-hosmer-lemeshow-test"></a>
 </h3>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/psolymos/ResourceSelection" class="external-link">ResourceSelection</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Ebrahim-Farrington test</span></span>
@@ -372,7 +399,7 @@
 <div class="section level3">
 <h3 id="example-4-power-analysis">Example 4: Power Analysis<a class="anchor" aria-label="anchor" href="#example-4-power-analysis"></a>
 </h3>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Function to simulate misspecified model</span></span>
 <span><span class="va">simulate_power</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">n</span>, <span class="va">beta_quad</span> <span class="op">=</span> <span class="fl">0.1</span>, <span class="va">n_sims</span> <span class="op">=</span> <span class="fl">100</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">rejections</span> <span class="op">&lt;-</span> <span class="fl">0</span></span>
@@ -409,7 +436,7 @@
 <div class="section level3">
 <h3 id="example-5-run-the-whole-battery-at-once-runallgof">Example 5: Run the whole battery at once (<code>run.all.gof</code>)<a class="anchor" aria-label="anchor" href="#example-5-run-the-whole-battery-at-once-runallgof"></a>
 </h3>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ebrahimkhaled.github.io/ebrahim.gof/">ebrahim.gof</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># a model on the classic low-birth-weight data</span></span>
@@ -430,7 +457,7 @@
 <div class="section level3">
 <h3 id="example-6-directed-test-and-the-ensemble-defgof-defensemblegof">Example 6: Directed test and the ensemble (<code>def.gof</code>, <code>def.ensemble.gof</code>)<a class="anchor" aria-label="anchor" href="#example-6-directed-test-and-the-ensemble-defgof-defensemblegof"></a>
 </h3>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
 <span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">800</span></span>
 <span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="op">-</span><span class="fl">3</span>, <span class="fl">3</span><span class="op">)</span></span>
@@ -492,7 +519,7 @@
 <h3 id="parallel-bootstrap-tests-built-in">Parallel bootstrap tests (built in)<a class="anchor" aria-label="anchor" href="#parallel-bootstrap-tests-built-in"></a>
 </h3>
 <p>Two of the slow tests — <strong>Stute–Zhu</strong> and <strong>Lai–Liu–HL</strong> — are bootstrap tests. Their resampling loops can be spread across CPU cores with a single flag:</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># run just the bootstrap test on 4 workers</span></span>
 <span><span class="fu"><a href="reference/run.all.gof.html">run.all.gof</a></span><span class="op">(</span><span class="va">fit</span>, tests <span class="op">=</span> <span class="st">"Stute-Zhu"</span>, parallel <span class="op">=</span> <span class="cn">TRUE</span>, ncores <span class="op">=</span> <span class="fl">4</span>,</span>
 <span>            control <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"Stute-Zhu"</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>B <span class="op">=</span> <span class="fl">2000</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
@@ -617,7 +644,7 @@ Email: <a href="mailto:ebrahimkhaled@alexu.edu.eg" class="email">ebrahimkhaled@a
 <li>The R community for continuous support and feedback ## Reproducing published results</li>
 </ul>
 <p>The EDGE paper’s benchmarks correspond to version 2.4.0 (the CRAN release accompanying the papers). To install that exact version later, so the published examples reproduce even after newer releases:</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_version</span><span class="op">(</span><span class="st">"ebrahim.gof"</span>, version <span class="op">=</span> <span class="st">"2.4.0"</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
@@ -649,6 +676,7 @@ Email: <a href="mailto:ebrahimkhaled@alexu.edu.eg" class="email">ebrahimkhaled@a
 <h2 data-toc-skip>Developers</h2>
 <ul class="list-unstyled">
 <li>Ebrahim Khaled Ebrahim <br><small class="roles"> Author, maintainer </small> <a href="https://orcid.org/0009-0006-7839-8778" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a>  </li>
+<li><a href="authors.html">More about authors...</a></li>
 </ul>
 </div>
 

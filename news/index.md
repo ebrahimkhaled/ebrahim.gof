@@ -1,6 +1,437 @@
 # Changelog
 
+## ebrahim.gof 2.9.0
+
+CRAN release: 2026-10-01
+
+### Bug fix
+
+- [`deepgof1()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/deepgof1.md)
+  refitted each bootstrap sample by evaluating the model formula on the
+  model frame. For a term that transforms a covariate, such as `log(x)`,
+  `ns(x, 3)` or `poly(x, 2)`, the model frame holds the transformed
+  column and not `x`, so every refit failed, every replicate was scored
+  `+Inf`, and the p-value was 1 whatever the data. The bootstrap now
+  refits on the fitted model’s design matrix with
+  [`glm.fit()`](https://rdrr.io/r/stats/glm.html), which also keeps a
+  spline basis fixed, as a parametric bootstrap under the fitted model
+  requires. For models without such terms the p-value for a given seed
+  is the same as in 2.8.0.
+
+- [`deepgof1()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/deepgof1.md)
+  now stops with a clear message for a grouped
+  (`cbind(successes, failures)`) or weighted binomial fit. The bootstrap
+  draws one Bernoulli outcome per row, so such fits were never served
+  correctly.
+
+- [`deepgof1()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/deepgof1.md)
+  accepted a probit or complementary log-log `glm` but refitted every
+  bootstrap sample with the logit link, so the p-value was calibrated
+  against the wrong model. The refits now use the fitted model’s own
+  family and link. Logit fits are unchanged.
+
+### New function
+
+- `deepgof1.external(y, p, X)` tests frozen predictions: given
+  probabilities for given 0/1 outcomes, from a published risk model
+  checked on new patients or from any model on a validation set. Nothing
+  is refitted, so the Monte Carlo p-value is exactly valid at every
+  sample size. The map lays the residuals out over the covariates, so
+  the test checks calibration within covariate subgroups, and it shows
+  where the predictions are off. Readings as in
+  [`deepgof1()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/deepgof1.md);
+  the default is `"combined"`.
+
+### Change to the default reading
+
+- The axis rule of
+  [`deepgof1()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/deepgof1.md)
+  now works on covariates, not on columns of the model matrix. Each
+  covariate is scored by the standard deviation of its terms’ total
+  contribution to the linear predictor, and the map is drawn over the
+  ranks of the covariate itself. Up to 2.8.0 the rule scored
+  model-matrix columns, so after a repair such as `ns(x, 3)` it could
+  choose two spline columns of the same covariate and draw a map that
+  shows no other covariate; a factor entered through its dummy columns.
+  For a model whose covariates all enter as one untransformed column the
+  score is \|b\| \* sd, the earlier rule, and the axes, the map and the
+  p-value for a given seed are the same as in 2.8.0. The earlier rule is
+  kept as `reading = "columns"`, for reproducing results.
+
+### Behaviour change
+
+- [`edge.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edge.gof.md)
+  now reports EDGE at two partitions by default, `G = c("auto", 10)`:
+  the default partition, `max(10, ceiling(n / 25))` groups, which has
+  more power, and ten groups, which tolerate more corrupted records. The
+  result has one row per partition and a new `Partition` column; give a
+  single `G` for one row (`edge.gof(fit, G = 10)` reproduces the earlier
+  default).
+  [`def.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/def.gof.md)
+  is unchanged.
+  [`run.all.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/run.all.gof.md)
+  gains the rows `EDGE` (default partition) and `EDGE.G10` (ten groups),
+  whatever its own `G`.
+
+- A `Role` column marks the first row `"verdict"` and the second
+  `"check"`, so the partition that decides is the one listed first;
+  `G = c(10, "auto")` lets ten groups decide.
+  [`edge.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edge.gof.md)
+  also accepts the outcome as `y =` for frozen predictions,
+  `edge.gof(y = y, predicted_probs = p, external = TRUE)`.
+
+- `G = "auto"` in
+  [`edge.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edge.gof.md),
+  [`def.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/def.gof.md),
+  [`def.ensemble.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/def.ensemble.gof.md)
+  and
+  [`run.all.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/run.all.gof.md)
+  now uses `max(10, ceiling(n / 25))` groups, the rule as published in
+  the EDGE paper; up to 2.8.0 it used `round(n / 25)`. The number of
+  groups moves by at most one, and only when the fractional part of
+  `n / 25` is between 0 and 0.5 (for example n = 610 now gives 25
+  groups, not 24). A numeric `G` is unchanged.
+
+### Documentation
+
+- EDGE is now expanded as Efficient Directed Grouped Examination, the
+  name used in the EDGE paper; the function names and results are
+  unchanged.
+
+### New features
+
+- [`run.all.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/run.all.gof.md)
+  gains `HL-largeN`, the large-sample Hosmer-Lemeshow test of Nattino,
+  Pennell and Lemeshow (2020, Biometrics 76:549). It tests whether the
+  misfit exceeds a tolerance rather than whether the model fits
+  perfectly, by referring the ordinary statistic to a noncentral
+  chi-square on G - 2 df with noncentrality eps0^2 n, eps0 being the
+  misfit just significant at n0 = 10^6
+  (`control = list("HL-largeN" = list(n0 = ...))`). It reproduces their
+  application (C = 25.35, n = 315,828: p = 0.010).
+
+- [`edge.stream()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edge.stream.md)
+  monitors a deployed model as patients arrive. It keeps four sums per
+  risk group, with cut points fixed in advance from reference
+  predictions (`p_ref`) or given as `breaks`; `update(s, y, p)` adds a
+  batch in constant time per record and `summary(s)` returns the
+  external-mode test without revisiting earlier records. The streamed
+  statistic equals the one-shot `def.gof(..., external = TRUE)`
+  statistic on the same groups, whatever the order or batching of the
+  updates, and keeps its reference when the risk distribution of later
+  patients drifts. Testing after every batch needs the level spent over
+  the looks; the help page says how.
+
+- `run.all.external(y, p)` runs the external-validation tests at once,
+  for predictions made without the data at hand (a published model, or
+  any model, applied to new patients). It needs only the outcomes and
+  the predicted probabilities, refits nothing, and returns the battery
+  format of
+  [`run.all.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/run.all.gof.md):
+  the directed test in external mode at ten groups and at `G = "auto"`,
+  Cox’s recalibration test (with the calibration intercept and slope),
+  calibration in the large, Spiegelhalter’s z, the GiViTI test in
+  external mode, the Hosmer-Lemeshow statistic referred to chi-squared
+  on G, Stukel’s terms on the frozen linear predictor, and, given
+  covariates and `include_slow = TRUE`, le Cessie’s kernel statistic
+  with Omega = I; plus the O/E ratio, the calibration slope and the
+  c-statistic. `run.all.gof(y, p)` treats the predictions as fitted to
+  `y` and so uses the internal references, which are conservative on
+  frozen predictions.
+
+- [`edge.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edge.gof.md)
+  and
+  [`def.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/def.gof.md)
+  gain `external = FALSE`. With `external = TRUE` the predicted
+  probabilities are taken as frozen, as when a published model is
+  checked on new data: the covariance of the grouped residuals is the
+  identity, a constant column joins the basis because no score equation
+  absorbs the overall level, and the statistic is referred to
+  chi-squared on d + 1 degrees of freedom, with no “conservative”
+  warning. Given a glm, its fitted probabilities are the frozen
+  predictions. Only `weights = "unit"` is supported. The default is
+  unchanged.
+
+- `deepgof1(reading = "allpairs")` scores the residual map of every pair
+  of covariates and takes the largest score as its statistic. The same
+  maximum is taken in every bootstrap replicate, so the p-value needs no
+  correction for the choice of pair. The default axis rule reads
+  covariates by their fitted effects, so it can pass over a covariate
+  whose effect is a pure U-shape. The two readings suit different
+  designs. With few covariates the maximum over pairs has more power: on
+  the benchmark of Liu et al. (2024, Statistics and Computing 34:175),
+  whose settings have at most three covariates, with B = 199 and matched
+  level .05, it has power .640 against .580 for the axis rule, and a
+  null rejection rate of .050. With many covariates the maximum pays for
+  the number of pairs: with two active covariates among ten, the axis
+  rule finds the active pair in 93 to 100 per cent of datasets and has
+  more power than the all-pairs reading in all twelve settings studied
+  (.453 against .286 on average).
+
+- `deepgof1(reading = "combined")` computes both from the same bootstrap
+  refits and reports the smaller of their two p-values, calibrated
+  exactly by ranking the observed minimum among the B + 1 minima; the
+  two p-values are returned as `components`.
+
+- In the all-pairs and combined readings the maps are drawn over the
+  covariates, as in the axis rule: a covariate that enters as
+  `ns(x, 3)`, `poly(x, 2)` or `I(x^2)` is ranked by `x` itself, and an
+  interaction adds no axis of its own. Transformed covariates are read
+  from the data the model was fitted to, on the rows the fit kept. A
+  factor is one covariate, entered by its level codes. The argument
+  `covariates` restricts the pairs to a chosen set.
+
+- A model with one covariate is now accepted: the map is 36 quantile
+  cells along its ranks, the construction of the benchmark above for its
+  one-covariate setting. The shipped network was trained on
+  two-covariate maps only; on that setting it holds its level (.055) and
+  has power .735 at matched level .05, about .10 below networks trained
+  on this map. Earlier versions stopped with an error.
+
+- The result now also holds `map`, the 6 x 6 map that gave the statistic
+  (rows follow the first axis), and, for the all-pairs and combined
+  readings, `pairs`, the observed score of every pair, so the test says
+  where the misfit lies as well as whether it is there.
+
+## ebrahim.gof 2.8.0
+
+CRAN release: 2026-09-26
+
+### Bug fix
+
+- [`deepgof1()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/deepgof1.md)
+  put covariate values that are tied into cells of its residual map by
+  row order. When the rows of the data are sorted by the outcome, as
+  clinical files often are, tied rows were then placed by their outcome,
+  while the bootstrap outcomes were not sorted, so a correct model could
+  be rejected. On `aplore3::glow500`, sorted with all fractures last,
+  the model with the interactions AGE x PRIORFRAC and MOMFRAC x
+  ARMASSIST gave p = .005 in file order and a median p of .54 over 30
+  random row orders. Ties among covariate values are now broken at
+  random. The random order is drawn once per call and used for the
+  observed map and for every bootstrap map, so the p-value no longer
+  depends on the order of the rows. For rows in random order the test
+  has the same distribution as before. When no covariate column has a
+  tie nothing extra is drawn, and the p-value for a given seed is the
+  same as in 2.7.0.
+
+- The `Stukel` row of
+  [`run.all.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/run.all.gof.md)
+  squared and summed the two marginal score statistics of Stukel’s two
+  tail directions and referred the sum to chi-squared on 2 degrees of
+  freedom. That is the statistic of `LogisticDx::gof.glm()` (“SstBoth”),
+  which the battery was built to reproduce, but it is not chi-squared on
+  2 degrees of freedom: once the model is fitted the two directions are
+  correlated, and the sum is liberal: for example, a post-fit
+  correlation of about -0.71 in a typical design, and a rejection rate
+  of up to about 7 per cent at the 5 per cent level. Against symmetric
+  departures from the logit it also loses much of its power. The row now
+  reports the joint score statistic, which is the score test for adding
+  both directions to the model and agrees with
+  `anova(..., test = "Rao")` up to glm’s convergence tolerance. The
+  joint test gives up a little power against one-sided (cloglog-type)
+  departures. The old statistic is still available, for reproducing
+  earlier results only, with
+  `control = list(Stukel = list(form = "marginal"))`. The 2.0.0 entry
+  below, which says the row matches `LogisticDx`, now holds only for
+  that form. Aliased columns of the model are left out of the joint and
+  likelihood-ratio forms.
+
+- When every fitted risk lay on one side of one half, one of Stukel’s
+  directions was identically zero and the row returned `NaN` without a
+  note. It now reports the one-degree-of-freedom score test on the
+  remaining direction, and says so in `Note`.
+
+- [`def.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/def.gof.md)
+  and
+  [`edge.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edge.gof.md)
+  with `basis = "stukel"` stopped with “system is computationally
+  singular” when one group’s mean fitted risk lay just above one half.
+  The basis column for risks at or above one half was then about 1e-7:
+  large enough to pass the old filter, small enough to break the solve.
+  The kept columns are now scaled to unit length before any solve, which
+  does not change the statistic.
+
+### New features
+
+- `control = list(Stukel = list(form = "lr"))` gives the
+  likelihood-ratio test for the same two directions: the model is
+  refitted with them added, and the drop in deviance is referred to
+  chi-squared on the number of added columns the refit can estimate (one
+  when every fitted risk lies on one side of one half). If the refit
+  fails or does not converge, as it can under separation, the row
+  returns `NA` and says why. The joint and likelihood-ratio forms need
+  an unweighted logit fit to binary data, and return `NA` with a note
+  otherwise.
+
+- [`edge.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edge.gof.md)
+  and
+  [`def.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/def.gof.md)
+  gain the basis `"sym"`: one column, eta\|eta\|, at the logit of each
+  group’s mean fitted risk. It is Stukel’s symmetric direction in
+  grouped form and is aimed at tails that are too heavy or too light on
+  both sides, such as a probit or cauchit truth fitted by a logit. The
+  battery reports it as `DEF.sym`, so the fast battery has one more row.
+  [`def.ensemble.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/def.ensemble.gof.md)
+  accepts `"sym"` as a component; its default components are unchanged.
+
+- [`edge.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edge.gof.md),
+  [`def.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/def.gof.md)
+  and
+  [`def.ensemble.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/def.ensemble.gof.md)
+  gain `weights = c("unit", "score")`. `"unit"` is the published
+  statistic and stays the default. `"score"` multiplies each basis
+  column by the square root of its group’s variance. For a logit fit the
+  statistic then becomes the Rao score test for adding the grouped
+  columns to the model (for other links it is a score-type test). It is
+  referred to chi-squared on the rank of its information matrix, which
+  is the number of columns unless one is redundant. When group variances
+  differ strongly, as they do at high discrimination, this keeps shapes
+  on the logit scale from losing their signal. The result keeps its six
+  columns, with `Method = "score"` and an integer `df`. In the battery,
+  use `control = list(DEF.sym = list(weights = "score"))`. The two
+  ensemble rows of the battery still combine the unit form of
+  `DEF.poly2`, `DEF.poly3` and `DEF.stukel` at the battery’s `G`; when
+  `control` gives those rows other `weights` or another `G`, the
+  ensemble rows say “unit form” in `Note`.
+
+- [`edge.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edge.gof.md),
+  [`def.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/def.gof.md)
+  and
+  [`def.ensemble.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/def.ensemble.gof.md)
+  accept `G = "auto"`, which uses `max(10, round(n / 25))` groups, the
+  partition rule of the EDGE paper. A number is used as before. In the
+  battery, `control = list(DEF.poly3 = list(G = "auto"))` applies it to
+  one directed row, and `Note` records the number of groups used.
+  `run.all.gof(G = "auto")` resolves the rule once, so every row, the EF
+  and ensemble rows included, uses the same number of groups, and the
+  directed rows record it in `Note`. Any other non-numeric `G` is now an
+  error rather than a failure of each row.
+
+- [`projection.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/projection.gof.md)
+  is the projection test of Escanciano (2006), as defined for logistic
+  regression by Liu et al. (2024, Statistics and Computing 34:175), also
+  in the battery as the slow row `"Projection"` (family “Bootstrap”).
+  The residual process is taken along every direction of the covariate
+  space rather than only along the fitted linear predictor, as in
+  `Stute-Zhu`, so the test also sees departures such as an omitted
+  interaction. The weight is the closed form of the integral over the
+  sphere, (pi - angle) / (2 pi), on the raw covariates, and the p-value
+  comes from Liu et al.’s model-based bootstrap with B = 1000 refits by
+  default, the number they use in their data examples. The weight costs
+  O(n^3) time and O(n^2) memory, in pure R; the battery row is skipped
+  above n = 3000 unless `control = list(Projection = list(max_n = ...))`
+  raises it. The tests check the weight against a Monte Carlo over
+  random directions, and exactly in the one-covariate case. Timing with
+  two covariates and B = 1000: 1.1 s at n = 200 and 6.4 s at n = 500, of
+  which the weight takes 0.2 s and 4.4 s.
+
+- [`bagoft.fast()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/bagoft.fast.md)
+  computes the BAGofT test of Zhang, Ding and Yang (2023, JASA) and
+  returns the same p-values as the BAGofT package 1.0.0 for the same
+  seed, identical to the last bit, including the distance-correlation
+  pre-selection that BAGofT runs above five covariates. It draws every
+  random number by the same call, in the same order, and removes the
+  package’s per-split overhead (formula parsing, model frames,
+  [`xtabs()`](https://rdrr.io/r/stats/xtabs.html),
+  [`cut()`](https://rdrr.io/r/base/cut.html) labels, the
+  [`predict()`](https://rdrr.io/r/stats/predict.html) wrappers). Timing
+  with the package defaults (nsplits = 100, nsim = 100), two covariates:
+  99 s against 239 s for the package at n = 200, and 188 s at n = 500,
+  where the package is estimated at about 360 s (39 s against 20 s
+  measured with nsim = 10). The rest of the time is the forests
+  themselves. It also runs where BAGofT 1.0.0 stops: a single covariate,
+  and formulas with transformed terms. The code is adapted from BAGofT
+  (GPL-3); its authors are credited in `DESCRIPTION` as contributors and
+  copyright holders. It needs `randomForest`, and `dcov` above five
+  covariates, both now in Suggests.
+
+- The `BAGofT` row of
+  [`run.all.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/run.all.gof.md)
+  now uses
+  [`bagoft.fast()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/bagoft.fast.md)
+  by default when `randomForest` is installed. The p-value is the same
+  as before for the same seed; only the time changes.
+  `control = list(BAGofT = list(engine = "package"))` calls the BAGofT
+  package as before, and `Note` says which engine ran.
+
+### Behaviour changes
+
+- [`def.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/def.gof.md),
+  and so
+  [`edge.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edge.gof.md)
+  and
+  [`def.ensemble.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/def.ensemble.gof.md),
+  now warn when there are fewer events, or fewer non-events, than
+  groups. The p-value is still returned, but some groups then hold
+  almost no events and the grouped reference distribution is unreliable.
+  [`def.ensemble.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/def.ensemble.gof.md)
+  warns once rather than once per basis, and in
+  [`run.all.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/run.all.gof.md)
+  the directed rows report it in `Note` instead.
+
+- A sample with no event, or no non-event, has no maximum-likelihood
+  fit.
+  [`def.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/def.gof.md)
+  in either form,
+  [`edge.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edge.gof.md)
+  and
+  [`def.ensemble.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/def.ensemble.gof.md)
+  now return `NA` for it, with a warning of class `def_degenerate`,
+  instead of stopping with an error or, for the score form, returning a
+  p-value of zero.
+  [`def.ensemble.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/def.ensemble.gof.md)
+  warns once. In
+  [`run.all.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/run.all.gof.md)
+  the directed rows say so in `Note`, and every form of the `Stukel`
+  row, `"marginal"` included, returns `NA` with a note.
+
+- The score form of
+  [`def.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/def.gof.md)
+  (and
+  [`edge.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edge.gof.md))
+  and the joint form of the `Stukel` row now leave out a column that the
+  fitted model already spans: one whose information after the fit is
+  below 1e-10 of its information before the fit. This happens when the
+  fitted logit is constant or nearly so, for example in a sample with
+  two or three events. The information of such a column is rounding
+  noise, and inverting it could give a p-value of zero. When no column
+  is left,
+  [`def.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/def.gof.md)
+  returns `NA` with a warning of class `def_no_information`, and the
+  `Stukel` row returns `NA` with a note.
+
+- [`deepgof1()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/deepgof1.md):
+  when some covariate column has tied values, the random tie-breaking
+  draws from the random-number stream, so for a given seed such calls
+  give a different p-value than in 2.7.0. Calls without ties give the
+  same p-value as before. The map still uses the two covariates selected
+  by the fitted coefficients, as in 2.7.0.
+
+- The full battery of
+  [`run.all.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/run.all.gof.md)
+  (`include_slow = TRUE`) has one more slow row, `Projection`. The
+  `BAGofT` row no longer needs the BAGofT package when `randomForest` is
+  installed, and
+  [`gof_install_suggests()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/gof_install_suggests.md)
+  now offers `randomForest` and `dcov` for it.
+
+### Documentation
+
+- [`?run.all.gof`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/run.all.gof.md)
+  said that Stukel’s two-parameter form does not always hold its nominal
+  level. That was a property of the summed statistic, not of the test,
+  and the sentence has been replaced.
+
+- The reference to Zhang, Ding and Yang in
+  [`?run.all.gof`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/run.all.gof.md)
+  gave the wrong issue and pages; it is now JASA 118(542), 1115-1125
+  (2023), and a second, incomplete entry for the same paper has been
+  removed.
+
 ## ebrahim.gof 2.7.0
+
+CRAN release: 2026-09-09
 
 ### Bug fix
 

@@ -38,7 +38,7 @@ for a full walkthrough on the bundled `gof_demo` dataset.
   normal reference)
 - **Directed EF Test**
   ([`def.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/def.gof.md)):
-  targets calibration-shape departures (poly2/poly3/stukel bases or
+  targets calibration-shape departures (poly2/poly3/stukel/sym bases or
   their ensemble)
 - **Ensemble**
   ([`def.ensemble.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/def.ensemble.gof.md)):
@@ -153,6 +153,38 @@ original Farrington test only) - `m`: Optional vector of trial counts
 
 **Returns:** A data frame with test name, test statistic, and p-value.
 
+### `run.all.external()` — external validation in one call
+
+For predictions made without the data at hand, such as a published model
+checked on new patients or any machine-learning model scored on a
+validation set, pass the outcomes and the predicted probabilities.
+Nothing is refitted, so every test uses its external reference.
+
+``` r
+
+run.all.external(y, p, G = 10, X = NULL, include_slow = FALSE)
+```
+
+It returns the directed test in external mode (ten groups and
+`G = "auto"`), Cox’s recalibration test, calibration in the large,
+Spiegelhalter’s z, the GiViTI test (external), the Hosmer-Lemeshow
+statistic on chi-squared(G), Stukel’s test on the frozen linear
+predictor, le Cessie’s test when `X` is given and `include_slow = TRUE`,
+and the O/E ratio, calibration slope and c-statistic.
+
+### `edge.stream()` — monitoring a deployed model
+
+``` r
+
+s <- edge.stream(p_ref = p_dev, G = 10)   # cut points from the development predictions
+s <- update(s, y_new, p_new)              # each new batch, constant time per patient
+summary(s)                                # the external-mode test on everything seen so far
+```
+
+The result equals the one-shot external test on the same groups. One
+test at any time is valid; if you test after every batch, spend the
+level over the looks (for example 0.05 / number of looks).
+
 ### `def.gof()` — Directed Ebrahim-Farrington test
 
 Concentrates power on calibration-curve shape directions by projecting
@@ -161,23 +193,39 @@ the grouped residuals onto a small smooth basis.
 ``` r
 
 def.gof(object, predicted_probs = NULL, X = NULL, G = 10,
-        basis = c("poly3", "poly2", "stukel", "ensemble"),
-        method = c("satterthwaite", "imhof"))
+        basis = c("poly3", "poly2", "stukel", "sym", "ensemble"),
+        method = c("satterthwaite", "imhof"),
+        weights = c("unit", "score"), external = FALSE)
 ```
 
 - `object`: a fitted binary-logistic `glm`, or a 0/1 response vector `y`
   (then give `predicted_probs`, and `X` to get the exact calibration).
-- `basis`: `"poly3"` (default), `"poly2"`, `"stukel"`, or `"ensemble"`
-  (runs all three and combines them via
+- `external`: `TRUE` checks frozen predictions, as in external
+  validation of a published model on new data: Omega is the identity, a
+  constant column joins the basis, and the statistic is referred to
+  chi-squared on d + 1 degrees of freedom (unit weights only).
+- `G`: the number of equal-frequency groups (default 10), or `"auto"`
+  for `max(10, ceiling(n / 25))`, the partition rule of the EDGE paper.
+- `basis`: `"poly3"` (default), `"poly2"`, `"stukel"`, `"sym"` (one
+  column, eta\|eta\|, Stukel’s symmetric tail direction), or
+  `"ensemble"` (runs poly2, poly3 and stukel and combines them via
   [`def.ensemble.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/def.ensemble.gof.md)).
 - `method`: `"satterthwaite"` (default, no extra dependency) or
   `"imhof"` (exact, needs `CompQuadForm`).
+- `weights`: `"unit"` (default, the published statistic) or `"score"`,
+  which weights each basis column by the square root of its group’s
+  variance. For a logit fit this makes the statistic the Rao score test
+  for adding the grouped shape to the model (for other links it is a
+  score-type test). It is referred to chi-squared on the rank of its
+  information matrix, which is the number of columns unless one is
+  redundant.
 
 ``` r
 
 fit <- glm(y ~ x1 + x2, family = binomial())
-def.gof(fit)                      # default poly3 basis
-def.gof(fit, basis = "ensemble")  # combined Cauchy decision
+def.gof(fit)                                   # default poly3 basis
+def.gof(fit, basis = "sym", weights = "score") # symmetric tail direction, score form
+def.gof(fit, basis = "ensemble")               # combined Cauchy decision
 ```
 
 ### `def.ensemble.gof()` — combine the DEF bases
@@ -205,24 +253,29 @@ run.all.gof(fit, tests = c("EF", "DEF.poly3", "HL"))   # a chosen subset
 run.all.gof(y, fitted(fit))            # prediction-only tests (no model)
 ```
 
-Default battery (19 rows): Pearson, Deviance, Osius-Rojek, Copas-RSS,
-Information-Matrix, Hosmer-Lemeshow (deciles and equal-width),
-Pigeon-Heyse, EF, EF-normal, the three DEF bases, Stukel, Tsiatis, Xie,
-Pulkstenis-Robinson, and the two Cauchy-combination ensemble rows. With
-`include_slow = TRUE` it also runs le Cessie-van Houwelingen, the
-GAM-based tests (HL-GAM, PR-GAM, Xie-GAM; need `mgcv`), Stute-Zhu, eHL,
-BAGofT, and the Lai & Liu standardized-power HL test. Every test
-reproduces the implementation used in the original thesis simulation.
+Default fast battery (22 rows on fully sparse data): Pearson, Deviance,
+Osius-Rojek, McCullagh, Copas-RSS, Information-Matrix, Hosmer-Lemeshow
+(deciles and equal-width), Pigeon-Heyse, the F-test, EF, EF-normal, the
+four DEF bases (poly2, poly3, stukel, sym), Stukel’s joint score test,
+Tsiatis, Xie, Pulkstenis-Robinson, and the two Cauchy-combination
+ensemble rows. With `include_slow = TRUE` it also runs le Cessie-van
+Houwelingen, the GAM-based tests (HL-GAM, PR-GAM, Xie-GAM; need `mgcv`),
+Stute-Zhu, eHL, BAGofT (computed by
+[`bagoft.fast()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/bagoft.fast.md)),
+the projection test of Liu et al. (2024)
+([`projection.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/projection.gof.md)),
+and the Lai & Liu standardized-power HL test. Every test reproduces the
+implementation used in the original thesis simulation.
 
 ### Optional packages for the slow tests
 
 The slow tests rely on a few optional packages (`givitiR` + `callr` for
 the GiViTI calibration test and belt, `mgcv` for the GAM tests,
-`BAGofT`, `ResourceSelection`). They are not required to install
-`ebrahim.gof`; a test whose package is missing is simply skipped with a
-note. CRAN policy forbids a package from installing anything on its own,
-so `ebrahim.gof` never does that silently. Instead, in an
-**interactive** session
+`randomForest` and `dcov` for BAGofT, `ResourceSelection`). They are not
+required to install `ebrahim.gof`; a test whose package is missing is
+simply skipped with a note. CRAN policy forbids a package from
+installing anything on its own, so `ebrahim.gof` never does that
+silently. Instead, in an **interactive** session
 [`run.all.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/run.all.gof.md)
 offers to install any missing package it needs (the default
 `install = "ask"`), and you can install them all up front at any time:
@@ -665,6 +718,14 @@ test detects. The package page has a table for choosing a single test.
 
 - [`run.all.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/run.all.gof.md)
   : Run a Battery of Goodness-of-Fit Tests at Once
+- [`run.all.external()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/run.all.external.md)
+  : Run the External-Validation Tests at Once
+- [`edge.stream()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edge.stream.md)
+  [`update(`*`<edge_stream>`*`)`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edge.stream.md)
+  [`summary(`*`<edge_stream>`*`)`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edge.stream.md)
+  [`print(`*`<edge_stream>`*`)`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edge.stream.md)
+  : EDGE for Streaming Data: Calibration Monitoring Without
+  Recomputation
 - [`ebrahim.gof-package`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/ebrahim.gof-package.md)
   [`ebrahim.gof`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/ebrahim.gof-package.md)
   : ebrahim.gof: Goodness-of-Fit and Calibration Tests for Logistic
@@ -716,6 +777,20 @@ same p-value. Nothing is retrained at call time.
   : Localize misspecification with familywise error control
 - [`deepgof1()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/deepgof1.md)
   : DeepGOF-1: a pretrained goodness-of-fit test for logistic regression
+- [`deepgof1.external()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/deepgof1.external.md)
+  : DeepGOF-1 for frozen predictions: external validation of a risk
+  model
+
+## Comparison tests
+
+Published tests implemented here so the battery can be compared with
+them on the same data: the projection test of Liu et al. (2024) and a
+fast implementation of the adaptive-partition test BAGofT.
+
+- [`projection.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/projection.gof.md)
+  : Projection Goodness-of-Fit Test for Binary Regression
+- [`bagoft.fast()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/bagoft.fast.md)
+  : Fast BAGofT: the Binary Adaptive Goodness-of-Fit Test
 
 ## Building your own scorer
 

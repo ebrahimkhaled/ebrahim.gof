@@ -62,6 +62,10 @@ data("gof_demo", package = "ebrahim.gof")
 fit <- glm(outcome ~ age + bmi + sex + treatment,
            data = gof_demo, family = binomial)
 edge.gof(fit)
-#>   Test Basis Test_Statistic       df        Method    p_value
-#> 1 EDGE poly3       8.329512 2.072814 satterthwaite 0.01496412
+#>   Test           Partition    Role Basis Test_Statistic       df        Method
+#> 1 EDGE    default (G = 32) verdict poly3      11.208214 2.014108 satterthwaite
+#> 2 EDGE ten groups (G = 10)   check poly3       8.329512 2.072814 satterthwaite
+#>       p_value
+#> 1 0.003451099
+#> 2 0.014964121
 ```

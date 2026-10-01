@@ -23,7 +23,7 @@ gof_demo)."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">ebrahim.gof</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.9.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -126,7 +126,7 @@ own pattern) the two forms coincide – the degenerate case.</p>
 <span class="r-in"><span><span class="co"># sparse and grouped forms reported side by side:</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="run.all.gof.html">run.all.gof</a></span><span class="op">(</span><span class="va">fit</span>, include_slow <span class="op">=</span> <span class="cn">FALSE</span>, install <span class="op">=</span> <span class="st">"no"</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Goodness-of-fit battery: 24 tests  (7 reject at 0.05)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Goodness-of-fit battery: 28 tests  (6 reject at 0.05)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ========================================================</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Test                        Statistic   df  p-value    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  --- Global --------------------------------------------</span>
@@ -144,29 +144,35 @@ own pattern) the two forms coincide – the degenerate case.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  EF-normal [b]                   1.038    8   0.1496    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  --- Partition -----------------------------------------</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  HL                              11.79    8   0.1610    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  HL-largeN [c]                   11.79    8   0.1614    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  HL-equalwidth                   10.33    7   0.1706    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Pigeon-Heyse                    11.57    9   0.2387    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  F-test [c]                      1.535    9   0.1312    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  F-test [d]                      1.535    9   0.1312    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  --- Covariate-space -----------------------------------</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Tsiatis                         52.87    8  1.1e-08 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Xie                             48.98    7  2.3e-08 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Pulkstenis-Robinson [d]         84.93   43   0.0001 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Pulkstenis-Robinson [e]         84.93   43   0.0001 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  --- Directed ------------------------------------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  EDGE [f]                        4.759 2.02   0.0906 .  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  EDGE.G10                        4.657 2.08   0.0974 .  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  DEF.poly2                       3.406 1.08   0.0645 .  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  DEF.poly3                       4.657 2.08   0.0974 .  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  DEF.stukel                        3.3 1.61   0.0936 .  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Stukel                          6.057    2   0.0484 *  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  DEF.sym                        0.9373    1   0.0535 .  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Stukel                          4.801    2   0.0907 .  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  --- Ensemble ------------------------------------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Ensemble.Vote(3DEF) [e]                      0.0824 .  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Ensemble.Univ(3DEF+EF) [e]                   0.0924 .  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Ensemble.Vote(3DEF) [g]                      0.0824 .  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Ensemble.Univ(3DEF+EF) [g]                   0.0924 .  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> --------------------------------------------------------</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Signif.:  *** &lt;.001   ** &lt;.01   * &lt;.05   . &lt;.1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Notes:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    [a] grouped to 328 covariate patterns</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    [b] normal reference (thesis)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [c] deviance residuals ~ groups (ANOVA F)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [d] split on categorical: age, sex, treatment</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [e] Cauchy combination of the directed tests</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [c] H0: eps &lt;= 2.74e-03 (n0 = 1e+06); eps_hat = 6.88e-02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [d] deviance residuals ~ groups (ANOVA F)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [e] split on categorical: age, sex, treatment</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [f] G = 32 (auto)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [g] Cauchy combination of the directed tests</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

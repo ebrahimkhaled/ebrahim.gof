@@ -62,7 +62,7 @@ set.seed(1)
 battery <- run.all.gof(fit, include_slow = FALSE, install = "no")
 battery
 #> 
-#> Goodness-of-fit battery: 21 tests  (16 reject at 0.05)
+#> Goodness-of-fit battery: 25 tests  (19 reject at 0.05)
 #> ========================================================
 #>  Test                        Statistic   df  p-value    
 #>  --- Global --------------------------------------------
@@ -77,37 +77,43 @@ battery
 #>  EF-normal [a]                   1.988    8   0.0234 *  
 #>  --- Partition -----------------------------------------
 #>  HL                              15.52    8   0.0499 *  
+#>  HL-largeN [b]                   15.52    8   0.0501 .  
 #>  HL-equalwidth                   22.11    7   0.0024 ** 
 #>  Pigeon-Heyse                    15.58    9   0.0761 .  
-#>  F-test [b]                      2.088    9   0.0283 *  
+#>  F-test [c]                      2.088    9   0.0283 *  
 #>  --- Covariate-space -----------------------------------
 #>  Tsiatis                         63.53    9  2.8e-10 ***
 #>  Xie                              51.9    7  6.1e-09 ***
-#>  Pulkstenis-Robinson [c]         7.282    4   0.1217    
+#>  Pulkstenis-Robinson [d]         7.282    4   0.1217    
 #>  --- Directed ------------------------------------------
+#>  EDGE [e]                        11.21 2.01   0.0035 ** 
+#>  EDGE.G10                         8.33 2.07   0.0150 *  
 #>  DEF.poly2                       8.299 1.08   0.0036 ** 
 #>  DEF.poly3                        8.33 2.07   0.0150 *  
 #>  DEF.stukel                        6.5 1.56   0.0118 *  
-#>  Stukel                          14.24    2   0.0008 ***
+#>  DEF.sym                         1.519    1   0.0096 ** 
+#>  Stukel                          11.58    2   0.0031 ** 
 #>  --- Ensemble ------------------------------------------
-#>  Ensemble.Vote(3DEF) [d]                      0.0070 ** 
-#>  Ensemble.Univ(3DEF+EF) [d]                   0.0088 ** 
+#>  Ensemble.Vote(3DEF) [f]                      0.0070 ** 
+#>  Ensemble.Univ(3DEF+EF) [f]                   0.0088 ** 
 #> --------------------------------------------------------
 #>  Signif.:  *** <.001   ** <.01   * <.05   . <.1
 #>  Notes:
 #>    [a] normal reference (thesis)
-#>    [b] deviance residuals ~ groups (ANOVA F)
-#>    [c] split on categorical: sex, treatment
-#>    [d] Cauchy combination of the directed tests
+#>    [b] H0: eps <= 2.74e-03 (n0 = 1e+06); eps_hat = 9.69e-02
+#>    [c] deviance residuals ~ groups (ANOVA F)
+#>    [d] split on categorical: sex, treatment
+#>    [e] G = 32 (auto)
+#>    [f] Cauchy combination of the directed tests
 ```
 
 Read the table by *family*. The **global omnibus** statistics (Pearson,
 deviance) spread their power over hundreds of covariate patterns and
 tend to **miss** this smooth misfit. The **directed** tests —
-`DEF.poly2`, `DEF.poly3` (EDGE), `DEF.stukel`, and Stukel’s score test —
-concentrate their few degrees of freedom on the calibration-curve shape
-and **detect** it, as do the EF test and the ensemble. That contrast is
-the whole point of a directed test.
+`DEF.poly2`, `DEF.poly3` (EDGE), `DEF.stukel`, `DEF.sym`, and Stukel’s
+score test — concentrate their few degrees of freedom on the
+calibration-curve shape and **detect** it, as do the EF test and the
+ensemble. That contrast is the whole point of a directed test.
 
 ## Sparse or grouped? Let the package show you both
 
@@ -140,7 +146,7 @@ fit_g <- glm(outcome ~ age + bmi + sex + treatment,
 set.seed(1)
 run.all.gof(fit_g, include_slow = FALSE, install = "no")
 #> 
-#> Goodness-of-fit battery: 24 tests  (7 reject at 0.05)
+#> Goodness-of-fit battery: 28 tests  (6 reject at 0.05)
 #> ========================================================
 #>  Test                        Statistic   df  p-value    
 #>  --- Global --------------------------------------------
@@ -158,29 +164,35 @@ run.all.gof(fit_g, include_slow = FALSE, install = "no")
 #>  EF-normal [b]                   1.038    8   0.1496    
 #>  --- Partition -----------------------------------------
 #>  HL                              11.79    8   0.1610    
+#>  HL-largeN [c]                   11.79    8   0.1614    
 #>  HL-equalwidth                   10.33    7   0.1706    
 #>  Pigeon-Heyse                    11.57    9   0.2387    
-#>  F-test [c]                      1.535    9   0.1312    
+#>  F-test [d]                      1.535    9   0.1312    
 #>  --- Covariate-space -----------------------------------
 #>  Tsiatis                         52.87    8  1.1e-08 ***
 #>  Xie                             48.98    7  2.3e-08 ***
-#>  Pulkstenis-Robinson [d]         84.93   43   0.0001 ***
+#>  Pulkstenis-Robinson [e]         84.93   43   0.0001 ***
 #>  --- Directed ------------------------------------------
+#>  EDGE [f]                        4.759 2.02   0.0906 .  
+#>  EDGE.G10                        4.657 2.08   0.0974 .  
 #>  DEF.poly2                       3.406 1.08   0.0645 .  
 #>  DEF.poly3                       4.657 2.08   0.0974 .  
 #>  DEF.stukel                        3.3 1.61   0.0936 .  
-#>  Stukel                          6.057    2   0.0484 *  
+#>  DEF.sym                        0.9373    1   0.0535 .  
+#>  Stukel                          4.801    2   0.0907 .  
 #>  --- Ensemble ------------------------------------------
-#>  Ensemble.Vote(3DEF) [e]                      0.0824 .  
-#>  Ensemble.Univ(3DEF+EF) [e]                   0.0924 .  
+#>  Ensemble.Vote(3DEF) [g]                      0.0824 .  
+#>  Ensemble.Univ(3DEF+EF) [g]                   0.0924 .  
 #> --------------------------------------------------------
 #>  Signif.:  *** <.001   ** <.01   * <.05   . <.1
 #>  Notes:
 #>    [a] grouped to 328 covariate patterns
 #>    [b] normal reference (thesis)
-#>    [c] deviance residuals ~ groups (ANOVA F)
-#>    [d] split on categorical: age, sex, treatment
-#>    [e] Cauchy combination of the directed tests
+#>    [c] H0: eps <= 2.74e-03 (n0 = 1e+06); eps_hat = 6.88e-02
+#>    [d] deviance residuals ~ groups (ANOVA F)
+#>    [e] split on categorical: age, sex, treatment
+#>    [f] G = 32 (auto)
+#>    [g] Cauchy combination of the directed tests
 ```
 
 Same model formula, same test family, opposite verdicts — so handling
@@ -198,8 +210,12 @@ standardized residuals onto a small basis of smooth calibration shapes:
 ``` r
 
 edge.gof(fit)                 # directed EDGE test (poly3 basis)
-#>   Test Basis Test_Statistic       df        Method    p_value
-#> 1 EDGE poly3       8.329512 2.072814 satterthwaite 0.01496412
+#>   Test           Partition    Role Basis Test_Statistic       df        Method
+#> 1 EDGE    default (G = 32) verdict poly3      11.208214 2.014108 satterthwaite
+#> 2 EDGE ten groups (G = 10)   check poly3       8.329512 2.072814 satterthwaite
+#>       p_value
+#> 1 0.003451099
+#> 2 0.014964121
 def.gof(fit, basis = "poly2") # a lower-order directed basis
 #>                          Test Basis Test_Statistic       df        Method
 #> 1 Directed Ebrahim-Farrington poly2        8.29914 1.076512 satterthwaite
