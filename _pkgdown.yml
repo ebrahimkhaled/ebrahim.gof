@@ -53,6 +53,15 @@ reference:
   - deepgof1
   - deepgof1.external
 
+- title: Localizing the misfit
+  desc: >
+    Which part of the misfit is present -- the intercept, the slope, the link or
+    the covariates -- with familywise error control, and the update it calls for.
+    For frozen predictions on validation data, or a fitted logistic model.
+  contents:
+  - localize.external
+  - localize.gof
+
 - title: Comparison tests
   desc: >
     Published tests implemented here so the battery can be compared with them

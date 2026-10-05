@@ -1,3 +1,24 @@
+# ebrahim.gof 2.9.0.9000 (development version)
+
+## New functions
+
+* `localize.external(y, p, X)` says which part of the misfit is present when frozen predictions are
+  checked on validation data, with the familywise error rate held at `alpha`. The misfit is split
+  into four parts that follow the calibration hierarchy: `INTERCEPT` (overall risk), `SLOPE` (risks
+  too extreme or too modest), `LINK` (a curved map from score to risk) and `COV` (misfit among
+  patients who share a score). Each part is tested by a Cauchy combination of score tests confined
+  to it, and a part is named by closed testing over the four. The Monte Carlo reference is exact
+  under no misfit at every sample size. The result names the groups and the update the highest of
+  them calls for: update the intercept, recalibrate, recalibrate flexibly, or revise the model.
+
+* `localize.gof(fit)` is the in-sample counterpart for a fitted logistic `glm`. After the fit the
+  intercept and slope parts are zero, so it names `LINK` and `COV`, calibrated by a parametric
+  bootstrap with refits; `dealias = TRUE` keeps covariate misfit out of `LINK`.
+
+* Both reproduce, for the same seed, the p-values of the script behind the paper "One
+  Goodness-of-Fit Test Is Not Enough: Error-Controlled Localization of Misfit in Logistic Risk
+  Models".
+
 # ebrahim.gof 2.9.0
 
 ## Bug fix
