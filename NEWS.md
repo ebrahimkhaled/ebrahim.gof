@@ -26,6 +26,13 @@
   Goodness-of-Fit Test Is Not Enough: Error-Controlled Localization of Misfit in Logistic Risk
   Models".
 
+## Bug fix
+
+* `deepgof1.external()` took the names of `y` and `p` for the printed `data:` line after converting
+  them to numbers, so the output listed every outcome and probability instead of the variable names.
+  The names are now taken first (`data:  died and risk`). `deepgof1()` also joins a long deparsed
+  model call into one line. Test results are unchanged.
+
 # ebrahim.gof 2.9.0
 
 ## Bug fix

@@ -268,6 +268,21 @@ test_that("deepgof1.external() tests frozen predictions with an exact Monte Carl
   expect_lte(deepgof1.external(y2, p, X, B = 99, reading = "allpairs")$p.value, 0.05)
 })
 
+test_that("deepgof1.external() names the data by the arguments, not by their values", {
+  set.seed(51)
+  n <- 200
+  X <- data.frame(x1 = rnorm(n), x2 = rnorm(n))
+  risk <- plogis(-0.5 + 0.8 * X$x1 + 0.6 * X$x2)
+  died <- rbinom(n, 1, risk)
+  r <- deepgof1.external(died, risk, X, B = 9)
+  expect_identical(r$data.name, "died and risk")
+  ## an expression as argument stays one readable string
+  r2 <- deepgof1.external(as.integer(died), pmin(risk, 0.99), X, B = 9)
+  expect_length(r2$data.name, 1L)
+  expect_identical(r2$data.name, "as.integer(died) and pmin(risk, 0.99)")
+  expect_output(print(r), "data:  died and risk", fixed = TRUE)
+})
+
 test_that("deepgof1.external() checks its inputs", {
   X <- data.frame(x1 = rnorm(20), x2 = rnorm(20))
   y <- rbinom(20, 1, 0.5)

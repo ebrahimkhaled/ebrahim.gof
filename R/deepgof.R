@@ -513,7 +513,7 @@ deepgof1 <- function(fit, B = 199L, K = 6L, reading = c("axes", "allpairs", "com
                  B = B, K = K, reading = reading, axes = axes,
                  map = matrix(map, K, K, byrow = TRUE), pairs = pairs, boot = Sb,
                  method    = "DeepGOF-1: pretrained residual-map goodness-of-fit test",
-                 data.name = deparse(substitute(fit))),
+                 data.name = paste(deparse(substitute(fit)), collapse = " ")),
             class = "deepgof1")
 }
 
@@ -607,6 +607,8 @@ print.deepgof1 <- function(x, ...) {
 #' @export
 deepgof1.external <- function(y, p, X, B = 199L, K = 6L, reading = c("combined", "axes", "allpairs"),
                               axes = NULL) {
+  ## the names of the arguments, taken before y and p are overwritten by their numeric copies below
+  dname <- paste(paste(deparse(substitute(y)), collapse = " "), "and", paste(deparse(substitute(p)), collapse = " "))
   reading <- match.arg(reading)
   if (K != deepgof1_weights$K)
     stop("the shipped DeepGOF-1 weights are valid only at K = ", deepgof1_weights$K, call. = FALSE)
@@ -676,7 +678,7 @@ deepgof1.external <- function(y, p, X, B = 199L, K = 6L, reading = c("combined",
                  map = matrix(.dg_cellmap(cells$idx[[show]], y - p, p, K), K, K, byrow = TRUE),
                  pairs = pairs, boot = boot[, if (reading == "allpairs") "allpairs" else "axes"],
                  method = "DeepGOF-1 for frozen predictions: exact Monte Carlo calibration test",
-                 data.name = paste(deparse(substitute(y)), "and", deparse(substitute(p))),
+                 data.name = dname,
                  alternative = "the probabilities are miscalibrated within covariate subgroups"),
             class = "deepgof1")
 }
