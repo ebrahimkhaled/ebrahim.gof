@@ -12,6 +12,8 @@ localize.external(
   alpha = 0.05,
   calibration = c("montecarlo", "multiplier"),
   cov_df = 5,
+  naming = c("closure", "holm", "bonferroni"),
+  robust = FALSE,
   seed = NULL
 )
 }
@@ -35,17 +37,26 @@ Details.}
 \item{cov_df}{the degrees of freedom of the spline in \eqn{\eta} that the \code{COV} bases
 are made orthogonal to; \code{"auto"} uses \code{max(5, ceiling(n^(1/3)))}.}
 
+\item{naming}{how groups are named: \code{"closure"} (the default; closed testing over
+Cauchy intersections), \code{"holm"} or \code{"bonferroni"} (over the single-group
+p-values); see Details.}
+
+\item{robust}{if \code{TRUE}, build the bases on normal scores of the score and the
+covariates; see Details.}
+
 \item{seed}{optional integer, passed to \code{set.seed()} before the reference draws.}
 }
 \value{
 An object of class \code{"gof_localize"}: a list with \code{named} (the groups named,
   in hierarchy order), \code{highest} (the highest of them, or \code{NA}), \code{action} (the
   update the decision table gives for it), \code{single} (the p-value of each group tested
-  alone), \code{adjusted} (each group's closed-testing adjusted p-value, the largest p-value of
-  an intersection containing it: a group is named when it is at most \code{alpha}),
+  alone), \code{adjusted} (each group's adjusted p-value: under closure the largest p-value
+  of an intersection containing it, otherwise the Holm or Bonferroni adjustment of the
+  single-group p-values; a group is named when it is at most \code{alpha}),
   \code{intersection} (the p-value of every intersection, named as in
   \code{"SLOPE+COV"}), \code{members} (the chi-square p-value of each member score test),
-  \code{groups} (the members of each group), \code{alpha}, \code{setting},
+  \code{groups} (the members of each group), \code{alpha}, \code{naming}, \code{robust},
+  \code{setting},
   \code{calibration}, \code{draws} (the number of reference draws, \code{M}), \code{n},
   \code{method} and \code{data.name}.
 }
@@ -85,6 +96,16 @@ departures in the other parts. \code{calibration = "multiplier"} uses a robust v
 sign-flipped residuals, so that an absent part keeps its level for departures of any size in
 the other parts; that guarantee is asymptotic, and in simulations at \eqn{n \le 4000} this
 reference was liberal. Use it for study, not yet for decisions.
+
+\code{naming = "holm"} or \code{"bonferroni"} names the groups by Holm's or Bonferroni's
+correction of their single-group p-values instead of by closure. Both are closed procedures
+with Bonferroni intersections, so they keep the same familywise guarantee; every intersection
+is still computed and returned.
+
+\code{robust = TRUE} builds the bases on normal scores, \code{qnorm(rank / (n + 1))}, of the
+score and of every covariate with more than four distinct values, so that a few extreme
+covariate values cannot drive a verdict. The level is unaffected: the Monte Carlo reference is
+exact for any fixed choice of bases.
 }
 \section{Reading a verdict}{
 

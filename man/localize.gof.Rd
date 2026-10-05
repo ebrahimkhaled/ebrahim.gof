@@ -11,6 +11,8 @@ localize.gof(
   alpha = 0.05,
   dealias = FALSE,
   cov_df = 5,
+  naming = c("closure", "holm", "bonferroni"),
+  robust = FALSE,
   seed = NULL
 )
 }
@@ -31,7 +33,9 @@ the numeric columns of the model frame other than the response; a term such as
 \item{dealias}{if \code{TRUE}, de-alias the \code{LINK} group from model columns that are
 curved in the score; see Details.}
 
-\item{cov_df}{as in \code{\link{localize.external}}.}
+\item{cov_df, naming}{as in \code{\link{localize.external}}.}
+
+\item{robust}{if \code{TRUE}, build the bases on normal scores; see Details.}
 
 \item{seed}{optional integer, passed to \code{set.seed()} before the bootstrap.}
 }
@@ -62,6 +66,13 @@ weighted F test of a 3-df spline in the score against a line, level .05), and ma
 \code{LINK} bases orthogonal to their spline fits on the observed score, frozen for every
 bootstrap draw, so that \code{LINK} reads link shape only. The price is power of \code{LINK}
 against departures that resemble those columns.
+
+\code{naming} is as in \code{\link{localize.external}}. \code{robust = TRUE} builds the
+bases on normal scores, so that a few extreme covariate values cannot drive a verdict: the
+covariates and the model columns are transformed once, from the data, and the score of every
+fit, observed or refitted, is transformed too (de-aliasing then uses the transformed score and
+columns). The level is unaffected, since the bootstrap still refits the model on the original
+model matrix.
 
 Only a logistic fit is served, since the bases and the refits assume the logit link. A
 model with another link, or any model that is not a \code{glm}, can be checked on

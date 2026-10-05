@@ -15,6 +15,13 @@
   intercept and slope parts are zero, so it names `LINK` and `COV`, calibrated by a parametric
   bootstrap with refits; `dealias = TRUE` keeps covariate misfit out of `LINK`.
 
+* Two options in both functions. `naming = "holm"` or `"bonferroni"` names the groups by Holm's or
+  Bonferroni's correction of their single-group p-values instead of by closure (the default);
+  both keep the familywise guarantee. `robust = TRUE` builds the bases on normal scores of the
+  score and the covariates, so that a few extreme covariate values cannot drive a verdict; the
+  level is unaffected, since the Monte Carlo reference stays exact and the bootstrap still refits
+  the model on its original design.
+
 * Both reproduce, for the same seed, the p-values of the script behind the paper "One
   Goodness-of-Fit Test Is Not Enough: Error-Controlled Localization of Misfit in Logistic Risk
   Models".

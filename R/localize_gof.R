@@ -115,7 +115,10 @@
 
 ## closure over the groups, given member p-values for the observed data (column 1) and the reference draws.
 ## .cauchy() (legoft.R) is tan((0.5 - p) * pi) with p clipped to [1e-12, 1 - 1e-12], as in the paper's script.
-.loc_closure <- function(P, groups, alpha) {
+## naming = "closure": a group is named when every intersection containing it rejects (Cauchy intersections);
+## "holm" / "bonferroni": the groups' own (single-group) p-values with Holm's or Bonferroni's correction, which are
+## closed procedures with Bonferroni intersections and so share the strong familywise guarantee
+.loc_closure <- function(P, groups, alpha, naming = "closure") {
   names_g <- names(groups)
   pint <- list()
   for (r in seq_along(names_g)) for (S in utils::combn(names_g, r, simplify = FALSE)) {
@@ -125,14 +128,33 @@
   }
   pint <- unlist(pint)
   has <- function(g) grepl(paste0("(^|\\+)", g, "($|\\+)"), names(pint))
-  ## the closed-testing adjusted p-value of a group: the largest p-value of an intersection containing it
-  adj <- vapply(names_g, function(g) max(pint[has(g)]), 0)
-  named <- vapply(names_g, function(g) all(pint[has(g)] <= alpha), TRUE)
-  list(named = names_g[named], intersection = pint, single = pint[names_g], adjusted = adj)
+  single <- pint[names_g]
+  ## the adjusted p-value of a group: under closure, the largest p-value of an intersection containing it; otherwise
+  ## p.adjust() of the single-group p-values. A group is named when its adjusted p-value is at most alpha.
+  adj <- switch(naming,
+    closure    = vapply(names_g, function(g) max(pint[has(g)]), 0),
+    holm       = stats::p.adjust(single, "holm"),
+    bonferroni = stats::p.adjust(single, "bonferroni"))
+  named <- switch(naming,
+    closure    = vapply(names_g, function(g) all(pint[has(g)] <= alpha), TRUE),
+    holm       = stats::p.adjust(single, "holm") <= alpha,
+    bonferroni = stats::p.adjust(single, "bonferroni") <= alpha)
+  list(named = names_g[named], intersection = pint, single = single, adjusted = adj, naming = naming)
+}
+
+## normal scores, the robust option: each continuous column and the score are replaced by qnorm(rank / (n + 1)), so that
+## no record can carry more than a bounded share of any statistic however extreme its covariate values are; columns
+## with four or fewer distinct values (binary, small ordinal) are left as they are
+.loc_nscore <- function(v) stats::qnorm(rank(v, ties.method = "average") / (length(v) + 1))
+.loc_robust_cols <- function(X) {
+  X <- as.matrix(X)
+  for (j in seq_len(ncol(X))) if (length(unique(X[, j])) > 4) X[, j] <- .loc_nscore(X[, j])
+  X
 }
 
 ## assemble the returned object
-.loc_result <- function(cl, P, groups, alpha, setting, calibration, draws, method, data.name, n, dealiased = NULL) {
+.loc_result <- function(cl, P, groups, alpha, setting, calibration, draws, method, data.name, n, robust,
+                        dealiased = NULL) {
   top <- if (length(cl$named)) .LOC_ORDER[max(match(cl$named, .LOC_ORDER))] else "NONE"
   structure(list(named = cl$named,
                  highest = if (top == "NONE") NA_character_ else top,
@@ -140,7 +162,7 @@
                  single = cl$single, adjusted = cl$adjusted, intersection = cl$intersection,
                  members = P[, 1],
                  groups = lapply(groups, function(i) rownames(P)[i]),
-                 alpha = alpha, setting = setting, calibration = calibration,
+                 alpha = alpha, naming = cl$naming, robust = robust, setting = setting, calibration = calibration,
                  draws = draws, n = n, dealiased = dealiased,
                  method = method, data.name = data.name),
             class = "gof_localize")
@@ -183,6 +205,16 @@
 #' the other parts; that guarantee is asymptotic, and in simulations at \eqn{n \le 4000} this
 #' reference was liberal. Use it for study, not yet for decisions.
 #'
+#' \code{naming = "holm"} or \code{"bonferroni"} names the groups by Holm's or Bonferroni's
+#' correction of their single-group p-values instead of by closure. Both are closed procedures
+#' with Bonferroni intersections, so they keep the same familywise guarantee; every intersection
+#' is still computed and returned.
+#'
+#' \code{robust = TRUE} builds the bases on normal scores, \code{qnorm(rank / (n + 1))}, of the
+#' score and of every covariate with more than four distinct values, so that a few extreme
+#' covariate values cannot drive a verdict. The level is unaffected: the Monte Carlo reference is
+#' exact for any fixed choice of bases.
+#'
 #' @section Reading a verdict:
 #' Act on the highest group named, in the order \code{INTERCEPT < SLOPE < LINK < COV}: it
 #' points to the lightest update that repairs the model (Steyerberg et al. 2004).
@@ -210,16 +242,23 @@
 #'   Details.
 #' @param cov_df the degrees of freedom of the spline in \eqn{\eta} that the \code{COV} bases
 #'   are made orthogonal to; \code{"auto"} uses \code{max(5, ceiling(n^(1/3)))}.
+#' @param naming how groups are named: \code{"closure"} (the default; closed testing over
+#'   Cauchy intersections), \code{"holm"} or \code{"bonferroni"} (over the single-group
+#'   p-values); see Details.
+#' @param robust if \code{TRUE}, build the bases on normal scores of the score and the
+#'   covariates; see Details.
 #' @param seed optional integer, passed to \code{set.seed()} before the reference draws.
 #'
 #' @return An object of class \code{"gof_localize"}: a list with \code{named} (the groups named,
 #'   in hierarchy order), \code{highest} (the highest of them, or \code{NA}), \code{action} (the
 #'   update the decision table gives for it), \code{single} (the p-value of each group tested
-#'   alone), \code{adjusted} (each group's closed-testing adjusted p-value, the largest p-value of
-#'   an intersection containing it: a group is named when it is at most \code{alpha}),
+#'   alone), \code{adjusted} (each group's adjusted p-value: under closure the largest p-value
+#'   of an intersection containing it, otherwise the Holm or Bonferroni adjustment of the
+#'   single-group p-values; a group is named when it is at most \code{alpha}),
 #'   \code{intersection} (the p-value of every intersection, named as in
 #'   \code{"SLOPE+COV"}), \code{members} (the chi-square p-value of each member score test),
-#'   \code{groups} (the members of each group), \code{alpha}, \code{setting},
+#'   \code{groups} (the members of each group), \code{alpha}, \code{naming}, \code{robust},
+#'   \code{setting},
 #'   \code{calibration}, \code{draws} (the number of reference draws, \code{M}), \code{n},
 #'   \code{method} and \code{data.name}.
 #'
@@ -260,9 +299,11 @@
 #' @concept familywise error
 #' @export
 localize.external <- function(y, p, X, M = 999L, alpha = 0.05, calibration = c("montecarlo", "multiplier"),
-                              cov_df = 5, seed = NULL) {
+                              cov_df = 5, naming = c("closure", "holm", "bonferroni"), robust = FALSE,
+                              seed = NULL) {
   dn <- paste(paste(deparse(substitute(y)), collapse = " "), "and", paste(deparse(substitute(p)), collapse = " "))
-  calibration <- match.arg(calibration)
+  calibration <- match.arg(calibration); naming <- match.arg(naming)
+  .loc_check_flag(robust, "robust")
   y <- as.numeric(y); p <- as.numeric(p)
   if (!length(y) || anyNA(y) || !all(y %in% c(0, 1))) stop("'y' must be 0/1, without missing values", call. = FALSE)
   if (length(p) != length(y) || anyNA(p) || any(p < 0 | p > 1))
@@ -273,6 +314,7 @@ localize.external <- function(y, p, X, M = 999L, alpha = 0.05, calibration = c("
 
   ## predictions of exactly 0 or 1 would give an infinite score; keep them just inside (0, 1)
   p <- pmin(pmax(p, 1e-10), 1 - 1e-10); eta <- stats::qlogis(p); w <- p * (1 - p)
+  if (robust) { eta <- .loc_nscore(eta); X <- .loc_robust_cols(X) }   # bases built on normal scores (bounded influence)
   r0 <- y - p
   mem <- .loc_build_members(eta, X, w, external = TRUE, r0 = if (calibration == "multiplier") r0 else NULL,
                             cov_df = cov_df)
@@ -285,10 +327,10 @@ localize.external <- function(y, p, X, M = 999L, alpha = 0.05, calibration = c("
   P <- do.call(rbind, lapply(unlist(mem, recursive = FALSE), function(f) f(R)))
   groups <- lapply(names(mem), function(g) grep(paste0("^", g, "\\."), rownames(P)))
   names(groups) <- names(mem)
-  .loc_result(.loc_closure(P, groups, alpha), P, groups, alpha,
+  .loc_result(.loc_closure(P, groups, alpha, naming), P, groups, alpha,
               setting = "external validation of frozen predictions",
               calibration = if (calibration == "montecarlo") "Monte Carlo" else "multiplier",
-              draws = as.integer(M), n = length(y),
+              draws = as.integer(M), n = length(y), robust = robust,
               method = "Localization of misfit: closed testing over orthogonal groups",
               data.name = dn)
 }
@@ -316,6 +358,13 @@ localize.external <- function(y, p, X, M = 999L, alpha = 0.05, calibration = c("
 #' bootstrap draw, so that \code{LINK} reads link shape only. The price is power of \code{LINK}
 #' against departures that resemble those columns.
 #'
+#' \code{naming} is as in \code{\link{localize.external}}. \code{robust = TRUE} builds the
+#' bases on normal scores, so that a few extreme covariate values cannot drive a verdict: the
+#' covariates and the model columns are transformed once, from the data, and the score of every
+#' fit, observed or refitted, is transformed too (de-aliasing then uses the transformed score and
+#' columns). The level is unaffected, since the bootstrap still refits the model on the original
+#' model matrix.
+#'
 #' Only a logistic fit is served, since the bases and the refits assume the logit link. A
 #' model with another link, or any model that is not a \code{glm}, can be checked on
 #' validation data with \code{\link{localize.external}}, which needs only its predictions.
@@ -338,7 +387,8 @@ localize.external <- function(y, p, X, M = 999L, alpha = 0.05, calibration = c("
 #' @param alpha familywise level.
 #' @param dealias if \code{TRUE}, de-alias the \code{LINK} group from model columns that are
 #'   curved in the score; see Details.
-#' @param cov_df as in \code{\link{localize.external}}.
+#' @param cov_df,naming as in \code{\link{localize.external}}.
+#' @param robust if \code{TRUE}, build the bases on normal scores; see Details.
 #' @param seed optional integer, passed to \code{set.seed()} before the bootstrap.
 #'
 #' @return An object of class \code{"gof_localize"}, as described in
@@ -360,7 +410,8 @@ localize.external <- function(y, p, X, M = 999L, alpha = 0.05, calibration = c("
 #' @concept closed testing
 #' @concept familywise error
 #' @export
-localize.gof <- function(fit, X = NULL, B = 199L, alpha = 0.05, dealias = FALSE, cov_df = 5, seed = NULL) {
+localize.gof <- function(fit, X = NULL, B = 199L, alpha = 0.05, dealias = FALSE, cov_df = 5,
+                         naming = c("closure", "holm", "bonferroni"), robust = FALSE, seed = NULL) {
   dn <- paste(deparse(substitute(fit)), collapse = " ")
   if (!inherits(fit, "glm") || !identical(fit$family$family, "binomial") || !identical(fit$family$link, "logit"))
     stop("localize.gof() needs a glm fitted with family = binomial(link = \"logit\"). ",
@@ -370,8 +421,8 @@ localize.gof <- function(fit, X = NULL, B = 199L, alpha = 0.05, dealias = FALSE,
     stop("localize.gof() needs a 0/1 outcome, one row per observation, without prior weights", call. = FALSE)
   if (!is.null(fit$offset) && any(fit$offset != 0))
     stop("localize.gof() does not serve a model with an offset", call. = FALSE)
-  if (!is.logical(dealias) || length(dealias) != 1L || is.na(dealias))
-    stop("'dealias' must be TRUE or FALSE", call. = FALSE)
+  naming <- match.arg(naming)
+  .loc_check_flag(dealias, "dealias"); .loc_check_flag(robust, "robust")
   if (is.null(X)) {
     mf <- stats::model.frame(fit)[-1L]
     keep <- vapply(mf, function(v) is.numeric(v) && is.null(dim(v)), TRUE) & !startsWith(names(mf), "(")
@@ -383,18 +434,22 @@ localize.gof <- function(fit, X = NULL, B = 199L, alpha = 0.05, dealias = FALSE,
   if (!is.null(seed)) set.seed(seed)
 
   mm <- stats::model.matrix(fit)
+  ## robust: the covariates and the model columns are put on normal scores ONCE, from the data, and the score of every
+  ## fit (observed and refitted) is too; the bootstrap still refits on the original model matrix
+  Xb <- if (robust) .loc_robust_cols(X) else X
+  Zb <- if (robust) .loc_robust_cols(mm[, -1, drop = FALSE]) else mm[, -1, drop = FALSE]
+  sc <- function(ph) if (robust) .loc_nscore(stats::qlogis(ph)) else stats::qlogis(ph)
   ph0 <- as.numeric(stats::fitted(fit))
-  dcols <- if (dealias) .loc_curved_cols(mm[, -1, drop = FALSE], stats::qlogis(ph0), ph0 * (1 - ph0)) else NULL
+  dcols <- if (dealias) .loc_curved_cols(Zb, sc(ph0), ph0 * (1 - ph0)) else NULL
   dE <- NULL
   if (length(dcols)) {   # fitted once, on the observed score, and frozen
-    e0 <- stats::qlogis(ph0); w0 <- ph0 * (1 - ph0)
-    Zc <- mm[, -1, drop = FALSE][, dcols, drop = FALSE]
+    e0 <- sc(ph0); w0 <- ph0 * (1 - ph0)
+    Zc <- Zb[, dcols, drop = FALSE]
     dE <- Zc - .loc_wperp(Zc, cbind(1, splines::ns(e0, df = 3)), w0)
   }
   members_at <- function(f) {
-    ph <- as.numeric(stats::fitted(f)); eta <- stats::qlogis(ph)
-    .loc_build_members(eta, X, ph * (1 - ph), Zfit = mm[, -1, drop = FALSE], external = FALSE, cov_df = cov_df,
-                       dealias_E = dE)
+    ph <- as.numeric(stats::fitted(f))
+    .loc_build_members(sc(ph), Xb, ph * (1 - ph), Zfit = Zb, external = FALSE, cov_df = cov_df, dealias_E = dE)
   }
   pv_of <- function(f, y) { m <- members_at(f); r <- matrix(y - as.numeric(stats::fitted(f)))
                             vapply(unlist(m, recursive = FALSE), function(g) g(r), 0) }
@@ -413,9 +468,9 @@ localize.gof <- function(fit, X = NULL, B = 199L, alpha = 0.05, dealias = FALSE,
   if (ncol(P) - 1L < 19L) stop("too few usable bootstrap replicates (", ncol(P) - 1L, ")", call. = FALSE)
   gn <- Filter(function(g) any(grepl(paste0("^", g, "\\."), rn)), c("LINK", "COV"))   # COV is absent with one covariate
   groups <- lapply(gn, function(g) grep(paste0("^", g, "\\."), rn)); names(groups) <- gn
-  .loc_result(.loc_closure(P, groups, alpha), P, groups, alpha,
+  .loc_result(.loc_closure(P, groups, alpha, naming), P, groups, alpha,
               setting = "in-sample checking of a fitted logistic model",
-              calibration = "parametric bootstrap", draws = ncol(P) - 1L, n = length(y0),
+              calibration = "parametric bootstrap", draws = ncol(P) - 1L, n = length(y0), robust = robust,
               method = "Localization of misfit: closed testing over orthogonal groups",
               data.name = dn,
               dealiased = colnames(mm)[-1][dcols])
@@ -436,6 +491,11 @@ localize.gof <- function(fit, X = NULL, B = 199L, alpha = 0.05, dealias = FALSE,
   X
 }
 
+.loc_check_flag <- function(v, what) {
+  if (!is.logical(v) || length(v) != 1L || is.na(v)) stop("'", what, "' must be TRUE or FALSE", call. = FALSE)
+  invisible(TRUE)
+}
+
 .loc_check_common <- function(M, alpha, cov_df, what = "M") {
   if (!is.numeric(M) || length(M) != 1L || is.na(M) || M < 19 || M != round(M))
     stop("'", what, "' must be a whole number of at least 19", call. = FALSE)
@@ -453,16 +513,19 @@ print.gof_localize <- function(x, digits = 4L, ...) {
   cat("data:     ", x$data.name, " (n = ", x$n, ")\n", sep = "")
   cat("setting:  ", x$setting, "\n", sep = "")
   cat(sprintf("reference: %s, %d draws\n", x$calibration, x$draws))
+  if (isTRUE(x$robust)) cat("bases:    built on normal scores (robust = TRUE)\n")
   if (length(x$dealiased))
     cat("LINK de-aliased from: ", paste(x$dealiased, collapse = ", "), "\n", sep = "")
   tab <- data.frame(alone = formatC(x$single, digits = digits, format = "f"),
                     adjusted = formatC(x$adjusted, digits = digits, format = "f"),
                     named = ifelse(names(x$single) %in% x$named, "*", ""),
                     row.names = names(x$single))
-  cat("\np-values by group (alone, and closed-testing adjusted):\n")
+  rule <- switch(if (is.null(x$naming)) "closure" else x$naming,
+                 closure = "closed testing", holm = "Holm over the groups", bonferroni = "Bonferroni over the groups")
+  cat(sprintf("\np-values by group (alone, and adjusted by %s):\n", rule))
   print(tab, right = TRUE)
   v <- if (length(x$named)) paste(x$named, collapse = " + ") else "none"
-  cat(sprintf("\ngroups named at FWER %s: %s\n", format(x$alpha), v))
+  cat(sprintf("\ngroups named (%s) at FWER %s: %s\n", rule, format(x$alpha), v))
   cat("recommended update: ", x$action, "\n\n", sep = "")
   invisible(x)
 }

@@ -149,8 +149,76 @@ test_that("print() shows the groups named and the recommended update", {
   d <- loc_data()
   r <- localize.external(d$y, d$p, d$X, M = 99, seed = 7)
   out <- capture.output(print(r))
-  expect_true(any(grepl("groups named at FWER 0.05: LINK \\+ COV", out)))
+  expect_true(any(grepl("groups named (closed testing) at FWER 0.05: LINK + COV", out, fixed = TRUE)))
   expect_true(any(grepl("recommended update: revise the model", out)))
   expect_true(any(grepl("^INTERCEPT +0\\.1100 +0\\.1100", out)))
   capture.output(expect_invisible(print(r)))
+})
+
+test_that("naming = 'holm' and 'bonferroni' reproduce the paper's script", {
+  d <- loc_data()
+  r <- localize.external(d$y, d$p, d$X, M = 99, naming = "holm", seed = 7)
+  ## the intersections are unchanged; only the naming rule differs
+  expect_equal(r$intersection, localize.external(d$y, d$p, d$X, M = 99, seed = 7)$intersection)
+  expect_equal(r$adjusted, c(INTERCEPT = 0.18, SLOPE = 0.18, LINK = 0.12, COV = 0.04), tolerance = 1e-12)
+  expect_identical(r$named, "COV")
+  expect_identical(r$naming, "holm")
+  rb <- localize.external(d$y, d$p, d$X, M = 99, naming = "bonferroni", seed = 7)
+  expect_equal(rb$adjusted, c(INTERCEPT = 0.44, SLOPE = 0.36, LINK = 0.16, COV = 0.04), tolerance = 1e-12)
+  expect_identical(rb$named, "COV")
+  out <- capture.output(print(r))
+  expect_true(any(grepl("groups named (Holm over the groups) at FWER 0.05: COV", out, fixed = TRUE)))
+  ## in-sample: Holm over LINK (0.10) and COV (0.05) names nothing at B = 19
+  fit <- glm(d$y ~ x1 + x2 + x3, data = d$X, family = binomial())
+  ri <- localize.gof(fit, X = d$X, B = 19, naming = "holm", seed = 8)
+  expect_identical(ri$named, character(0))
+  expect_equal(ri$adjusted, c(LINK = 0.1, COV = 0.1), tolerance = 1e-12)
+})
+
+test_that("robust = TRUE reproduces the paper's script", {
+  d <- loc_data()
+  r <- localize.external(d$y, d$p, d$X, M = 99, robust = TRUE, seed = 7)
+  expect_equal(unname(r$intersection[c("INTERCEPT", "SLOPE", "LINK", "COV", "LINK+COV")]),
+               c(0.11, 0.07, 0.04, 0.01, 0.02), tolerance = 1e-12)
+  expect_equal(r$members, c(
+    INTERCEPT.cal = 0.122438318746109, SLOPE.slope = 0.0721015566648641,
+    LINK.poly = 0.00985599609578549, LINK.stukel = 0.0134600239638279,
+    LINK.spline = 0.035546393704911, COV.poly = 0.00025010706706531,
+    COV.products = 0.000165031810536696, COV.spline = 0.000857523843869752), tolerance = 1e-12)
+  expect_identical(r$named, c("LINK", "COV"))
+  expect_true(r$robust)
+
+  fit <- glm(d$y ~ x1 + x2 + x3, data = d$X, family = binomial())
+  ri <- localize.gof(fit, X = d$X, B = 19, dealias = TRUE, robust = TRUE, seed = 8)
+  expect_equal(ri$intersection, c(LINK = 0.75, COV = 0.05, `LINK+COV` = 0.05), tolerance = 1e-12)
+  expect_equal(ri$members, c(
+    LINK.poly = 0.483764091120531, LINK.stukel = 0.654156527825062,
+    LINK.spline = 0.453869341724405, COV.poly = 0.00318839357151969,
+    COV.products = 0.000732266376956144, COV.spline = 0.00223743917446776), tolerance = 1e-12)
+  expect_identical(ri$dealiased, c("x1", "x2"))
+  expect_true(any(grepl("normal scores", capture.output(print(ri)))))
+})
+
+test_that("robust = TRUE limits the influence of a single extreme record", {
+  ## a correct model; one covariate value is then recorded 50 times too large
+  set.seed(8)
+  n <- 400
+  X <- data.frame(x1 = rnorm(n), x2 = rnorm(n))
+  p <- plogis(-0.3 + 0.8 * X$x1 + 0.5 * X$x2)
+  y <- rbinom(n, 1, p)
+  i <- which.max(abs(y - p))
+  X2 <- X; X2$x1[i] <- X2$x1[i] * 50
+  cov_p <- function(XX, rb) localize.external(y, p, XX, M = 199, robust = rb, seed = 1)$single[["COV"]]
+  ## the default bases let the one record drive COV (0.40 -> 0.005 on this seed) ...
+  expect_gt(cov_p(X, FALSE), 0.2)
+  expect_lt(cov_p(X2, FALSE), 0.05)
+  ## ... the normal-score bases barely move (0.41 -> 0.32)
+  expect_gt(cov_p(X2, TRUE), 0.2)
+  expect_lt(abs(cov_p(X2, TRUE) - cov_p(X, TRUE)), 0.15)
+})
+
+test_that("the new options are checked", {
+  d <- loc_data()
+  expect_error(localize.external(d$y, d$p, d$X, M = 19, naming = "hochberg"), "should be one of")
+  expect_error(localize.external(d$y, d$p, d$X, M = 19, robust = NA), "TRUE or FALSE")
 })
