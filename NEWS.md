@@ -34,6 +34,15 @@
   Goodness-of-Fit Test Is Not Enough: Error-Controlled Localization of Misfit in Logistic Risk
   Models".
 
+* `cubic.calib.gof()` is the cubic calibration likelihood-ratio test, also in the battery as the row
+  `"Cubic-LR"` (family "Calibration", fast): the square and the cube of the logit of the fitted risk
+  are added to a logistic regression of the outcome on it, and the drop in deviance is referred to
+  chi-squared on 2 degrees of freedom. It is not a new test. It is the goodness-of-link idea of
+  Pregibon (1980), in the line of Tukey's (1949) one degree of freedom for non-additivity and
+  Ramsey's (1969) RESET, applied with the cubic logistic model of Morgan (1985), and a fixed-degree
+  relative of the GiViTI polynomial; the help page gives that history with its references. It takes
+  a fitted model or frozen predictions. **The fast battery of `run.all.gof()` has one more row.**
+
 ## Bug fix
 
 * `deepgof1.external()` took the names of `y` and `p` for the printed `data:` line after converting

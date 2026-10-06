@@ -305,6 +305,13 @@ directly whether predicted risks match observed frequencies.
     \eqn{p = \min(1, 1/e)}. E-values are safe under optional stopping, which
     conventional p-values are not, but the conversion shown here is
     conservative.
+  \item \code{Cubic-LR} -- the cubic calibration likelihood-ratio test: the
+    square and cube of the logit of the fitted risk are added to a logistic
+    regression of the outcome on it, and the drop in deviance is referred to
+    chi-squared on 2 degrees of freedom. It is the goodness-of-link idea of
+    Pregibon (1980) with the cubic logistic model of Morgan (1985), and a
+    fixed-degree relative of the GiViTI polynomial; fast, and needs only the
+    predictions. See \code{\link{cubic.calib.gof}}, which documents its origin.
 }
 
 \strong{Combinations} (\code{Family} "Ensemble"). Rather than choosing one test, these pool several.
