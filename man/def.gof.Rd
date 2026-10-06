@@ -111,9 +111,29 @@ information before the fit (\eqn{Z_s'Z_s}, with \eqn{Z_s} the weighted columns)
 is one the model already spans, as when the fitted logit is constant. It is
 left out, and when no column is left the p-value is \code{NA}, with a warning of
 class \code{def_no_information}.
-The unit form is the statistic as published;
-the score form keeps a shape on the logit scale from losing its signal when the
-group variances differ strongly, as they do at high discrimination.
+
+\strong{Which weighting to use.} The unit form is the statistic as published and
+is the recommended default. Which weighting is better depends on the basis, and
+the two bases go opposite ways:
+\itemize{
+  \item \code{basis = "poly3"} (and the other polynomial bases): use
+    \code{weights = "unit"}. Over the 32 power scenarios of the EDGE paper the
+    score form was behind in 24 and ahead in 1, by a mean of 0.039.
+  \item \code{basis = "sym"}: the score form is usually the better choice, and at
+    high discrimination it is decisively so. It was ahead in 21 of the same 32
+    scenarios; against a probit truth at high discrimination its power was 0.598
+    against the unit form's 0.096, and 0.834 against 0.506, at nominal size.
+    Weighting each column by \eqn{\sqrt{V_g}} gives the extreme groups more
+    weight, and the symmetric shape \eqn{\eta|\eta|} is carried by those groups;
+    the cubic basis already spans them through its own columns.
+}
+\strong{Data quality overrides this.} The score weighting is the more fragile of
+the two when a few records carry corrupted predictions, because it leans on
+exactly the extreme groups such records occupy. With 25 corrupted covariates in
+1000 observations and a correct model otherwise, \code{poly3} with
+\code{weights = "score"} raised its false-alarm rate to 0.894 where the unit
+form reached 0.344. When the data may contain corrupted predictors, use
+\code{weights = "unit"} whatever the basis.
 
 \strong{External mode.} With \code{external = TRUE} the predicted probabilities
 are taken as frozen, as when a published model is checked on new data with its
