@@ -43,6 +43,15 @@
   relative of the GiViTI polynomial; the help page gives that history with its references. It takes
   a fitted model or frozen predictions. **The fast battery of `run.all.gof()` has one more row.**
 
+* `edge.belt()` returns, and `plot()` draws, the group-level picture behind `edge.gof()`: the
+  standardized group residuals divided by their estimation-adjusted null standard deviations (the
+  square roots of the diagonal of Omega, below one in-sample), the projection of the residuals on
+  the basis, whose squared length is the EDGE statistic, a pointwise band and a simultaneous band
+  (the level quantile of the largest standardized residual under N(0, Omega)), and a second panel
+  with the same band on the event-rate scale. The p-value is the one `def.gof()` returns, never
+  recomputed. With `external = TRUE` the belt carries the external test (Omega = I, constant
+  column, d + 1 df), so its band is exact rather than conservative.
+
 ## Bug fix
 
 * `deepgof1.external()` took the names of `y` and `p` for the printed `data:` line after converting
