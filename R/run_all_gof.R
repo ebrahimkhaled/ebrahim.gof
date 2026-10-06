@@ -755,6 +755,7 @@ run.all.gof <- function(object, predicted_probs = NULL, X = NULL,
     return(NULL)
   devel <- if (is.null(opts$devel)) "internal" else opts$devel
   o <- as.numeric(ctx$y); e <- as.numeric(ctx$ph)
+  rng <- .rng_snapshot(); on.exit(.rng_restore(rng), add = TRUE)   # callr draws from the session stream
   tryCatch(
     callr::r(function(o, e, devel) {
       givitiR::givitiCalibrationBelt(o = o, e = e, devel = devel)
@@ -1901,6 +1902,9 @@ gof_giviti <- function(ctx, opts = list()) {
                 Note = "Not run: install the 'callr' package (isolates givitiR)"))
   devel <- if (is.null(opts$devel)) "internal" else opts$devel
   o <- as.numeric(ctx$y); e <- as.numeric(ctx$ph)
+  ## starting the subprocess draws from the session's random number stream; give it back,
+  ## so that the rows after this one do not depend on whether it ran
+  rng <- .rng_snapshot(); on.exit(.rng_restore(rng), add = TRUE)
   pv <- tryCatch(
     callr::r(function(o, e, devel) {
       givitiR::givitiCalibrationTest(o = o, e = e, devel = devel)$p.value

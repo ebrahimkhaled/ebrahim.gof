@@ -125,3 +125,13 @@ test_that("plot() of a single row taken from edge.gof() draws it", {
   expect_silent(plot(e[2, ]))
   expect_error(plot(e[2, ], row = "verdict"), "no 'verdict' row")
 })
+
+test_that("the GiViTI row leaves the session's random number stream alone", {
+  skip_on_cran()
+  skip_if_not_installed("givitiR")
+  skip_if_not_installed("callr")
+  f <- sim_fit(n = 300)
+  set.seed(3); ref <- runif(2)
+  set.seed(3); invisible(run.all.gof(f, tests = "GiViTI"))
+  expect_identical(runif(2), ref)
+})

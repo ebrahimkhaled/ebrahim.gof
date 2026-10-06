@@ -250,6 +250,10 @@
   for a model checked on its own data. The warnings that `splines::ns()` gives on tied or extreme
   scores no longer reach the console.
 
+* The GiViTI rows, and the calibration belt, start a `callr` subprocess, which drew from the
+  session's random number stream; the rows after them in a battery therefore depended on whether
+  a GiViTI row ran. The stream is now restored after the subprocess.
+
 * `calm.gof()` and `shrink.gof()` check that `lambda` is a single non-negative number and that `X`
   and `y` have no missing values, and accept a data frame `X` (coded with `model.matrix()`).
 
