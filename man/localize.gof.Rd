@@ -123,8 +123,8 @@ a study on sample size and shrinkage. \emph{Statistics in Medicine}, 23(16), 256
 \doi{10.1002/sim.1844}
 }
 \seealso{
-\code{\link{localize.external}}; \code{\link{legoft.localize}} for a two-domain
-  localization over the classical battery.
+\code{\link{localize.external}} for frozen predictions on new data;
+  \code{\link{plot.gof_localize}} for the display of a verdict.
 }
 \concept{closed testing}
 \concept{familywise error}

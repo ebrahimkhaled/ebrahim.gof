@@ -114,7 +114,8 @@
 }
 
 ## closure over the groups, given member p-values for the observed data (column 1) and the reference draws.
-## .cauchy() (legoft.R) is tan((0.5 - p) * pi) with p clipped to [1e-12, 1 - 1e-12], as in the paper's script.
+## The Cauchy transform of a member p-value, clipped to [1e-12, 1 - 1e-12] as in the paper's script.
+.loc_cauchy <- function(p) tan((0.5 - pmin(pmax(p, 1e-12), 1 - 1e-12)) * pi)
 ## naming = "closure": a group is named when every intersection containing it rejects (Cauchy intersections);
 ## "holm" / "bonferroni": the groups' own (single-group) p-values with Holm's or Bonferroni's correction, which are
 ## closed procedures with Bonferroni intersections and so share the strong familywise guarantee
@@ -123,7 +124,7 @@
   pint <- list()
   for (r in seq_along(names_g)) for (S in utils::combn(names_g, r, simplify = FALSE)) {
     rows <- unlist(groups[S], use.names = FALSE)
-    stat <- colMeans(.cauchy(P[rows, , drop = FALSE]))
+    stat <- colMeans(.loc_cauchy(P[rows, , drop = FALSE]))
     pint[[paste(S, collapse = "+")]] <- (1 + sum(stat[-1] >= stat[1])) / length(stat)
   }
   pint <- unlist(pint)
@@ -416,8 +417,8 @@ localize.external <- function(y, p, X, M = 999L, alpha = 0.05, calibration = c("
 #' y  <- rbinom(n, 1, plogis(-0.3 + 0.8 * x1 + 0.6 * x2 + 0.8 * x1 * x2))
 #' fit <- glm(y ~ x1 + x2, family = binomial())   # the interaction is missed
 #' localize.gof(fit, B = 49, seed = 1)   # B = 49 to keep the example fast; use 199 or more
-#' @seealso \code{\link{localize.external}}; \code{\link{legoft.localize}} for a two-domain
-#'   localization over the classical battery.
+#' @seealso \code{\link{localize.external}} for frozen predictions on new data;
+#'   \code{\link{plot.gof_localize}} for the display of a verdict.
 #' @concept goodness-of-fit
 #' @concept logistic regression
 #' @concept closed testing
