@@ -174,6 +174,9 @@
 
 * `ef.gof()` refuses a `G` that is not a whole number.
 
+* `ef.gof(fit)` stopped with a length mismatch when `fit` was fitted with `na.action = na.exclude`,
+  because `fitted()` pads the excluded records with `NA`. It now uses the records of the fit.
+
 # ebrahim.gof 2.9.0
 
 ## Bug fix
