@@ -67,8 +67,9 @@
   simulated statistic as extreme), the `BAGofT` row reports `1 / (nsim + 1)` and says so.
 
 * Printing: whole-number degrees of freedom are printed in full (`2997`, not `3e+03`), the header
-  says "1 test", notes and the `summary()` lines are wrapped to `getOption("width")`, a long test
-  name in the `Given by` column of `summary()` is shortened, and the directed rows say when their
+  says "1 test", notes and the `summary()` lines are wrapped to `getOption("width")`, the printed `summary()`
+  heads its columns `Reject` and `Min p` and shortens a long test name in `Given by`, so the table
+  is not split, and the directed rows say when their
   p-value comes from `S / c ~ chi-square(df)` (Satterthwaite), so that `Statistic` and `df` alone
   do not give it. The message about slow tests is printed only for the full battery.
 

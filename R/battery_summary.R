@@ -68,11 +68,12 @@ print.summary.gof_battery <- function(x, ...) {
   w <- max(40L, getOption("width", 80L))
   by <- ifelse(is.na(d$Smallest_test), "", d$Smallest_test)
   ## the test that gives the smallest p goes last; a long name is cut so a row fits the console
-  room <- w - 1L - (max(nchar(d$Family), 6L) + 1L) - 6L - 7L - 9L - 11L
+  ## one leading space, then each column and its separating space; one column of slack
+  room <- w - 2L - (max(nchar(d$Family), 6L) + 1L) - 6L - 7L - 7L - (max(nchar(fp), 5L) + 1L)
   room <- max(room, 12L)
   by <- ifelse(nchar(by) > room, paste0(substr(by, 1L, room - 3L), "..."), by)
   tab <- data.frame(Family = d$Family, Tests = d$Tests, `With p` = d$With_p,
-                    Rejected = d$Rejected, `Smallest p` = fp, `Given by` = by,
+                    Reject = d$Rejected, `Min p` = fp, `Given by` = by,
                     check.names = FALSE, stringsAsFactors = FALSE)
   cat("\n", paste(strwrap(sprintf(
     "Goodness-of-fit battery by family: %d %s, %d with a p-value, %d %s at %g",

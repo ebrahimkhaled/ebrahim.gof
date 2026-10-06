@@ -76,6 +76,14 @@ test_that("printed lines fit a 70-character console", {
   res <- run.all.gof(f, include_slow = FALSE, install = "no")
   out <- c(capture.output(print(res)), capture.output(print(summary(res))))
   expect_true(all(nchar(out) <= 70))
+  expect_true(any(grepl("Family.*Given by", out)))        # the summary table is not wrapped
+  long <- structure(data.frame(Test = c("Hosmer-Lemeshow (external)", "Ensemble.Univ(3DEF+EF)"),
+                               Family = c("Covariate-space", "Ensemble"), Statistic = NA_real_,
+                               df = NA_real_, p_value = c(1e-5, 0.0123), Note = ""),
+                    class = c("gof_battery", "data.frame"))
+  lo <- capture.output(print(summary(long)))
+  expect_true(any(grepl("Family.*Given by", lo)))
+  expect_true(all(nchar(lo) <= 70))
   expect_true(any(grepl(" 2997 ", out, fixed = TRUE)))   # whole-number df in full
 })
 
