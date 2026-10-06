@@ -245,7 +245,7 @@ ef.gof <- function(y, predicted_probs = NULL, model = NULL, m = NULL, G = 10,
     if (is.null(groups)) {
       if (identical(G, "auto")) G <- max(10, ceiling(n / 25))
       else if (identical(G, "paul")) G <- .ef_paul_G(n, y)
-      if (!is.numeric(G) || length(G) != 1 || G < 2) {
+      if (!is.numeric(G) || length(G) != 1 || is.na(G) || G < 2 || G != round(G)) {
         stop("'G' must be a single integer >= 2, \"auto\" or \"paul\"")
       }
       if (G > n) {

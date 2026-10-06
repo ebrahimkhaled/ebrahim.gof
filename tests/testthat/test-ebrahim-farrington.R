@@ -72,7 +72,11 @@ test_that("input validation works correctly", {
     ef.gof(y, predicted_probs, G = 1),
     "must be a single integer >= 2"
   )
-  
+  expect_error(
+    ef.gof(y, predicted_probs, G = 4.5),             # would give 5 groups of unequal size
+    "must be a single integer >= 2"
+  )
+
   expect_error(
     ef.gof(y, predicted_probs, G = n + 10),
     "cannot exceed sample size"
