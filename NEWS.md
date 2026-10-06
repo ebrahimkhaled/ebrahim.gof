@@ -1,5 +1,47 @@
 # ebrahim.gof 2.9.0.9000 (development version)
 
+## Behaviour change
+
+* `ef.gof()` now computes the test as the EF paper defines it (Ebrahim, Khattab and El-Kotory,
+  arXiv:2607.15454), and **its default p-value changes for some data**:
+  - The groups are equal in size to within one record. Up to 2.9.0 the `n %% G` records left over
+    all went to the last group, so results change whenever `n` is not a multiple of `G`.
+  - Tied fitted risks are put in random order. They used to follow the row order, so with binomial
+    data expanded events first a group boundary inside a covariate pattern manufactured misfit. A
+    result with tied risks now depends on the random number stream: call `set.seed()` first to
+    reproduce it. Nothing is drawn when no risks are tied, so untied data give the same groups
+    as before (when `n` is a multiple of `G`) and leave the stream alone.
+  - `Test_Statistic` is now EF itself, the statistic referred to chi-squared on `G - 2` degrees of
+    freedom. It used to be the standardization `(EF - (G - 2)) / sqrt(2 (G - 2))` even when the
+    p-value came from the chi-squared reference. The `EF` row of `run.all.gof()` therefore prints
+    EF beside its `df`.
+  - The result has new columns `df`, `Reference`, `G`, `HL` and `C`, and an attribute `"groups"`
+    with the per-group residuals `r`, weights `b` and the directional read-out `c = b r`, whose sum
+    is `C = HL - EF`.
+
+  To reproduce a p-value of 2.9.0, pass its groups:
+  `ef.gof(y, p, groups = pmin(ceiling(rank(p, ties.method = "first") / floor(n / G)), G))`.
+  What takes the EF p-value changes with it: the `EF` row of `run.all.gof()`, the
+  `Ensemble.Univ(3DEF+EF)` row, `def.ensemble.gof(add_ef = TRUE)`, `legoft()` and
+  `gof.features()`.
+
+* `ef.gof(reference = "normal")` is the plug-in normal reference of the EF paper (Theorem 3), with
+  model-based moments; it is the reference for many groups and needs the model's design matrix
+  (pass the fitted `glm`, or `X`). The old `method = "normal"`, the standardization above referred
+  to the normal, is deprecated: it still works, with a warning, to reproduce earlier results. The
+  `EF-normal` row of `run.all.gof()` now uses the Theorem-3 reference, so its p-value changes.
+
+## New features
+
+* `ef.gof(G = "auto")` uses groups of about 25 records, `max(10, ceiling(n / 25))`, the choice the
+  EF paper recommends for large samples, and `G = "paul"` the number of groups of Paul, Pennell and
+  Lemeshow (2013). `groups = "pattern"` keeps each covariate pattern (records with the same fitted
+  risk) in one group of its own, and `groups` also takes any vector of group labels.
+
+* `ef.gof()` warns (class `ef_sparse_groups`) when some group expects fewer than one half event or
+  non-event: the chi-squared reference then needs fewer groups. In `run.all.gof()` the warning goes
+  to the Note of the `EF` row.
+
 ## New functions
 
 * `plot()` for the result of `localize.external()` or `localize.gof()` draws the verdict: a misfit

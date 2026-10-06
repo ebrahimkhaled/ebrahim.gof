@@ -96,19 +96,23 @@ print(result)
 The main function that performs the goodness-of-fit test:
 
 ```r
-ef.gof(y, predicted_probs, G = 10, model = NULL, m = NULL,
-       method = c("chisq", "normal"))
+ef.gof(y, predicted_probs = NULL, model = NULL, m = NULL, G = 10,
+       method = NULL, reference = c("chisq", "normal"), X = NULL, groups = NULL)
 ```
 
 **Parameters:**
-- `y`: a fitted binary-logistic `glm` (then `predicted_probs` is taken from it), or a binary response vector (0/1) / success counts for grouped data
+- `y`: a fitted binary-logistic `glm` (then `predicted_probs` and `X` are taken from it), or a binary response vector (0/1) / success counts for grouped data
 - `predicted_probs`: Vector of predicted probabilities from logistic model
-- `G`: Number of groups for binary data (default: 10)
-- `method`: reference distribution for the grouped statistic. `"chisq"` (default, new in 2.0.0) refers T_EF to a chi-square with G-2 df; `"normal"` uses the standardized Z_EF (the behaviour of versions <= 1.0.0)
+- `G`: Number of groups (default: 10); `"auto"` for groups of about 25 records; `"paul"` for the rule of Paul, Pennell and Lemeshow (2013)
+- `reference`: `"chisq"` (default) refers EF to a chi-square with G-2 df; `"normal"` is the plug-in normal reference for many groups (needs the fitted `glm` or `X`)
+- `groups`: `NULL` (equal-size groups by fitted risk, ties at random), `"pattern"` (one group per covariate pattern), or a vector of group labels
+- `method`: deprecated; `method = "normal"` reproduces the standardization of versions up to 2.9.0
 - `model`: Optional glm object (required for the original Farrington test only)
 - `m`: Optional vector of trial counts (for grouped data; original Farrington only)
 
-> **Note (breaking change in 2.0.0):** `ef.gof()` now defaults to `method = "chisq"`. Use `method = "normal"` to reproduce p-values from version 1.0.0.
+The result carries `C = HL - EF` and, in `attr(result, "groups")`, the per-group read-out `c = b r`.
+
+> **Note (behaviour change in 2.10.0):** the groups are equal in size to within one record, tied fitted risks are put in random order (call `set.seed()` first), and `Test_Statistic` is EF itself. See NEWS for how to reproduce an earlier p-value.
 
 **Returns:**
 A data frame with test name, test statistic, and p-value.
@@ -298,8 +302,7 @@ y <- rbinom(n, 1, prob)
 model <- glm(y ~ x1 + x2, family = binomial())
 predicted_probs <- fitted(model)
 
-# Test goodness of fit (chi-square reference by default in 2.0.0;
-# use method = "normal" for the version 1.0.0 p-value)
+# Test goodness of fit (EF on ten groups, chi-square reference on G - 2 df)
 result <- ef.gof(y, predicted_probs, G = 10)
 print(result)
 #>                 Test Test_Statistic p_value

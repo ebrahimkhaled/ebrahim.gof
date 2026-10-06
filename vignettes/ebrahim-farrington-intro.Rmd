@@ -180,8 +180,10 @@ power. DEF keeps the intuitive fitted-probability grouping but *directs* the tes
 at calibration-curve shapes, which is why it tops the table without losing size
 control.
 
-> Note: as of 2.0.0, `ef.gof()` defaults to the chi-square reference
-> (`method = "chisq"`); use `method = "normal"` for the version 1.0.0 behaviour.
+> Note: `ef.gof()` refers EF to the chi-square on `G - 2` degrees of freedom. With many
+> groups use `reference = "normal"`, the normal reference of the EF paper, and prefer
+> groups of about 25 records (`G = "auto"`). Since 2.10.0 the groups are equal in size to
+> within one record and tied fitted risks are put in random order (call `set.seed()` first).
 
 ## Power Analysis Example
 

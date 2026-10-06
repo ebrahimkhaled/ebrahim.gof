@@ -98,7 +98,9 @@ test_that("EF appears in both chisq and normal forms", {
   res <- run.all.gof(fit, include_slow = FALSE)
   expect_true(all(c("EF", "EF-normal") %in% res$Test))
   expect_equal(res$p_value[res$Test == "EF-normal"],
-               ef.gof(fit, method = "normal")$p_value, tolerance = 1e-8)
+               ef.gof(fit, reference = "normal")$p_value, tolerance = 1e-8)
+  expect_equal(res$p_value[res$Test == "EF"], ef.gof(fit)$p_value, tolerance = 1e-8)
+  expect_equal(res$df[res$Test == "EF"], 8)
 })
 
 test_that("Pigeon-Heyse matches its source (deterministic golden)", {

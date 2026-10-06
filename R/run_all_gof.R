@@ -101,8 +101,10 @@
 #' power when the guess is right.
 #' \itemize{
 #'   \item \code{EF}, \code{EF-normal} -- the omnibus Ebrahim-Farrington test,
-#'     with the chi-square and normal references respectively. Built for sparse
-#'     data, where the classical grouped statistics lose their reference.
+#'     Farrington's correction on the Hosmer-Lemeshow risk groups, with the
+#'     chi-square reference on \eqn{G - 2} degrees of freedom and with the
+#'     plug-in normal reference for many groups (needs the model or \code{X});
+#'     see \code{\link{ef.gof}}. Tied fitted risks are put in random order.
 #'   \item \code{DEF.poly2}, \code{DEF.poly3}, \code{DEF.stukel}, \code{DEF.sym} --
 #'     the directed forms, each aiming the test at a smooth departure in the shape
 #'     of the calibration curve: a quadratic or cubic drift in the linear
@@ -529,9 +531,9 @@
 #' are reported in the following. Reproduction materials for each are archived
 #' and citable.
 #'
-#' Ebrahim EK, El-Kotory A (2026). "A Directional Hosmer-Lemeshow
-#' Goodness-of-Fit Test for Sparse Logistic Regression." arXiv:2607.15454
-#' [stat.ME]. \doi{10.48550/arXiv.2607.15454}
+#' Ebrahim EK, Khattab IG, El-Kotory A (2026). "A Modified Hosmer-Lemeshow
+#' Goodness-of-Fit Test for Asymmetric Links: Second-Order Power and Robustness."
+#' arXiv:2607.15454 [stat.ME]. \doi{10.48550/arXiv.2607.15454}
 #'
 #' Ebrahim EK, El-Kotory A (2026). "Benchmarking Goodness-of-Fit and Calibration
 #' Algorithms for Logistic Regression Classifiers: A Large-Scale Simulation
@@ -655,10 +657,12 @@ run.all.gof <- function(object, predicted_probs = NULL, X = NULL,
 
   # ensemble rows (only when a model is available and running the full set)
   if (ctx$has_model && identical(tests, "all")) {
-    # a few-events or no-fit warning is already in the Note of the directed rows
+    # a few-events or no-fit warning is already in the Note of the directed rows, and EF's
+    # size-rule warning in the Note of its own row
     quiet <- function(expr)
       withCallingHandlers(expr, def_few_events = function(w) invokeRestart("muffleWarning"),
-                          def_degenerate = function(w) invokeRestart("muffleWarning"))
+                          def_degenerate = function(w) invokeRestart("muffleWarning"),
+                          ef_sparse_groups = function(w) invokeRestart("muffleWarning"))
     v3 <- tryCatch(quiet(def.ensemble.gof(ctx$model, G = ctx$G))$p_value, error = function(e) NA_real_)
     vu <- tryCatch(quiet(def.ensemble.gof(ctx$model, add_ef = TRUE, G = ctx$G))$p_value,
                    error = function(e) NA_real_)
@@ -1026,15 +1030,23 @@ gof_ph_test <- function(ctx, opts = list()) {
 }
 
 gof_ef <- function(ctx, opts = list()) {
-  r <- ef.gof(ctx$y, ctx$ph, G = ctx$G)            # chisq reference (package default)
-  list(Statistic = r$Test_Statistic, df = ctx$G - 2, p_value = r$p_value, Note = "")
+  note <- ""                                       # the size-rule warning goes to Note
+  r <- withCallingHandlers(ef.gof(ctx$y, ctx$ph, G = ctx$G),   # chisq reference (package default)
+                           ef_sparse_groups = function(w) {
+                             note <<- "fewer than one half expected event or non-event in a group"
+                             invokeRestart("muffleWarning")
+                           })
+  list(Statistic = r$Test_Statistic, df = r$df, p_value = r$p_value, Note = note)
 }
 
-# EF with the normal reference: reproduces the thesis simulation's farrington_test.
+# EF with the plug-in normal reference of the EF paper (Theorem 3), the reference for many groups.
 gof_ef_normal <- function(ctx, opts = list()) {
-  r <- ef.gof(ctx$y, ctx$ph, G = ctx$G, method = "normal")
-  list(Statistic = r$Test_Statistic, df = ctx$G - 2, p_value = r$p_value,
-       Note = "normal reference (thesis)")
+  if (!ctx$has_model && is.null(ctx$X))
+    return(list(Statistic = NA, df = NA, p_value = NA, Note = "needs a glm model or X"))
+  r <- if (ctx$has_model) ef.gof(ctx$model, G = ctx$G, reference = "normal")
+       else ef.gof(ctx$y, ctx$ph, G = ctx$G, reference = "normal", X = ctx$X)
+  list(Statistic = r$Test_Statistic, df = NA, p_value = r$p_value,
+       Note = "normal reference (Theorem 3 of the EF paper)")
 }
 
 gof_def <- function(ctx, opts = list()) {

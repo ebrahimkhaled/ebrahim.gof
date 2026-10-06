@@ -10,13 +10,16 @@ ef.gof(
   model = NULL,
   m = NULL,
   G = 10,
-  method = c("chisq", "normal")
+  method = NULL,
+  reference = c("chisq", "normal"),
+  X = NULL,
+  groups = NULL
 )
 }
 \arguments{
-\item{y}{A fitted binary logistic \code{glm} (then \code{predicted_probs} is
-taken from it automatically), or a numeric vector of binary responses (0/1)
-for binary data / counts of successes for grouped data.}
+\item{y}{A fitted binary logistic \code{glm} (then \code{predicted_probs} and \code{X}
+are taken from it), or a numeric vector of binary responses (0/1) for binary data /
+counts of successes for grouped data.}
 
 \item{predicted_probs}{Numeric vector of predicted probabilities from the
 logistic regression model. Must be same length as \code{y}.}
@@ -27,55 +30,105 @@ Farrington test with grouped data (when \code{m} is provided and \code{G} is NUL
 \item{m}{Optional numeric vector of trial counts for each observation
 (for grouped data). If NULL, data is assumed to be binary.}
 
-\item{G}{Optional integer specifying the number of groups for binary data
-grouping. Default is 10. If NULL, no grouping is performed and \code{m}
-must be provided.}
+\item{G}{Number of risk groups: an integer (default 10); \code{"auto"} for groups of
+about 25 records, \code{max(10, ceiling(n / 25))}; or \code{"paul"} for the rule of
+Paul, Pennell and Lemeshow (2013), \eqn{\max\{10, \min(n_1/2, (n-n_1)/2,
+2 + 8(n/1000)^2)\}} rounded down, \eqn{n_1} the number of events (designed for
+\eqn{1000 < n \le 25000}). Ignored when \code{groups} is given. If NULL (and no
+\code{groups}), no grouping is performed and \code{m} must be provided.}
 
-\item{method}{Reference distribution for the grouped EF statistic:
-\code{"chisq"} (default) refers \eqn{T_{EF}} to a \eqn{\chi^2_{G-2}}
-distribution; \code{"normal"} uses the standardized \eqn{Z_{EF}} (the
-behaviour of package versions <= 1.0.0).}
+\item{method}{Deprecated. \code{"chisq"} is \code{reference = "chisq"};
+\code{"normal"} is the standardization \eqn{(EF - (G-2))/\sqrt{2(G-2)}} of package
+versions up to 2.9.0, kept, with a warning, to reproduce earlier results. It is not
+the normal reference of the EF paper, which is \code{reference = "normal"}.}
+
+\item{reference}{\code{"chisq"} (default) or \code{"normal"}; see Details.}
+
+\item{X}{Design matrix of the fitted model (with the intercept column), needed for
+\code{reference = "normal"} when \code{y} is not a fitted \code{glm}.}
+
+\item{groups}{\code{NULL} (default) for equal-size groups by rank of the fitted risk,
+ties at random; \code{"pattern"} for one group per distinct fitted risk; or a vector
+of group labels, one per record.}
 }
 \value{
-A data frame with the following columns:
-\item{Test}{Character string identifying the test performed}
-\item{Test_Statistic}{Numeric value of the standardized test statistic}
-\item{p_value}{Numeric p-value for the test}
+For the grouped test, a one-row data frame with columns
+\item{Test}{\code{"Ebrahim-Farrington"}}
+\item{Test_Statistic}{\eqn{EF} for \code{reference = "chisq"}; the standardized
+  \eqn{z} for \code{reference = "normal"} (and for the deprecated \code{method = "normal"})}
+\item{df}{\eqn{G - 2} for the chi-squared reference, \code{NA} otherwise}
+\item{Reference}{\code{"chisq"}, \code{"normal"} or \code{"thesis"} (the deprecated
+  \code{method = "normal"})}
+\item{p_value}{the p-value}
+\item{G}{the number of groups used}
+\item{HL}{the Hosmer-Lemeshow statistic on the same groups}
+\item{C}{the removed directional part, \eqn{C = HL - EF}}
+and an attribute \code{"groups"}: one row per group with \code{group}, \code{n},
+\code{observed}, \code{expected}, \code{pbar}, \code{r} (\eqn{r_g}), \code{b}
+(\eqn{b_g}) and \code{c} (\eqn{c_g = b_g r_g}, summing to \code{C}).
+For the original Farrington test (\code{G = NULL}), a data frame with \code{Test},
+\code{Test_Statistic} (standardized) and \code{p_value}.
 }
 \description{
-Performs the Ebrahim-Farrington goodness-of-fit test for logistic regression models.
-This test is particularly effective for binary data and sparse datasets, providing
-an improved alternative to the traditional Hosmer-Lemeshow test.
+Performs the Ebrahim-Farrington (EF) goodness-of-fit test for logistic regression
+models: Farrington's (1996) correction applied to the Hosmer-Lemeshow risk groups.
+It keeps the protection of the risk-ordered table against gross recording errors and
+is the score test for records of similar fitted risk sharing a miscalibration.
 }
 \details{
-The Ebrahim-Farrington test is based on Farrington's (1996) theoretical framework
-but simplified for practical implementation with binary data. The test uses a
-modified Pearson chi-square statistic with data-dependent grouping, where
-observations are grouped by their predicted probabilities.
+The records are sorted by fitted risk and cut into \code{G} groups of sizes that differ
+by at most one. For group \eqn{g} with \eqn{n_g} records, \eqn{o_g} observed and
+\eqn{e_g = n_g \bar\pi_g} expected events and \eqn{V_g = n_g\bar\pi_g(1-\bar\pi_g)},
+the standardized residual is \eqn{r_g = (o_g - e_g)/\sqrt{V_g}} and
+\eqn{HL = \sum_g r_g^2}. With \eqn{b_g = (1 - 2\bar\pi_g)/\sqrt{V_g}},
+\deqn{EF = HL - C, \qquad C = \sum_g b_g r_g .}
+\eqn{EF} keeps only the within-group products of the residuals: \eqn{HL = G + C + Q}
+and \eqn{EF = G + Q} (Ebrahim, Khattab and El-Kotory, 2026).
 
-For binary data (when \code{G} is specified), the test automatically groups
-observations into \code{G} groups based on predicted probabilities and applies
-the simplified Ebrahim-Farrington statistic:
+\strong{Reference distributions.} \code{reference = "chisq"} (the default) refers
+\eqn{EF} to \eqn{\chi^2_{G-2}}, the reference of the Hosmer-Lemeshow test, which the
+fixed-\eqn{G} theory justifies. \code{reference = "normal"} is the plug-in normal
+reference for many groups (Theorem 3 of the paper): \eqn{z = (EF - \hat\mu)/\hat\sigma}
+with model-based moments evaluated at the fit, referred to the upper tail of the
+standard normal. It needs the model's design matrix: pass the fitted \code{glm}, or
+\code{X}.
 
-\deqn{Z_{EF} = \frac{T_{EF} - (G - 2)}{\sqrt{2(G-2)}}}
+\strong{Which reference, how many groups.}
+\itemize{
+  \item With \code{G = 10} and \eqn{\chi^2_{G-2}}, each group needs about one expected
+    event and one expected non-event. When some group expects fewer than one half,
+    the test is conservative and the Hosmer-Lemeshow reference is unreliable too: use
+    fewer groups. A warning of class \code{ef_sparse_groups} says so.
+  \item With many groups, as under the rule of Paul, Pennell and Lemeshow (2013)
+    (\code{G = "paul"}), use \code{reference = "normal"}, not \eqn{\chi^2_{G-2}}, and
+    prefer groups of about 25 records (\code{G = "auto"}, that is
+    \code{max(10, ceiling(n / 25))}): they keep the protection against gross errors and
+    do not dilute a smooth misfit over very many small groups.
+}
 
-where \eqn{T_{EF}} is the modified Pearson chi-square statistic, and \eqn{G}
-is the number of groups.
+\strong{Ties.} Records with tied fitted risks must not be ordered by the response: a
+group boundary inside a covariate pattern then manufactures misfit. Ties are broken at
+random, so a result with tied fitted risks depends on the random number stream; call
+\code{set.seed()} first to reproduce it. Nothing is drawn when no fitted risks are tied.
+Alternatively, \code{groups = "pattern"} keeps each pattern (records with the same
+fitted risk) in one group of its own, as for binomial data expanded to binary records,
+or \code{groups} takes any vector of group labels.
 
-For grouped data (when \code{m} is provided), the test applies the original
-Farrington test with full variance calculations.
+\strong{Directional read-out.} The returned \code{C} and the per-group terms
+\eqn{c_g = b_g r_g} in \code{attr(, "groups")} describe the direction of the misfit.
+Since \eqn{b_g} changes sign at \eqn{\bar\pi_g = 1/2}, \eqn{C < 0} says that, on
+balance, the model underestimates how fast the risk approaches one in the high-risk
+groups or approaches zero in the low-risk groups. The read-out is descriptive.
+
+For grouped binomial data (\code{G = NULL} with \code{m} and \code{model}), the
+original Farrington test is applied with its full variance calculations.
 }
 \note{
 \itemize{
-  \item For binary data with automatic grouping (\code{G} specified): Use the
-        Ebrahim-Farrington test which is computationally efficient and doesn't
-        require the model specification.
   \item For grouped data (\code{m} provided \emph{and} \code{G} set to \code{NULL}):
         Use the original Farrington test, which requires the fitted model object.
         Leaving \code{G} at its default keeps the automatic grouping, and \code{m}
         and \code{model} are then ignored.
-  \item The test statistic follows a standard normal distribution under the
-        null hypothesis of adequate model fit.
   \item For binary data with \code{m=1} for all observations and no grouping,
         the test is not applicable and will return a p-value of 1.
 }
@@ -91,17 +144,19 @@ y <- rbinom(n, 1, prob)
 
 # Fit logistic regression
 model <- glm(y ~ x, family = binomial())
-predicted_probs <- fitted(model)
 
-# Perform Ebrahim-Farrington test with 10 groups
-result <- ef.gof(y, predicted_probs, G = 10)
+# Ten groups, chi-square(G - 2) reference
+result <- ef.gof(model)
 print(result)
+attr(result, "groups")              # r_g, b_g and the read-out c_g
 
-# Example 2: Compare with different number of groups
-result_4 <- ef.gof(y, predicted_probs, G = 4)
-result_20 <- ef.gof(y, predicted_probs, G = 20)
+# Groups of about 25 records with the normal reference
+ef.gof(model, G = "auto", reference = "normal")
 
-# Example 3: Grouped data (original Farrington test)
+# Frozen predictions: y and the predicted probabilities
+ef.gof(y, fitted(model), G = 10)
+
+# Example 2: Grouped data (original Farrington test)
 set.seed(456)
 n_groups <- 50
 m_trials <- sample(5:20, n_groups, replace = TRUE)
@@ -112,7 +167,7 @@ y_grouped <- rbinom(n_groups, m_trials, prob_grouped)
 
 # Fit model for grouped data
 data_grouped <- data.frame(successes = y_grouped, trials = m_trials, x = x_grouped)
-model_grouped <- glm(cbind(successes, trials - successes) ~ x, 
+model_grouped <- glm(cbind(successes, trials - successes) ~ x,
                      data = data_grouped, family = binomial())
 predicted_probs_grouped <- fitted(model_grouped)
 
@@ -126,6 +181,10 @@ print(result_grouped)
 
 }
 \references{
+Ebrahim EK, Khattab IG, El-Kotory A (2026). "A Modified Hosmer-Lemeshow
+Goodness-of-Fit Test for Asymmetric Links: Second-Order Power and Robustness."
+arXiv:2607.15454 [stat.ME]. \doi{10.48550/arXiv.2607.15454}
+
 Farrington CP (1996). "On Assessing Goodness of Fit of Generalized Linear Models
 to Sparse Data." \emph{Journal of the Royal Statistical Society, Series B},
 \bold{58}(2), 349-360. \doi{10.1111/j.2517-6161.1996.tb02086.x}
@@ -134,9 +193,9 @@ Hosmer DW, Lemeshow S (1980). "A goodness-of-fit test for the multiple logistic
 regression model." \emph{Communications in Statistics - Theory and Methods},
 \bold{9}(10), 1043-1069. \doi{10.1080/03610928008827941}
 
-Ebrahim EK, El-Kotory A (2026). "A Directional Hosmer-Lemeshow Goodness-of-Fit
-Test for Sparse Logistic Regression." arXiv:2607.15454 [stat.ME].
-\doi{10.48550/arXiv.2607.15454}
+Paul P, Pennell ML, Lemeshow S (2013). "Standardizing the power of the
+Hosmer-Lemeshow goodness of fit test in large data sets." \emph{Statistics in
+Medicine}, \bold{32}(1), 67-80. \doi{10.1002/sim.5525}
 
 Ebrahim EK (2026). "Goodness-of-Fit Tests and Calibration Machine-Learning
 Algorithms for Logistic Regression with Sparse Data." M.Sc. thesis, Alexandria

@@ -14,8 +14,9 @@ test_that("ef.gof works with binary data", {
   result <- ef.gof(y, predicted_probs)
   
   expect_s3_class(result, "data.frame")
-  expect_equal(ncol(result), 3)
-  expect_equal(names(result), c("Test", "Test_Statistic", "p_value"))
+  expect_equal(names(result), c("Test", "Test_Statistic", "df", "Reference", "p_value",
+                                "G", "HL", "C"))
+  expect_equal(result$Test_Statistic, result$HL - result$C)
   expect_equal(result$Test, "Ebrahim-Farrington")
   expect_true(is.numeric(result$Test_Statistic))
   expect_true(is.numeric(result$p_value))
@@ -146,14 +147,17 @@ test_that("handles edge cases gracefully", {
   y_small <- c(0, 1, 0, 1)
   pred_small <- c(0.2, 0.8, 0.3, 0.7)
   
-  result_small <- ef.gof(y_small, pred_small, G = 4)
+  # one record per group: far below the size rule of the chi-square reference
+  expect_warning(result_small <- ef.gof(y_small, pred_small, G = 4),
+                 class = "ef_sparse_groups")
   expect_true(is.numeric(result_small$p_value))
-  
+
   # Extreme probabilities (but within bounds)
   y_extreme <- c(0, 0, 1, 1)
   pred_extreme <- c(0.001, 0.001, 0.999, 0.999)
-  
-  result_extreme <- ef.gof(y_extreme, pred_extreme, G = 4)
+
+  expect_warning(result_extreme <- ef.gof(y_extreme, pred_extreme, G = 4),
+                 class = "ef_sparse_groups")
   expect_true(is.numeric(result_extreme$p_value))
 })
 

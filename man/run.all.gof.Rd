@@ -194,8 +194,10 @@ ask whether a \emph{particular} shape of departure is present, which buys
 power when the guess is right.
 \itemize{
   \item \code{EF}, \code{EF-normal} -- the omnibus Ebrahim-Farrington test,
-    with the chi-square and normal references respectively. Built for sparse
-    data, where the classical grouped statistics lose their reference.
+    Farrington's correction on the Hosmer-Lemeshow risk groups, with the
+    chi-square reference on \eqn{G - 2} degrees of freedom and with the
+    plug-in normal reference for many groups (needs the model or \code{X});
+    see \code{\link{ef.gof}}. Tied fitted risks are put in random order.
   \item \code{DEF.poly2}, \code{DEF.poly3}, \code{DEF.stukel}, \code{DEF.sym} --
     the directed forms, each aiming the test at a smooth departure in the shape
     of the calibration curve: a quadratic or cubic drift in the linear
@@ -557,9 +559,9 @@ The methods introduced by this package, and the studies that evaluate them,
 are reported in the following. Reproduction materials for each are archived
 and citable.
 
-Ebrahim EK, El-Kotory A (2026). "A Directional Hosmer-Lemeshow
-Goodness-of-Fit Test for Sparse Logistic Regression." arXiv:2607.15454
-[stat.ME]. \doi{10.48550/arXiv.2607.15454}
+Ebrahim EK, Khattab IG, El-Kotory A (2026). "A Modified Hosmer-Lemeshow
+Goodness-of-Fit Test for Asymmetric Links: Second-Order Power and Robustness."
+arXiv:2607.15454 [stat.ME]. \doi{10.48550/arXiv.2607.15454}
 
 Ebrahim EK, El-Kotory A (2026). "Benchmarking Goodness-of-Fit and Calibration
 Algorithms for Logistic Regression Classifiers: A Large-Scale Simulation
