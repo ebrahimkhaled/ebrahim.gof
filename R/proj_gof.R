@@ -162,7 +162,7 @@ projection.gof <- function(object, B = 1000, scale = FALSE, tol = 1e-10) {
     Z <- base::scale(Z)
   }
   A    <- .proj_weight(Z, tol = tol)
-  mu   <- as.numeric(stats::fitted(object))
+  mu   <- as.numeric(object$fitted.values)
   Tobs <- .proj_stat(y - mu, A)
 
   off <- object$offset

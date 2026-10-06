@@ -69,7 +69,7 @@
 ## parametric bootstrap reference: refit under the fitted model, recompute the battery
 .legoft_reference <- function(object, B, members, seed) {
   if (!is.null(seed)) set.seed(seed)
-  ph  <- as.numeric(stats::fitted(object))
+  ph  <- as.numeric(object$fitted.values)
   dat <- object$data
   if (is.null(dat)) dat <- stats::model.frame(object)
   frm <- stats::formula(object)

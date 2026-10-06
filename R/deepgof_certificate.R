@@ -46,7 +46,7 @@
     tcols <- .dg_term_cols(fit, mm, colnames(X))
   }
   if (ncol(X) < 1L) stop("deepgof1() needs at least one covariate", call. = FALSE)
-  ph <- as.numeric(stats::fitted(fit))
+  ph <- as.numeric(fit$fitted.values)
   n  <- length(ph)
   if (ncol(X) == 1L) {
     ## one covariate: the 36 quantile cells along it, as deepgof1() reads it
@@ -146,12 +146,12 @@ gof_certificate <- function(fit, pi_star = NULL, eta_shift = NULL, direction = N
       if (is.null(eta_shift))
         stop("name the departure: pi_star, eta_shift, or direction", call. = FALSE)
       eta_shift <- as.numeric(eta_shift)
-      if (length(eta_shift) != length(stats::fitted(fit)))
+      if (length(eta_shift) != length(fit$fitted.values))
         stop("eta_shift must have one entry per observation", call. = FALSE)
-      pi_star <- stats::plogis(stats::qlogis(as.numeric(stats::fitted(fit))) + eta_shift)
+      pi_star <- stats::plogis(stats::qlogis(as.numeric(fit$fitted.values)) + eta_shift)
     }
     pi_star <- as.numeric(pi_star)
-    if (length(pi_star) != length(stats::fitted(fit)))
+    if (length(pi_star) != length(fit$fitted.values))
       stop("pi_star must have one entry per observation", call. = FALSE)
     if (any(pi_star < 0 | pi_star > 1)) stop("pi_star must lie in [0, 1]", call. = FALSE)
     dd <- .dg_direction(fit, pi_star, K)

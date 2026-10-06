@@ -82,7 +82,7 @@
 ## sorted by the outcome then puts tied rows into cells by their outcome, the bootstrap
 ## outcomes are not sorted, and a correct model can be rejected.
 .dg_map <- function(fit, K = 6L, tb = NULL)
-  .dg_map_core(stats::model.matrix(fit), fit$y, as.numeric(stats::fitted(fit)),
+  .dg_map_core(stats::model.matrix(fit), fit$y, as.numeric(fit$fitted.values),
                stats::coef(fit), K, tb)
 
 ## the same map from a design matrix, outcome, fitted risks and coefficients, so a bootstrap
@@ -200,7 +200,7 @@
 ##            statistics; not offered by deepgof1())
 ## Returns the observed values, the B x 4 matrix of bootstrap values, and the observed maps.
 .dg_engine <- function(fit, B, K, X, mm, tb, score, need = c("axes", "allpairs"), tcols = NULL) {
-  ph <- as.numeric(stats::fitted(fit)); y <- as.numeric(fit$y); n <- length(y)
+  ph <- as.numeric(fit$fitted.values); y <- as.numeric(fit$y); n <- length(y)
   rk <- function(v) {
     if (is.null(tb)) return(rank(v, ties.method = "first"))
     o <- order(v, tb); rr <- integer(n); rr[o] <- seq_len(n); rr
@@ -453,7 +453,7 @@ deepgof1 <- function(fit, B = 199L, K = 6L, reading = c("axes", "allpairs", "com
   tied <- any(apply(X, 2, anyDuplicated) > 0L)
   tb <- if (tied) sample.int(nrow(mm)) else NULL
 
-  ph  <- as.numeric(stats::fitted(fit))
+  ph  <- as.numeric(fit$fitted.values)
   y   <- as.numeric(fit$y)                       # 0/1, also for a factor or logical response
   itc <- attr(stats::terms(fit), "intercept") > 0L
 

@@ -456,7 +456,7 @@ localize.gof <- function(fit, X = NULL, B = 199L, alpha = 0.05, dealias = FALSE,
   Xb <- if (robust) .loc_robust_cols(X) else X
   Zb <- if (robust) .loc_robust_cols(mm[, -1, drop = FALSE]) else mm[, -1, drop = FALSE]
   sc <- function(ph) if (robust) .loc_nscore(stats::qlogis(ph)) else stats::qlogis(ph)
-  ph0 <- as.numeric(stats::fitted(fit))
+  ph0 <- as.numeric(fit$fitted.values)
   dcols <- if (dealias) .loc_curved_cols(Zb, sc(ph0), ph0 * (1 - ph0)) else NULL
   dE <- NULL
   if (length(dcols)) {   # fitted once, on the observed score, and frozen
@@ -465,12 +465,12 @@ localize.gof <- function(fit, X = NULL, B = 199L, alpha = 0.05, dealias = FALSE,
     dE <- Zc - .loc_wperp(Zc, cbind(1, splines::ns(e0, df = 3)), w0)
   }
   members_at <- function(f) {
-    ph <- as.numeric(stats::fitted(f))
+    ph <- as.numeric(f$fitted.values)
     .loc_build_members(sc(ph), Xb, ph * (1 - ph), Zfit = Zb, external = FALSE, cov_df = cov_df, dealias_E = dE)
   }
-  pv_of <- function(f, y) { m <- members_at(f); r <- matrix(y - as.numeric(stats::fitted(f)))
+  pv_of <- function(f, y) { m <- members_at(f); r <- matrix(y - as.numeric(f$fitted.values))
                             vapply(unlist(m, recursive = FALSE), function(g) g(r), 0) }
-  y0 <- as.numeric(fit$y); ph <- as.numeric(stats::fitted(fit))
+  y0 <- as.numeric(fit$y); ph <- as.numeric(fit$fitted.values)
   P <- matrix(pv_of(fit, y0), ncol = 1)
   rn <- names(pv_of(fit, y0))
   for (b in seq_len(B)) {

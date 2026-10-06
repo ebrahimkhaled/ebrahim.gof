@@ -117,7 +117,7 @@ cubic.calib.gof <- function(object, predicted_probs = NULL) {
       stop("cubic.calib.gof: the model must be a binomial glm.")
     y <- as.numeric(object$y)
     eta <- if (identical(object$family$link, "logit")) as.numeric(object$linear.predictors)
-           else stats::qlogis(pmin(pmax(as.numeric(stats::fitted(object)), 1e-12), 1 - 1e-12))
+           else stats::qlogis(pmin(pmax(as.numeric(object$fitted.values), 1e-12), 1 - 1e-12))
   } else {
     if (!is.numeric(object) || is.null(predicted_probs))
       stop("cubic.calib.gof: pass a binomial glm, or a 0/1 outcome vector with 'predicted_probs'.")

@@ -822,7 +822,7 @@ print.gof_battery <- function(x, ...) {
     if (object$family$family != "binomial")
       stop("run.all.gof: the model must be a binomial glm.")
     y  <- as.numeric(object$y)
-    ph <- pmin(pmax(as.numeric(stats::fitted(object)), 1e-6), 1 - 1e-6)
+    ph <- pmin(pmax(as.numeric(object$fitted.values), 1e-6), 1 - 1e-6)
     list(y = y, ph = ph, X = stats::model.matrix(object),
          data = tryCatch(stats::model.frame(object), error = function(e) NULL),
          model = object, G = G, n = length(y), has_model = TRUE,
@@ -1103,7 +1103,7 @@ gof_stukel <- function(ctx, opts = list()) {
     return(list(Statistic = NA, df = NA, p_value = NA,
                 Note = paste("Not run: no", if (sum(y) == 0) "events" else "non-events",
                              "in the sample, so the model has no maximum-likelihood fit")))
-  eta <- as.numeric(stats::predict(ctx$model, type = "link"))
+  eta <- as.numeric(ctx$model$linear.predictors)
   za  <- 0.5 * eta^2 * (ph >= 0.5)                 # Stukel direction, p >= 0.5
   zb  <- -0.5 * eta^2 * (ph < 0.5)                 # Stukel direction, p < 0.5
 
@@ -1153,7 +1153,7 @@ gof_stukel <- function(ctx, opts = list()) {
     return(list(Statistic = lr, df = k, p_value = stats::pchisq(lr, k, lower.tail = FALSE), Note = side))
   }
 
-  ph  <- as.numeric(stats::fitted(ctx$model))       # unclamped, as the fit itself uses
+  ph  <- as.numeric(ctx$model$fitted.values)       # unclamped, as the fit itself uses
   W   <- ph * (1 - ph)
   u   <- colSums(Z * (y - ph))
   ok  <- rep(TRUE, ncol(Z))
@@ -1476,7 +1476,7 @@ gof_stutezhu <- function(ctx, opts = list()) {
   if (!ctx$has_model) return(list(Statistic = NA, df = NA, p_value = NA, Note = "needs a glm model"))
   B   <- if (is.null(opts$B)) 200L else as.integer(opts$B)
   y   <- ctx$y; ph <- ctx$ph; X <- ctx$X
-  eta <- as.numeric(stats::predict(ctx$model, type = "link"))
+  eta <- as.numeric(ctx$model$linear.predictors)
   Tobs <- .gof_tsz_stat(y - ph, eta)
   # One bootstrap replicate, self-contained (base-only closure so PSOCK workers
   # need neither this package's namespace nor any serialized surroundings).

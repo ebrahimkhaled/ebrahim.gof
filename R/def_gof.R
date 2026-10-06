@@ -215,8 +215,8 @@ def.gof <- function(object, predicted_probs = NULL, X = NULL, G = 10,
     if (object$family$family != "binomial")
       stop("'object' must be a binomial glm (or pass y, predicted_probs, X).")
     y   <- as.numeric(object$y)
-    ph  <- pmin(pmax(as.numeric(stats::fitted(object)), 1e-6), 1 - 1e-6)
-    eta <- as.numeric(stats::predict(object, type = "link"))
+    ph  <- pmin(pmax(as.numeric(object$fitted.values), 1e-6), 1 - 1e-6)
+    eta <- as.numeric(object$linear.predictors)
     dmu <- object$family$mu.eta(eta)
     X   <- stats::model.matrix(object)
     naive <- FALSE
@@ -353,7 +353,7 @@ def.gof <- function(object, predicted_probs = NULL, X = NULL, G = 10,
     if (object$family$family != "binomial")
       stop("'object' must be a binomial glm (or pass y and predicted_probs).")
     y  <- as.numeric(object$y)
-    ph <- as.numeric(stats::fitted(object))
+    ph <- as.numeric(object$fitted.values)
   } else {
     if (!is.numeric(object))
       stop("'object' must be a fitted binomial glm or a numeric (0/1) y vector.")

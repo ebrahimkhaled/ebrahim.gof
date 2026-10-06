@@ -106,7 +106,7 @@ def.ensemble.gof <- function(object, predicted_probs = NULL, X = NULL,
 
   if (isTRUE(add_ef)) {
     if (inherits(object, "glm")) {
-      yy <- as.numeric(object$y); pp <- as.numeric(stats::fitted(object))
+      yy <- as.numeric(object$y); pp <- as.numeric(object$fitted.values)
     } else { yy <- as.numeric(object); pp <- as.numeric(predicted_probs) }
     ef <- ef.gof(yy, pp, G = G)$p_value
     pv <- c(pv, EF = ef)

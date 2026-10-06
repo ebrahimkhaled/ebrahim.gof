@@ -177,6 +177,13 @@
 * `ef.gof(fit)` stopped with a length mismatch when `fit` was fitted with `na.action = na.exclude`,
   because `fitted()` pads the excluded records with `NA`. It now uses the records of the fit.
 
+* The same padding broke every other function that read `fitted()` or `predict()` of a fit made
+  with `na.action = na.exclude`. `run.all.gof()` printed rejections for a correct model (the
+  fitted values were recycled against the outcomes), `edge.gof()` and `localize.gof()` stopped with
+  a length error, and `deepgof1()` returned `NA`. All of them now read `fitted.values` and
+  `linear.predictors` of the fit, which are never padded, and give the result of the same fit made
+  with `na.omit`.
+
 # ebrahim.gof 2.9.0
 
 ## Bug fix

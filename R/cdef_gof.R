@@ -73,7 +73,7 @@ cdef.gof <- function(object, predicted_probs = NULL, X = NULL,
     if (object$family$family != "binomial")
       stop("'object' must be a binomial glm (or pass y, predicted_probs, X).")
     y  <- as.numeric(object$y)
-    ph <- pmin(pmax(as.numeric(stats::fitted(object)), 1e-6), 1 - 1e-6)
+    ph <- pmin(pmax(as.numeric(object$fitted.values), 1e-6), 1 - 1e-6)
     X  <- stats::model.matrix(object)
   } else {
     if (!is.numeric(object)) stop("'object' must be a binomial glm or a 0/1 y vector.")
@@ -210,7 +210,7 @@ deploy.gof <- function(object, meta, B = 99, feature_fn = gof.features) {
                               s = "lambda.min", type = "link"))
   }
   s_obs <- score1(feature_fn(object))
-  ph    <- stats::fitted(object)
+  ph    <- object$fitted.values
   dat   <- object$model
   resp  <- names(dat)[1]
   fml   <- stats::formula(object)

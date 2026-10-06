@@ -165,8 +165,8 @@ edge.belt <- function(object, predicted_probs = NULL, X = NULL, G = "auto",
     if (object$family$family != "binomial")
       stop("'object' must be a binomial glm (or pass y, predicted_probs, X).")
     y   <- as.numeric(object$y)
-    ph  <- pmin(pmax(as.numeric(stats::fitted(object)), 1e-6), 1 - 1e-6)
-    eta <- as.numeric(stats::predict(object, type = "link"))
+    ph  <- pmin(pmax(as.numeric(object$fitted.values), 1e-6), 1 - 1e-6)
+    eta <- as.numeric(object$linear.predictors)
     dmu <- object$family$mu.eta(eta)
     X   <- stats::model.matrix(object)
     naive <- FALSE
