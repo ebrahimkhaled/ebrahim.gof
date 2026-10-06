@@ -46,6 +46,8 @@ BugReports: https://github.com/ebrahimkhaled/ebrahim.gof/issues
 Depends: R (>= 3.5.0)
 Imports:
     CompQuadForm,
+    graphics,
+    grDevices,
     parallel,
     stats
 Suggests:

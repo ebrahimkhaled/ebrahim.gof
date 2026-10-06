@@ -222,3 +222,18 @@ test_that("the new options are checked", {
   expect_error(localize.external(d$y, d$p, d$X, M = 19, naming = "hochberg"), "should be one of")
   expect_error(localize.external(d$y, d$p, d$X, M = 19, robust = NA), "TRUE or FALSE")
 })
+
+test_that("plot() draws a verdict in both settings and returns it invisibly", {
+  d <- loc_data()
+  re <- localize.external(d$y, d$p, d$X, M = 49, seed = 1)
+  fit <- stats::glm(y ~ x1 + x2 + x3, family = binomial(), data = data.frame(y = d$y, d$X))
+  ri <- localize.gof(fit, B = 19, seed = 1)
+  f <- tempfile(fileext = ".pdf"); grDevices::pdf(f)
+  on.exit({ grDevices::dev.off(); unlink(f) })
+  expect_identical(withVisible(plot(re))$visible, FALSE)
+  expect_identical(plot(re), re)
+  expect_silent(plot(re, which = "compass", colour = FALSE))
+  expect_silent(plot(ri, which = "lattice"))
+  expect_silent(plot(ri))
+  expect_error(plot(re, which = "radar"), "should be one of")
+})

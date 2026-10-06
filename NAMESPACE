@@ -3,6 +3,7 @@
 S3method(base::print,edge_stream)
 S3method(base::summary,edge_stream)
 S3method(plot,gof_battery)
+S3method(plot,gof_localize)
 S3method(print,bagoft_fast)
 S3method(print,calm.gof)
 S3method(print,deepgof1)

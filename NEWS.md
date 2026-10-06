@@ -2,6 +2,12 @@
 
 ## New functions
 
+* `plot()` for the result of `localize.external()` or `localize.gof()` draws the verdict: a misfit
+  compass (one wedge per part, its length the strength of evidence, the parts named filled) beside the
+  lattice of closed tests (every set of parts with its p-value; a part is named when every set that
+  contains it rejects). The highest part named and the next step are written underneath.
+  `which = "compass"` or `"lattice"` draws one panel; `colour = FALSE` draws in greys.
+
 * `localize.external(y, p, X)` says which part of the misfit is present when frozen predictions are
   checked on validation data, with the familywise error rate held at `alpha`. The misfit is split
   into four parts that follow the calibration hierarchy: `INTERCEPT` (overall risk), `SLOPE` (risks
