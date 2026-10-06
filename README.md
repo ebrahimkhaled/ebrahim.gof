@@ -525,7 +525,7 @@ in R for the up-to-date entries):
 
 ```
 Ebrahim, E. K. (2026). ebrahim.gof: Goodness-of-Fit and Calibration Tests
-for Logistic Regression. R package version 2.4.0.
+for Logistic Regression. R package version 2.10.0.
 https://github.com/ebrahimkhaled/ebrahim.gof
 ```
 
@@ -534,14 +534,25 @@ https://github.com/ebrahimkhaled/ebrahim.gof
 The methods in this package are described in the following papers by the author
 (please cite the relevant one alongside the package):
 
-- **EDGE — the directed test** (`edge.gof()` / `def.gof()`): Ebrahim, E. K. & El-Kotory, A. (2026).
-  *EDGE: A Closed-Form Directed Goodness-of-Fit Test for Sparse Logistic Regression.* Manuscript.
-- **EF — the omnibus test** (`ef.gof()`): Ebrahim, E. K. & El-Kotory, A. (2026).
-  *A directional Hosmer–Lemeshow goodness-of-fit test for sparse logistic regression.*
-  arXiv:2607.15454 · Zenodo [10.5281/zenodo.21184547](https://doi.org/10.5281/zenodo.21184547)
+- **EDGE — the directed test** (`edge.gof()` / `def.gof()`): Ebrahim, E. K., Hussein, O. A. E.-A.
+  & El-Kotory, A. (2026). *A grouped calibration test for logistic regression that tolerates a few
+  corrupted records.* arXiv:2608.20511
+- **EF — the omnibus test** (`ef.gof()`): Ebrahim, E. K., Khattab, I. G. & El-Kotory, A. (2026).
+  *A modified Hosmer–Lemeshow goodness-of-fit test for asymmetric links: second-order power and
+  robustness.* arXiv:2607.15454 · Zenodo [10.5281/zenodo.21184547](https://doi.org/10.5281/zenodo.21184547)
+- **DeepGOF-1 — the pretrained test** (`deepgof1()`, `deepgof1.external()`): Ebrahim, E. K.,
+  Hussein, O. A. E.-A. & El-Kotory, A. (2026). *Where does a logistic risk model fail? An audited
+  neural goodness-of-fit test for model development and external validation.* arXiv:2609.29575
+- **Shrinkage — penalized fits** (`shrink.gof()`): Ebrahim, E. K. (2026). *Shrinkage invalidates the
+  Hosmer–Lemeshow test: goodness of fit for penalized logistic regression, with an application to
+  glaucoma diagnosis.* arXiv:2609.06413
+- **Localization** (`localize.gof()`, `localize.external()`): Ebrahim, E. K., El-Kotory, A. &
+  Hussein, O. A. E.-A. (2026). *One goodness-of-fit test is not enough: error-controlled localization
+  of misfit in logistic risk models.* Preprint · Zenodo [10.5281/zenodo.23192535](https://doi.org/10.5281/zenodo.23192535)
 - **Benchmark — how the battery performs**: Ebrahim, E. K. & El-Kotory, A. (2026).
-  *Benchmarking goodness-of-fit and calibration algorithms for logistic regression.*
-  arXiv:2607.16344 · Zenodo [10.5281/zenodo.21286172](https://doi.org/10.5281/zenodo.21286172) —
+  *Benchmarking goodness-of-fit and calibration algorithms for logistic regression classifiers: a
+  large-scale simulation study under sparse data.* Journal of Intelligent Computing and Data Science
+  2(2), 97–128. [10.21608/jicds.2026.505341.1048](https://doi.org/10.21608/jicds.2026.505341.1048) —
   an empirical comparison of the tests aggregated here (no single test wins across all alternatives).
 - **EDGES — the Cauchy-combination ensemble** (`edges.gof()` / `def.ensemble.gof()`):
   Ebrahim, E. K. & El-Kotory, A. (2026). *A Cauchy-combination ensemble of directed

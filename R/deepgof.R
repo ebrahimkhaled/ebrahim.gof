@@ -371,8 +371,9 @@
 #' terms the default reading gives the same p-value as in 2.8.0.
 #'
 #' @references
-#' Ebrahim EK (2026). "DeepGOF-1: A Pretrained Convolutional Goodness-of-Fit Test for
-#' Logistic Regression with a Computable Consistency Certificate." Manuscript under review.
+#' Ebrahim EK, Hussein OAE-A, El-Kotory A (2026). "Where Does a Logistic Risk Model Fail?
+#' An Audited Neural Goodness-of-Fit Test for Model Development and External Validation."
+#' arXiv:2609.29575 [stat.ME]. \doi{10.48550/arXiv.2609.29575}
 #' Reproduction materials and frozen weights: \doi{10.5281/zenodo.22113220}
 #'
 #' Besag, J. and Clifford, P. (1989). Generalized Monte Carlo significance tests.
@@ -588,6 +589,10 @@ print.deepgof1 <- function(x, ...) {
 #'   advance.
 #' @return An object of class \code{"deepgof1"}, as returned by \code{\link{deepgof1}}.
 #' @references
+#' Ebrahim EK, Hussein OAE-A, El-Kotory A (2026). "Where Does a Logistic Risk Model Fail?
+#' An Audited Neural Goodness-of-Fit Test for Model Development and External Validation."
+#' arXiv:2609.29575 [stat.ME]. \doi{10.48550/arXiv.2609.29575}
+#'
 #' Besag, J. and Clifford, P. (1989). Generalized Monte Carlo significance tests.
 #' \emph{Biometrika}, 76(4), 633--642.
 #'

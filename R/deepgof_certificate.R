@@ -101,8 +101,9 @@
 #'   the other), \code{direction} (normalized), \code{axes} and \code{method}.
 #'
 #' @references
-#' Ebrahim EK (2026). "DeepGOF-1: A Pretrained Convolutional Goodness-of-Fit Test for
-#' Logistic Regression with a Computable Consistency Certificate." Manuscript under review.
+#' Ebrahim EK, Hussein OAE-A, El-Kotory A (2026). "Where Does a Logistic Risk Model Fail?
+#' An Audited Neural Goodness-of-Fit Test for Model Development and External Validation."
+#' arXiv:2609.29575 [stat.ME]. \doi{10.48550/arXiv.2609.29575}
 #'
 #' @examples
 #' set.seed(1)

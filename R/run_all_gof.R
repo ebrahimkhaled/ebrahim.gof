@@ -538,17 +538,18 @@
 #' Ebrahim EK, El-Kotory A (2026). "Benchmarking Goodness-of-Fit and Calibration
 #' Algorithms for Logistic Regression Classifiers: A Large-Scale Simulation
 #' Study under Sparse Data." \emph{Journal of Intelligent Computing and Data
-#' Science}, in press. arXiv:2607.16344 [stat.ME].
-#' \doi{10.48550/arXiv.2607.16344} Reproduction materials:
-#' \doi{10.5281/zenodo.21286171}
+#' Science}, \bold{2}(2), 97-128. \doi{10.21608/jicds.2026.505341.1048}
+#' Reproduction materials: \doi{10.5281/zenodo.21286171}
 #'
 #' Ebrahim EK (2026). "Goodness-of-Fit Tests and Calibration Machine-Learning
 #' Algorithms for Logistic Regression with Sparse Data." M.Sc. thesis,
 #' Alexandria University. arXiv:2608.11140 [stat.ME].
 #' \doi{10.48550/arXiv.2608.11140}
 #'
-#' Ebrahim EK (2026). "EDGE: a directed goodness-of-fit test for sparse logistic
-#' regression." Reproduction materials. \doi{10.5281/zenodo.21247541}
+#' Ebrahim EK, Hussein OAE-A, El-Kotory A (2026). "A Grouped Calibration Test for Logistic
+#' Regression That Tolerates a Few Corrupted Records." arXiv:2608.20511 [stat.ME].
+#' \doi{10.48550/arXiv.2608.20511} Reproduction materials (first version):
+#' \doi{10.5281/zenodo.21247541}
 #'
 #' Ebrahim EK (2026). "EDGES: A Selection-Free Ensemble Goodness-of-Fit Test."
 #' Reproduction materials. \doi{10.5281/zenodo.21320865}
@@ -556,9 +557,10 @@
 #' Ebrahim EK (2026). "Detection Subspaces: A Theory of Goodness-of-Fit Tests."
 #' Reproduction materials. \doi{10.5281/zenodo.21687498}
 #'
-#' Ebrahim EK (2026). "Shrinkage Invalidates the Hosmer-Lemeshow Test."
-#' Reproduction materials for \code{\link{shrink.gof}}.
-#' \doi{10.5281/zenodo.21900114}
+#' Ebrahim EK (2026). "Shrinkage Invalidates the Hosmer-Lemeshow Test: Goodness of Fit
+#' for Penalized Logistic Regression, with an Application to Glaucoma Diagnosis."
+#' arXiv:2609.06413 [stat.ME]. \doi{10.48550/arXiv.2609.06413} Reproduction materials
+#' for \code{\link{shrink.gof}}: \doi{10.5281/zenodo.21900114}
 #' @importFrom stats fitted predict model.matrix model.frame coef deviance pchisq binomial glm.fit kmeans median dist anova lm pnorm
 #' @importFrom utils capture.output
 #' @concept goodness-of-fit
@@ -756,9 +758,7 @@ plot.gof_battery <- function(x, ...) {
 #' @exportS3Method print gof_battery
 print.gof_battery <- function(x, ...) {
   d <- as.data.frame(x)
-  fam_order <- c("Global", "Standardized", "Partition", "Covariate-space",
-                 "Directed", "Smoothing", "GAM", "Bootstrap", "Calibration", "Ensemble")
-  ord <- match(d$Family, fam_order); ord[is.na(ord)] <- 99L
+  ord <- match(d$Family, .battery_family_order); ord[is.na(ord)] <- 99L
   d <- d[order(ord, seq_len(nrow(d))), , drop = FALSE]
 
   ## distinct notes -> footnote markers [a], [b], ... (keeps the table narrow)

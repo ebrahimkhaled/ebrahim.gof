@@ -116,9 +116,9 @@ Davies, R. B. (1980). Algorithm AS 155: the distribution of a linear
 combination of chi-squared random variables. \emph{Journal of the Royal
 Statistical Society, Series C}, \strong{29}(3), 323--333.
 
-Ebrahim, E. K. (2026). A closed-form reference distribution for
-goodness-of-fit testing under penalized logistic regression in the
-proportional regime.
+Ebrahim, E. K. (2026). A closed-form goodness-of-fit reference for penalised
+logistic regression in the proportional regime. Preprint. Reproduction materials:
+\doi{10.5281/zenodo.22467285}
 }
 \seealso{
 \code{\link{shrink.gof}} for the bootstrap reference for the same

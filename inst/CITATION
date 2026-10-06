@@ -1,17 +1,32 @@
 citHeader("To cite ebrahim.gof in publications use:")
 
 bibentry(
-  bibtype  = "Misc",
-  title    = "{EDGE}: A Closed-Form Directed Goodness-of-Fit Test for Sparse Logistic Regression",
-  author   = c(person("Ebrahim Khaled", "Ebrahim"), person("Ahmed", "El-Kotory")),
+  bibtype  = "Manual",
+  title    = "{ebrahim.gof}: Goodness-of-Fit and Calibration Tests for Logistic Regression",
+  author   = person("Ebrahim Khaled", "Ebrahim"),
   year     = "2026",
-  note     = paste("Manuscript; R package ebrahim.gof version", meta$Version),
+  note     = paste("R package version", meta$Version),
   url      = "https://CRAN.R-project.org/package=ebrahim.gof",
   textVersion = paste(
-    "Ebrahim, E. K. and El-Kotory, A. (2026).",
-    "EDGE: A Closed-Form Directed Goodness-of-Fit Test for Sparse Logistic Regression.",
-    paste0("R package ebrahim.gof version ", meta$Version, "."),
+    "Ebrahim, E. K. (2026).",
+    "ebrahim.gof: Goodness-of-Fit and Calibration Tests for Logistic Regression.",
+    paste0("R package version ", meta$Version, "."),
     "https://CRAN.R-project.org/package=ebrahim.gof"
+  )
+)
+
+bibentry(
+  bibtype  = "Misc",
+  title    = "A grouped calibration test for logistic regression that tolerates a few corrupted records",
+  author   = c(person("Ebrahim Khaled", "Ebrahim"), person("Osama Abd El-Aziz", "Hussein"),
+               person("Ahmed", "El-Kotory")),
+  year     = "2026",
+  note     = "arXiv:2608.20511 [stat.ME]",
+  url      = "https://arxiv.org/abs/2608.20511",
+  textVersion = paste(
+    "Ebrahim, E. K., Hussein, O. A. E.-A. and El-Kotory, A. (2026).",
+    "A grouped calibration test for logistic regression that tolerates a few corrupted records.",
+    "arXiv:2608.20511."
   )
 )
 
@@ -31,15 +46,20 @@ bibentry(
 )
 
 bibentry(
-  bibtype  = "Misc",
-  title    = "Benchmarking goodness-of-fit and calibration algorithms for logistic regression",
+  bibtype  = "Article",
+  title    = "Benchmarking goodness-of-fit and calibration algorithms for logistic regression classifiers: a large-scale simulation study under sparse data",
   author   = c(person("Ebrahim Khaled", "Ebrahim"), person("Ahmed", "El-Kotory")),
+  journal  = "Journal of Intelligent Computing and Data Science",
   year     = "2026",
-  note     = "Journal of Intelligent Computing and Data Science, in press; arXiv:2607.16344 [stat.ME]",
-  url      = "https://arxiv.org/abs/2607.16344",
+  volume   = "2",
+  number   = "2",
+  pages    = "97--128",
+  doi      = "10.21608/jicds.2026.505341.1048",
   textVersion = paste(
     "Ebrahim, E. K. and El-Kotory, A. (2026).",
-    "Benchmarking goodness-of-fit and calibration algorithms for logistic regression.",
-    "arXiv:2607.16344."
+    "Benchmarking goodness-of-fit and calibration algorithms for logistic regression classifiers:",
+    "a large-scale simulation study under sparse data.",
+    "Journal of Intelligent Computing and Data Science, 2(2), 97-128.",
+    "doi:10.21608/jicds.2026.505341.1048."
   )
 )

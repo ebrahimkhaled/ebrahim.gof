@@ -60,7 +60,8 @@ reference world matches the null being tested.
 
 Reference implementation for: Ebrahim, E. K. (2026), "Shrinkage invalidates the
 Hosmer--Lemeshow test: goodness of fit for penalized logistic regression, with an
-application to glaucoma diagnosis."
+application to glaucoma diagnosis." arXiv:2609.06413 [stat.ME].
+\doi{10.48550/arXiv.2609.06413}
 
 Depends only on base \R and \pkg{stats}, so results do not move with package versions.
 }

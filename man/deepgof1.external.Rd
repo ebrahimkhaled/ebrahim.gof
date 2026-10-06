@@ -74,6 +74,10 @@ y <- rbinom(n, 1, plogis(qlogis(p) + 0.8 * X$x1 * X$x2)) # the new patients
 deepgof1.external(y, p, X, B = 99)
 }
 \references{
+Ebrahim EK, Hussein OAE-A, El-Kotory A (2026). "Where Does a Logistic Risk Model Fail?
+An Audited Neural Goodness-of-Fit Test for Model Development and External Validation."
+arXiv:2609.29575 [stat.ME]. \doi{10.48550/arXiv.2609.29575}
+
 Besag, J. and Clifford, P. (1989). Generalized Monte Carlo significance tests.
 \emph{Biometrika}, 76(4), 633--642.
 
