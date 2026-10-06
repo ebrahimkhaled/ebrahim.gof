@@ -39,18 +39,18 @@
   }
   for (q in c(alpha, .01, .001))
     graphics::text(.lplot_lp(q) * cos(pi / 4) + .02, .lplot_lp(q) * sin(pi / 4) + .02, sub("^0", "", format(q)), adj = c(0, 0),
-                   cex = .5, col = pal$soft)
+                   cex = .6, col = pal$soft)
   lx <- 1.33 * cos(mid); ly <- 1.33 * sin(mid) + c(.05, 0, -.05, 0)
   graphics::text(lx, ly + .07, tolower(G), cex = .8, font = ifelse(nm, 2, 1),
                  col = ifelse(tested, ifelse(nm, pal$part[G], pal$ink), pal$soft))
-  graphics::text(lx, ly - .1, ifelse(tested, .lplot_pfmt(as.numeric(x$intersection[G])), "not tested"), cex = .58, col = pal$soft)
+  graphics::text(lx, ly - .1, ifelse(tested, .lplot_pfmt(as.numeric(x$intersection[G])), "not tested"), cex = .6, col = pal$soft)
   invisible(x)
 }
 
 .lplot_lattice <- function(x, colour = TRUE, head = NULL) {
   pal <- .lplot_pal(colour); alpha <- if (is.null(x$alpha)) 0.05 else x$alpha
   sets <- names(x$intersection); lev <- vapply(sets, function(s) length(.lplot_split(s)), 1L); K <- max(lev)
-  hh <- function(k) .12 * k + .17; hw <- .64
+  hh <- function(k) .12 * k + .2; hw <- .64
   Y <- .55; for (k in seq_len(K - 1)) Y[k + 1] <- Y[k] + hh(k) + hh(k + 1) + .62
   xy <- do.call(rbind, lapply(seq_len(K), function(k) { s <- sets[lev == k]; nk <- length(s); W <- min(1.55, 8.4 / max(nk, 1))
     data.frame(s = s, k = k, x = 5.2 + (seq_len(nk) - (nk + 1) / 2) * W, y = Y[k], stringsAsFactors = FALSE) }))
@@ -58,7 +58,7 @@
   graphics::plot(NA, xlim = c(0, 10), ylim = c(0, max(H, top + .5)), axes = FALSE, xlab = "", ylab = "")
   if (!is.null(head)) graphics::text(0, max(H, top + .5) - .03, head, adj = c(0, 1), font = 2, cex = .82, col = pal$ink)
   for (k in seq_len(K)) graphics::text(0, Y[k] + sh, if (k == 1) "each part" else if (k == K) (if (K == 2) "both" else paste("all", K)) else paste(k, "parts"),
-                                       adj = 0, cex = .55, col = pal$soft, font = 3)
+                                       adj = 0, cex = .6, col = pal$soft, font = 3)
   sup <- function(a, b) all(.lplot_split(a) %in% .lplot_split(b))
   hot <- vapply(seq_len(nrow(xy)), function(j) any(vapply(x$named, function(g) sup(g, xy$s[j]), TRUE)), TRUE)
   for (i in seq_len(nrow(xy))) for (j in seq_len(nrow(xy)))
@@ -73,9 +73,9 @@
                col = if (named) pal$part[[s]] else if (rej) pal$rej else "white",
                border = if (named) pal$part[[s]] else if (rej) pal$soft else pal$rule, lwd = if (named) 1.5 else .8)
     nm <- .lplot_split(s)
-    graphics::text(xy$x[i], xy$y[i] + hh(k) - .16 - (seq_along(nm) - 1) * .24, tolower(nm), cex = .56,
+    graphics::text(xy$x[i], xy$y[i] + hh(k) - .16 - (seq_along(nm) - 1) * .24, tolower(nm), cex = .6,
                    col = if (named) "white" else pal$part[nm], font = if (named) 2 else 1)
-    graphics::text(xy$x[i], xy$y[i] - hh(k) + .13, .lplot_pfmt(p), cex = .47,
+    graphics::text(xy$x[i], xy$y[i] - hh(k) + .14, .lplot_pfmt(p), cex = .6,
                    col = if (named) "white" else if (rej) pal$ink else pal$soft, font = if (rej) 2 else 1)
   }
   invisible(x)
@@ -112,15 +112,20 @@
 #' @exportS3Method plot gof_localize
 plot.gof_localize <- function(x, which = c("both", "compass", "lattice"), colour = TRUE, main = NULL, ...) {
   which <- match.arg(which)
-  op <- graphics::par(mar = c(.3, .3, .3, .3), oma = c(1.6, 0, 1.6, 0)); on.exit(graphics::par(op))
+  note <- if (is.na(x$highest)) "Nothing named: keep the model; the verdict is limited by the sample size."
+          else paste0("Highest part named: ", tolower(x$highest), ". Next step: ", x$action, ".")
+  ## the next step can be longer than the figure is wide: wrap it rather than lose its end
+  w <- graphics::strwidth(note, units = "inches", cex = .75)
+  room <- .97 * graphics::par("din")[1]
+  if (w > room) note <- strwrap(note, width = floor(nchar(note) * room / w))
+  op <- graphics::par(mar = c(.3, .3, .3, .3), oma = c(.6 + length(note), 0, 1.6, 0)); on.exit(graphics::par(op))
   if (which == "both") graphics::layout(matrix(1:2, 1), widths = c(.42, .58)) else graphics::layout(1)
+  graphics::par(cex = 1)                     # layout() can shrink the text of a multi-panel figure
   if (which != "lattice") .lplot_compass(x, colour, "Misfit compass")
   if (which != "compass") .lplot_lattice(x, colour, "Closed tests")
   if (is.null(main)) main <- paste0(toupper(substr(x$setting, 1, 1)), substring(x$setting, 2),
                                     if (is.null(x$n)) "" else paste0(", n = ", format(x$n, big.mark = ",")))
   graphics::mtext(main, side = 3, outer = TRUE, line = .3, adj = .01, cex = .85, font = 2)
-  graphics::mtext(if (is.na(x$highest)) "Nothing named: keep the model; the verdict is limited by the sample size."
-                  else paste0("Highest part named: ", tolower(x$highest), ". Next step: ", x$action, "."),
-                  side = 1, outer = TRUE, line = .4, adj = .01, cex = .75)
+  graphics::mtext(note, side = 1, outer = TRUE, line = .4 + seq_along(note) - 1, adj = .01, cex = .75)
   invisible(x)
 }
