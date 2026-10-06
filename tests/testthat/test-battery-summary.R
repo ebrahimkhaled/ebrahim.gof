@@ -37,3 +37,12 @@ test_that("a family whose rows have no p-value is listed without one", {
   expect_true(is.na(s$Smallest_p[2]))
   expect_output(print(s), "Descriptive")
 })
+
+test_that("an empty battery gives an empty summary", {
+  b <- data.frame(Test = character(0), Family = character(0), Statistic = numeric(0),
+                  df = numeric(0), p_value = numeric(0), Note = character(0))
+  class(b) <- c("gof_battery", "data.frame")
+  s <- summary(b)
+  expect_identical(nrow(s), 0L)
+  expect_output(print(s), "0 tests")
+})

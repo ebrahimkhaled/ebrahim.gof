@@ -208,7 +208,7 @@ ef.gof <- function(y, predicted_probs = NULL, model = NULL, m = NULL, G = 10,
   if (inherits(y, "glm")) {
     if (y$family$family != "binomial") stop("ef.gof: the model must be a binomial glm.")
     if (is.null(X)) X <- stats::model.matrix(y)
-    predicted_probs <- as.numeric(stats::fitted(y))
+    predicted_probs <- as.numeric(y$fitted.values)   # fitted() pads NAs under na.exclude
     y <- as.numeric(y$y)
   }
   if (is.null(predicted_probs)) {

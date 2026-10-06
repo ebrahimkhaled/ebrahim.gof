@@ -181,4 +181,15 @@ test_that("test produces consistent results with same seed", {
   result2 <- ef.gof(y2, predicted_probs2, G = 10)
   
   expect_identical(result1, result2)
-}) 
+})
+
+test_that("a glm fitted with na.exclude gives the test on its complete records", {
+  set.seed(5)
+  d <- data.frame(x = rnorm(300))
+  d$y <- rbinom(300, 1, plogis(d$x))
+  d$x[1:4] <- NA
+  f1 <- glm(y ~ x, family = binomial, data = d, na.action = na.exclude)
+  f2 <- glm(y ~ x, family = binomial, data = d[-(1:4), ])
+  expect_equal(ef.gof(f1)$p_value, ef.gof(f2)$p_value)
+  expect_equal(ef.gof(f1, reference = "normal")$p_value, ef.gof(f2, reference = "normal")$p_value)
+})

@@ -39,6 +39,10 @@ summary.gof_battery <- function(object, alpha = 0.05, ...) {
                Smallest_test = if (is.na(j)) NA_character_ else s$Test[j],
                stringsAsFactors = FALSE)
   }))
+  if (is.null(out))                            # a battery with no rows
+    out <- data.frame(Family = character(0), Tests = integer(0), With_p = integer(0),
+                      Rejected = integer(0), Smallest_p = numeric(0), Smallest_test = character(0),
+                      stringsAsFactors = FALSE)
   rownames(out) <- NULL
   attr(out, "alpha") <- alpha
   class(out) <- c("summary.gof_battery", "data.frame")
