@@ -17,15 +17,16 @@ bibentry(
 
 bibentry(
   bibtype  = "Misc",
-  title    = "A directional {Hosmer--Lemeshow} goodness-of-fit test for sparse logistic regression",
-  author   = c(person("Ebrahim Khaled", "Ebrahim"), person("Ahmed", "El-Kotory")),
+  title    = "A modified {Hosmer--Lemeshow} goodness-of-fit test for asymmetric links: second-order power and robustness",
+  author   = c(person("Ebrahim Khaled", "Ebrahim"), person("Ibrahim Galal", "Khattab"),
+               person("Ahmed", "El-Kotory")),
   year     = "2026",
   note     = "arXiv:2607.15454 [stat.ME]",
   url      = "https://arxiv.org/abs/2607.15454",
   textVersion = paste(
-    "Ebrahim, E. K. and El-Kotory, A. (2026).",
-    "A directional Hosmer-Lemeshow goodness-of-fit test for sparse logistic regression.",
-    "arXiv:2607.15454."
+    "Ebrahim, E. K., Khattab, I. G. and El-Kotory, A. (2026).",
+    "A modified Hosmer-Lemeshow goodness-of-fit test for asymmetric links:",
+    "second-order power and robustness. arXiv:2607.15454."
   )
 )
 

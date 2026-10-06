@@ -43,9 +43,9 @@
 #' Test for Sparse Logistic Regression." arXiv:2608.20511 [stat.ME].
 #' \doi{10.48550/arXiv.2608.20511}
 #'
-#' Ebrahim EK, El-Kotory A (2026). "A Directional Hosmer-Lemeshow Goodness-of-Fit
-#' Test for Sparse Logistic Regression." arXiv:2607.15454 [stat.ME].
-#' \doi{10.48550/arXiv.2607.15454}
+#' Ebrahim EK, Khattab IG, El-Kotory A (2026). "A Modified Hosmer-Lemeshow
+#' Goodness-of-Fit Test for Asymmetric Links: Second-Order Power and Robustness."
+#' arXiv:2607.15454 [stat.ME]. \doi{10.48550/arXiv.2607.15454}
 #'
 #' @author Ebrahim Khaled Ebrahim \email{ebrahimkhaled@@alexu.edu.eg}
 #'
