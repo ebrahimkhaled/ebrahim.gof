@@ -67,12 +67,12 @@
   cs  <- function(v) (v - mean(v)) / stats::sd(v)
   sq  <- if (ncol(Xn)) do.call(cbind, lapply(seq_len(ncol(Xn)), function(j) { z <- cs(Xn[, j]); cbind(z^2, z^3) })) else NULL
   pr  <- if (ncol(X) > 1) do.call(cbind, utils::combn(ncol(X), 2, function(ij) cs(X[, ij[1]]) * cs(X[, ij[2]]), simplify = FALSE)) else NULL
-  sp  <- if (ncol(Xn)) do.call(cbind, lapply(seq_len(ncol(Xn)), function(j) splines::ns(Xn[, j], df = 3))) else NULL
+  sp  <- if (ncol(Xn)) do.call(cbind, lapply(seq_len(ncol(Xn)), function(j) .loc_ns(Xn[, j], df = 3))) else NULL
   ## with a single covariate every function of it is a function of eta, so there is no covariate-structure part:
   ## the COV group is dropped instead of testing the spline's approximation error
   list(
     LINK = list(poly = cbind(eta^2, eta^3), stukel = cbind(0.5 * eta^2 * (eta >= 0), -0.5 * eta^2 * (eta < 0)),
-                spline = splines::ns(eta, df = 4)),
+                spline = .loc_ns(eta, df = 4)),
     COV  = if (ncol(X) < 2) list() else Filter(Negate(is.null), list(poly = sq, products = pr, spline = sp)))
 }
 
@@ -88,7 +88,7 @@
   gb <- .loc_group_bases(eta, X)
   one <- matrix(1, length(eta), 1)
   Z2  <- cbind(one, eta, Zfit)
-  Z3  <- cbind(Z2, splines::ns(eta, df = .loc_cov_df(cov_df, length(eta))))
+  Z3  <- cbind(Z2, .loc_ns(eta, df = .loc_cov_df(cov_df, length(eta))))
   if (!is.null(dealias_E) && ncol(dealias_E)) Z2 <- cbind(Z2, dealias_E)
   mem <- list()
   if (external) {
@@ -104,7 +104,7 @@
 ## in eta against a straight line, level .05
 .loc_curved_cols <- function(Zfit, eta, w, level = 0.05) {
   n <- length(eta); one <- matrix(1, n, 1)
-  L <- cbind(one, eta); S <- cbind(one, splines::ns(eta, df = 3))
+  L <- cbind(one, eta); S <- cbind(one, .loc_ns(eta, df = 3))
   which(vapply(seq_len(ncol(Zfit)), function(j) {
     z <- Zfit[, j]
     r1 <- sum(w * .loc_wperp(matrix(z), L, w)^2); r2 <- sum(w * .loc_wperp(matrix(z), S, w)^2)
@@ -116,6 +116,20 @@
 ## closure over the groups, given member p-values for the observed data (column 1) and the reference draws.
 ## The Cauchy transform of a member p-value, clipped to [1e-12, 1 - 1e-12] as in the paper's script.
 .loc_cauchy <- function(p) tan((0.5 - pmin(pmax(p, 1e-12), 1 - 1e-12)) * pi)
+
+## natural spline bases; with tied or extreme scores ns() moves interior knots inside the boundary
+## knots and says so once per call, which inside the reference loop floods the console
+.loc_ns <- function(x, df) suppressWarnings(splines::ns(x, df = df))
+
+## the session's random number state, taken before a function seeds its own draws and put back on exit
+## (also used by shrink.gof() and legoft())
+.rng_snapshot <- function()
+  if (exists(".Random.seed", envir = globalenv(), inherits = FALSE)) get(".Random.seed", envir = globalenv()) else NULL
+.rng_restore <- function(old) {
+  if (is.null(old)) {
+    if (exists(".Random.seed", envir = globalenv(), inherits = FALSE)) rm(".Random.seed", envir = globalenv())
+  } else assign(".Random.seed", old, envir = globalenv())
+}
 ## naming = "closure": a group is named when every intersection containing it rejects (Cauchy intersections);
 ## "holm" / "bonferroni": the groups' own (single-group) p-values with Holm's or Bonferroni's correction, which are
 ## closed procedures with Bonferroni intersections and so share the strong familywise guarantee
@@ -238,7 +252,11 @@
 #' @param y 0/1 outcomes.
 #' @param p the predicted probabilities to be checked, one per outcome, in \eqn{[0, 1]}.
 #'   Values of exactly 0 or 1 would give an infinite score and are moved to \code{1e-10} and
-#'   \code{1 - 1e-10}.
+#'   \code{1 - 1e-10}. The predictions should be frozen: a model's own fitted values are
+#'   calibrated in the large and in slope by construction, so \code{INTERCEPT} and \code{SLOPE}
+#'   read \eqn{p = 1}, and a member p-value near 1 pulls every Cauchy intersection that contains
+#'   it towards 1, which can hide a real \code{COV} misfit. The function warns in that case; use
+#'   \code{\link{localize.gof}} for a model checked on its own data.
 #' @param X a numeric matrix or data frame of covariates, one row per outcome, without missing
 #'   values or constant columns. At least one column; \code{COV} needs two.
 #' @param M number of reference draws; each p-value lies on a grid of \code{1 / (M + 1)}.
@@ -252,7 +270,9 @@
 #'   p-values); see Details.
 #' @param robust if \code{TRUE}, build the bases on normal scores of the score and the
 #'   covariates; see Details.
-#' @param seed optional integer, passed to \code{set.seed()} before the reference draws.
+#' @param seed optional integer, passed to \code{set.seed()} before the reference draws. The
+#'   random number stream of the session is restored on exit, so a call inside a
+#'   simulation loop does not reset the loop's own draws.
 #' @param plot if \code{TRUE}, draw the verdict with \code{\link{plot.gof_localize}} (a misfit
 #'   compass beside the lattice of closed tests). The default draws it in an interactive session
 #'   and not in scripts, simulations or examples.
@@ -320,12 +340,24 @@ localize.external <- function(y, p, X, M = 999L, alpha = 0.05, calibration = c("
     stop("'p' must hold one probability in [0, 1] per outcome", call. = FALSE)
   X <- .loc_check_X(X, length(y))
   .loc_check_common(M, alpha, cov_df)
-  if (!is.null(seed)) set.seed(seed)
+  if (!is.null(seed)) {             # seed the draws here, then give the caller's stream back
+    .seed_restore <- .rng_snapshot()
+    on.exit(.rng_restore(.seed_restore), add = TRUE)
+    set.seed(seed)
+  }
 
   ## predictions of exactly 0 or 1 would give an infinite score; keep them just inside (0, 1)
   p <- pmin(pmax(p, 1e-10), 1 - 1e-10); eta <- stats::qlogis(p); w <- p * (1 - p)
   if (robust) { eta <- .loc_nscore(eta); X <- .loc_robust_cols(X) }   # bases built on normal scores (bounded influence)
   r0 <- y - p
+  ## a model's own fitted values solve the score equations, so they are calibrated in the large
+  ## and in slope to machine precision: INTERCEPT and SLOPE then read p = 1, and their Cauchy
+  ## coordinates pull every intersection that contains them towards 1
+  lp <- stats::qlogis(p)
+  if (abs(sum(r0)) < 1e-6 * sqrt(length(y)) && abs(sum(r0 * lp)) < 1e-6 * sqrt(sum(lp^2)))
+    warning("the predictions are calibrated in the large and in slope to machine precision, as the ",
+            "fitted values of a model on its own data are; localize.external() is meant for frozen ",
+            "predictions on new data, and localize.gof() checks a model on its own data", call. = FALSE)
   mem <- .loc_build_members(eta, X, w, external = TRUE, r0 = if (calibration == "multiplier") r0 else NULL,
                             cov_df = cov_df)
   R <- if (calibration == "montecarlo") {
@@ -401,7 +433,8 @@ localize.external <- function(y, p, X, M = 999L, alpha = 0.05, calibration = c("
 #'   curved in the score; see Details.
 #' @param cov_df,naming as in \code{\link{localize.external}}.
 #' @param robust if \code{TRUE}, build the bases on normal scores; see Details.
-#' @param seed optional integer, passed to \code{set.seed()} before the bootstrap.
+#' @param seed optional integer, passed to \code{set.seed()} before the bootstrap. The
+#'   random number stream of the session is restored on exit.
 #' @param plot if \code{TRUE}, draw the verdict with \code{\link{plot.gof_localize}} (a misfit
 #'   compass beside the lattice of closed tests). The default draws it in an interactive session
 #'   and not in scripts, simulations or examples.
@@ -448,7 +481,11 @@ localize.gof <- function(fit, X = NULL, B = 199L, alpha = 0.05, dealias = FALSE,
   }
   X <- .loc_check_X(X, length(fit$y))
   .loc_check_common(B, alpha, cov_df, "B")
-  if (!is.null(seed)) set.seed(seed)
+  if (!is.null(seed)) {             # seed the draws here, then give the caller's stream back
+    .seed_restore <- .rng_snapshot()
+    on.exit(.rng_restore(.seed_restore), add = TRUE)
+    set.seed(seed)
+  }
 
   mm <- stats::model.matrix(fit)
   ## robust: the covariates and the model columns are put on normal scores ONCE, from the data, and the score of every
@@ -462,7 +499,7 @@ localize.gof <- function(fit, X = NULL, B = 199L, alpha = 0.05, dealias = FALSE,
   if (length(dcols)) {   # fitted once, on the observed score, and frozen
     e0 <- sc(ph0); w0 <- ph0 * (1 - ph0)
     Zc <- Zb[, dcols, drop = FALSE]
-    dE <- Zc - .loc_wperp(Zc, cbind(1, splines::ns(e0, df = 3)), w0)
+    dE <- Zc - .loc_wperp(Zc, cbind(1, .loc_ns(e0, df = 3)), w0)
   }
   members_at <- function(f) {
     ph <- as.numeric(f$fitted.values)
@@ -544,7 +581,10 @@ print.gof_localize <- function(x, digits = 4L, ...) {
   cat(sprintf("\np-values by group (alone, and adjusted by %s):\n", rule))
   print(tab, right = TRUE)
   v <- if (length(x$named)) paste(x$named, collapse = " + ") else "none"
-  cat(sprintf("\ngroups named (%s) at FWER %s: %s\n", rule, format(x$alpha), v))
-  cat("recommended update: ", x$action, "\n\n", sep = "")
+  w <- max(40L, getOption("width", 80L) - 1L)
+  cat("\n", paste(strwrap(sprintf("groups named (%s) at FWER %s: %s", rule, format(x$alpha), v),
+                          width = w, exdent = 2L), collapse = "\n"), "\n", sep = "")
+  cat(paste(strwrap(paste("recommended update:", x$action), width = w, exdent = 2L),
+            collapse = "\n"), "\n\n", sep = "")
   invisible(x)
 }

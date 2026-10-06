@@ -33,7 +33,8 @@ length of a wedge is the strength of evidence, \eqn{-\log_{10} p} of the part's 
 (capped at \eqn{p = 0.001}), the dashed ring marks \code{alpha}, and the parts named are filled.
 The \emph{lattice of closed tests} shows every set of the parts tested with the p-value of its
 test, shaded when it rejects; a part is named when every set that contains it rejects, and the
-links from a named part up to those sets are drawn dark. The highest part named and the next
+links from a named part up to those sets are drawn dark. The lattice writes the intercept as
+"intcpt", so the label fits its node at 7 pt. The highest part named and the next
 step are written under the panels. Parts that cannot be tested in the setting (intercept and
 slope in-sample) are shown as empty wedges marked "not tested".
 }

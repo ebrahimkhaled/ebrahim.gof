@@ -198,6 +198,31 @@
   `linear.predictors` of the fit, which are never padded, and give the result of the same fit made
   with `na.omit`.
 
+* `localize.gof()`, `localize.external()`, `shrink.gof()` and `legoft()` called `set.seed(seed)` on
+  the session's stream and left it there, so a call with `seed =` inside a simulation loop reset
+  the loop's own draws and every later replicate drew the same data. They now restore the
+  session's random number state on exit. Their results for a given `seed` are unchanged.
+
+* `localize.external()` warns when the predictions are calibrated in the large and in slope to
+  machine precision, as a model's own fitted values are: `INTERCEPT` and `SLOPE` then read
+  `p = 1` and pull every closed test that contains them towards 1. `localize.gof()` is the function
+  for a model checked on its own data. The warnings that `splines::ns()` gives on tied or extreme
+  scores no longer reach the console.
+
+* `calm.gof()` and `shrink.gof()` check that `lambda` is a single non-negative number and that `X`
+  and `y` have no missing values, and accept a data frame `X` (coded with `model.matrix()`).
+
+* `plot()` of a single row taken from an `edge.gof()` result with `x[i, ]` draws that row instead
+  of stopping because the row is not the verdict row.
+
+* Printed output fits a console of `getOption("width")`: the "recommended update" line of
+  `localize.*()` is wrapped, `calm.gof()` prints the two scales of `lambda` and `G` on separate
+  lines and its advice wrapped, and `shrink.gof()` prints `S = ` and an uncorrected p-value that
+  is 0 in 20,000 draws as `< 0.0001`. `print()` of `bagoft.fast()` shows a p-value of 0 as the
+  bound `< 1/(nsim + 1)`; the stored values are unchanged and equal to those of BAGofT. The
+  lattice of `plot()` for a localization writes the intercept as `intcpt`, so the label fits its
+  node at 7 pt.
+
 # ebrahim.gof 2.9.0
 
 ## Bug fix

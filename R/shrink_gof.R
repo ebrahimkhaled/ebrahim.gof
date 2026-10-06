@@ -103,7 +103,8 @@
 #' @param G number of groups.
 #' @param basis \code{"edge"}, \code{"decile"}, or both.
 #' @param B bootstrap replicates.
-#' @param seed optional integer for reproducibility.
+#' @param seed optional integer for reproducibility; the session's random number stream is
+#'   restored on exit.
 #' @param penalize logical vector marking which columns of \code{X} are penalized; the
 #'   intercept is never penalized.
 #' @param uncorrected if \code{TRUE}, also return the uncorrected statistic, which is what a
@@ -161,9 +162,17 @@ shrink.gof <- function(X, y, lambda, G = 10,
                        basis = c("edge", "decile"), B = 999,
                        seed = NULL, penalize = NULL, uncorrected = FALSE) {
   basis <- match.arg(basis, c("edge", "decile"), several.ok = TRUE)
+  if (is.data.frame(X)) X <- stats::model.matrix(~ ., data = X)[, -1, drop = FALSE]   # factors coded
+  if (!is.numeric(lambda) || length(lambda) != 1L || !is.finite(lambda) || lambda < 0)
+    stop("'lambda' must be a single non-negative number.", call. = FALSE)
+  if (anyNA(X) || anyNA(y)) stop("X and y must not contain missing values.", call. = FALSE)
   X <- as.matrix(X); y <- as.numeric(y)
-  stopifnot(all(y %in% c(0, 1)), nrow(X) == length(y), lambda >= 0, G >= 3)
-  if (!is.null(seed)) set.seed(seed)
+  stopifnot(all(y %in% c(0, 1)), nrow(X) == length(y), G >= 3)
+  if (!is.null(seed)) {             # seed the draws here, then give the caller's stream back
+    .seed_restore <- .rng_snapshot()
+    on.exit(.rng_restore(.seed_restore), add = TRUE)
+    set.seed(seed)
+  }
   n  <- length(y)
   X1 <- cbind(1, X)
   if (is.null(penalize)) penalize <- rep(TRUE, ncol(X))
@@ -206,10 +215,12 @@ print.shrink.gof <- function(x, ...) {
   cat(sprintf("n = %d, p = %d (p/n = %.3f), lambda = %.4g, G = %d, B = %d\n\n",
               x$n, x$p, x$p / x$n, x$lambda, x$G, x$B))
   for (nm in c("SC.HL", "SC.EDGE")) if (!is.null(x[[nm]])) {
-    cat(sprintf("  %-8s statistic = %8.4f   p = %.4f", nm,
+    cat(sprintf("  %-8s S = %8.4f  p = %.4f", nm,
                 x[[nm]]$statistic, x[[nm]]$p.value))
+    ## the uncorrected p-value is a Monte Carlo share of 20000 draws; 0 means none was as large
     if (!is.null(x[[nm]]$p.uncorrected))
-      cat(sprintf("   (uncorrected p = %.5f)", x[[nm]]$p.uncorrected))
+      cat(sprintf("  (uncorrected p %s)", if (isTRUE(x[[nm]]$p.uncorrected == 0)) "< 0.0001"
+                  else sprintf("= %.4f", x[[nm]]$p.uncorrected)))
     cat("\n")
   }
   cat("\n")

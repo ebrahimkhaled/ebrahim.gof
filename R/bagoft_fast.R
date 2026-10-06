@@ -313,8 +313,10 @@ print.bagoft_fast <- function(x, ...) {
               as.integer(st$ne), as.integer(st$ntree),
               if (isTRUE(st$preselected)) ", five columns pre-selected per split" else ""))
   if (!is.null(x$p.value)) {
+    ## a stored 0 means no simulated statistic was as extreme: print the Monte Carlo bound
+    fmt <- function(p) if (isTRUE(p == 0)) sprintf("< %.2g", 1 / (st$nsim + 1)) else format(p)
     cat(sprintf("p-value = %s   (mean split p-value; median: %s, minimum: %s)\n",
-                format(x$p.value), format(x$p.value2), format(x$p.value3)))
+                fmt(x$p.value), fmt(x$p.value2), fmt(x$p.value3)))
   }
   cat(sprintf("statistics: pmean = %s, pmedian = %s, pmin = %s (not p-values)\n\n",
               format(x$pmean, digits = 4), format(x$pmedian, digits = 4),

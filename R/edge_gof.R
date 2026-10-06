@@ -209,10 +209,13 @@ plot.edge_gof <- function(x, row = c("verdict", "check"), scale = c("residual", 
     k <- as.integer(row[1])
     if (is.na(k) || k < 1L || k > nrow(x)) stop("'row' must be between 1 and ", nrow(x), call. = FALSE)
   } else {
+    asked <- !missing(row)
     row <- match.arg(row)
     k <- match(row, x$Role)
-    if (is.na(k)) stop(sprintf("this result has no '%s' row; it has: %s", row,
-                               paste(x$Role, collapse = ", ")), call. = FALSE)
+    if (is.na(k) && !asked && nrow(x) == 1L) {
+      k <- 1L                              # one row taken with x[i, ]: draw it
+    } else if (is.na(k)) stop(sprintf("this result has no '%s' row; it has: %s", row,
+                                      paste(x$Role, collapse = ", ")), call. = FALSE)
   }
   ## A subset or a reordering of the rows keeps the attribute as it was, so the pieces are
   ## found by the row's partition, role and statistic, not by its position.

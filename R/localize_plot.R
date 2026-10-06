@@ -73,7 +73,9 @@
                col = if (named) pal$part[[s]] else if (rej) pal$rej else "white",
                border = if (named) pal$part[[s]] else if (rej) pal$soft else pal$rule, lwd = if (named) 1.5 else .8)
     nm <- .lplot_split(s)
-    graphics::text(xy$x[i], xy$y[i] + hh(k) - .16 - (seq_along(nm) - 1) * .24, tolower(nm), cex = .6,
+    ## "intercept" is wider than a node at 7 pt, so the lattice writes it short; the compass spells it out
+    lab <- ifelse(nm == "INTERCEPT", "intcpt", tolower(nm))
+    graphics::text(xy$x[i], xy$y[i] + hh(k) - .16 - (seq_along(nm) - 1) * .24, lab, cex = .6,
                    col = if (named) "white" else pal$part[nm], font = if (named) 2 else 1)
     graphics::text(xy$x[i], xy$y[i] - hh(k) + .14, .lplot_pfmt(p), cex = .6,
                    col = if (named) "white" else if (rej) pal$ink else pal$soft, font = if (rej) 2 else 1)
@@ -89,7 +91,8 @@
 #' (capped at \eqn{p = 0.001}), the dashed ring marks \code{alpha}, and the parts named are filled.
 #' The \emph{lattice of closed tests} shows every set of the parts tested with the p-value of its
 #' test, shaded when it rejects; a part is named when every set that contains it rejects, and the
-#' links from a named part up to those sets are drawn dark. The highest part named and the next
+#' links from a named part up to those sets are drawn dark. The lattice writes the intercept as
+#' "intcpt", so the label fits its node at 7 pt. The highest part named and the next
 #' step are written under the panels. Parts that cannot be tested in the setting (intercept and
 #' slope in-sample) are shown as empty wedges marked "not tested".
 #'

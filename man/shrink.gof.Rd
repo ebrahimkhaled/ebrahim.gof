@@ -30,7 +30,8 @@ Passing a \pkg{glmnet} lambda directly is the commonest error; multiply by \code
 
 \item{B}{bootstrap replicates.}
 
-\item{seed}{optional integer for reproducibility.}
+\item{seed}{optional integer for reproducibility; the session's random number stream is
+restored on exit.}
 
 \item{penalize}{logical vector marking which columns of \code{X} are penalized; the
 intercept is never penalized.}

@@ -298,6 +298,10 @@ calm.gof <- function(X, y, lambda, G = 10,
   basis <- match.arg(basis, c("decile", "adaptive", "edge"), several.ok = TRUE)
   lambda_scale <- match.arg(lambda_scale); inflate <- match.arg(inflate)
   stopifnot(is.numeric(tau), length(tau) == 1, tau > 0, tau < 1)
+  if (is.data.frame(X)) X <- stats::model.matrix(~ ., data = X)[, -1, drop = FALSE]   # factors coded
+  if (!is.numeric(lambda) || length(lambda) != 1L || !is.finite(lambda) || lambda < 0)
+    stop("'lambda' must be a single non-negative number.", call. = FALSE)
+  if (anyNA(X) || anyNA(y)) stop("X and y must not contain missing values.", call. = FALSE)
   X <- as.matrix(X); y <- as.numeric(y); n <- length(y)
   if (nrow(X) != n) stop("X and y have different numbers of observations.", call. = FALSE)
   if (!all(y %in% c(0, 1))) stop("y must contain only 0 and 1.", call. = FALSE)
@@ -368,15 +372,17 @@ but the smooth basis degrades with strong imbalance (see the Scope section of ?c
 #' @export
 print.calm.gof <- function(x, ...) {
   cat("\nCALM: closed-form goodness of fit for penalized logistic regression\n")
-  cat(sprintf("lambda = %.4g (theory scale) = %.4g on glmnet's scale | G = %d | p/n = %.3f\n",
-              x$lambda, x$lambda_glmnet, x$G, x$kappa))
+  cat(sprintf("lambda = %.4g (theory scale) = %.4g (glmnet scale)\n", x$lambda, x$lambda_glmnet))
+  cat(sprintf("G = %d, p/n = %.3f\n", x$G, x$kappa))
   for (nm in c("SC.HL", "SC.EDGE", "SC.EDGE.adaptive")) {
     if (is.null(x[[nm]])) next
-    cat(sprintf("  %-17s statistic %8.3f   p = %.4f", nm, x[[nm]]$statistic, x[[nm]]$p.value))
+    cat(sprintf("  %-16s S = %7.3f  p = %.4f", nm, x[[nm]]$statistic, x[[nm]]$p.value))
     if (nm == "SC.EDGE.adaptive")
-      cat(sprintf("   [degree %d, rho_hat %.2f]", x[[nm]]$degree, x[[nm]]$rho_hat))
+      cat(sprintf("  [degree %d, rho_hat %.2f]", x[[nm]]$degree, x[[nm]]$rho_hat))
     cat("\n")
   }
-  cat("\nSC.EDGE.adaptive is the statistic to prefer; see ?calm.gof for the scope of the reference.\n\n")
+  cat("\n", paste(strwrap(paste("SC.EDGE.adaptive is the statistic to prefer; see ?calm.gof for the",
+                                "scope of the reference."), width = max(40L, getOption("width", 80L) - 1L)),
+                  collapse = "\n"), "\n\n", sep = "")
   invisible(x)
 }

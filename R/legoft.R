@@ -68,7 +68,11 @@
 
 ## parametric bootstrap reference: refit under the fitted model, recompute the battery
 .legoft_reference <- function(object, B, members, seed) {
-  if (!is.null(seed)) set.seed(seed)
+  if (!is.null(seed)) {             # seed the draws here, then give the caller's stream back
+    .seed_restore <- .rng_snapshot()
+    on.exit(.rng_restore(.seed_restore), add = TRUE)
+    set.seed(seed)
+  }
   ph  <- as.numeric(object$fitted.values)
   dat <- object$data
   if (is.null(dat)) dat <- stats::model.frame(object)

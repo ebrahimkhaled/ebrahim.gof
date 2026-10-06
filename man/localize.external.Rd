@@ -23,7 +23,11 @@ localize.external(
 
 \item{p}{the predicted probabilities to be checked, one per outcome, in \eqn{[0, 1]}.
 Values of exactly 0 or 1 would give an infinite score and are moved to \code{1e-10} and
-\code{1 - 1e-10}.}
+\code{1 - 1e-10}. The predictions should be frozen: a model's own fitted values are
+calibrated in the large and in slope by construction, so \code{INTERCEPT} and \code{SLOPE}
+read \eqn{p = 1}, and a member p-value near 1 pulls every Cauchy intersection that contains
+it towards 1, which can hide a real \code{COV} misfit. The function warns in that case; use
+\code{\link{localize.gof}} for a model checked on its own data.}
 
 \item{X}{a numeric matrix or data frame of covariates, one row per outcome, without missing
 values or constant columns. At least one column; \code{COV} needs two.}
@@ -45,7 +49,9 @@ p-values); see Details.}
 \item{robust}{if \code{TRUE}, build the bases on normal scores of the score and the
 covariates; see Details.}
 
-\item{seed}{optional integer, passed to \code{set.seed()} before the reference draws.}
+\item{seed}{optional integer, passed to \code{set.seed()} before the reference draws. The
+random number stream of the session is restored on exit, so a call inside a
+simulation loop does not reset the loop's own draws.}
 
 \item{plot}{if \code{TRUE}, draw the verdict with \code{\link{plot.gof_localize}} (a misfit
 compass beside the lattice of closed tests). The default draws it in an interactive session
