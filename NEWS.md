@@ -168,6 +168,12 @@
   The names are now taken first (`data:  died and risk`). `deepgof1()` also joins a long deparsed
   model call into one line. Test results are unchanged.
 
+* `edge.gof(basis = "ensemble")` returned only the default partition. The rule that reports a
+  partition once when `n <= 250` compared the two rows' statistics, which ensemble rows do not have.
+  It now compares their numbers of groups, so the ten-group check row is back.
+
+* `ef.gof()` refuses a `G` that is not a whole number.
+
 # ebrahim.gof 2.9.0
 
 ## Bug fix
