@@ -95,7 +95,40 @@ test_that("plot.edge_gof() draws every documented variant and refuses what it ca
   ex <- edge.gof(y, predicted_probs = rep(0.3, 500) + runif(500, -0.1, 0.1), external = TRUE, G = 10)
   expect_silent(plot(ex, scale = "rate"))
   expect_error(plot(ex, row = "check"), "no 'check' row")
-  expect_error(plot(e[1, ]), "no grouped details")
+  expect_error(plot(rbind(e, ex), row = 3), "no grouped details")
   expect_error(plot(e, row = 3), "between 1 and 2")
   expect_error(plot(e, level = 1.2), "'level'")
+})
+
+test_that("a subset or a reordering of the rows draws the row it shows", {
+  fit <- edge_fit()
+  e <- edge.gof(fit)
+  skip_if_not(isTRUE(capabilities("png")))
+  ## the bytes of the drawn picture, to compare two calls
+  drawn <- function(obj, ...) {
+    f <- tempfile(fileext = ".png")
+    grDevices::png(f, width = 630, height = 360)
+    plot(obj, ...)
+    grDevices::dev.off()
+    on.exit(unlink(f))
+    readBin(f, "raw", file.size(f))
+  }
+  rev_e <- e[2:1, ]
+  expect_identical(rev_e$Role, c("check", "verdict"))
+  expect_identical(drawn(rev_e), drawn(e))                     # the verdict row, now second
+  expect_identical(drawn(rev_e, row = 1), drawn(e, row = "check"))
+  expect_identical(drawn(e[2, ], row = 1), drawn(e, row = "check"))
+  expect_error(plot(subset(e, Role == "check"), row = 1), "no grouped details")   # subset() drops it
+  expect_false(identical(drawn(e, row = "check"), drawn(e)))
+})
+
+test_that("edge.gof() reports each partition once, also for the ensemble", {
+  fit <- edge_fit()
+  ens <- edge.gof(fit, basis = "ensemble")
+  expect_identical(nrow(ens), 2L)
+  expect_identical(ens$Role, c("verdict", "check"))
+  small <- edge_fit(n = 200)
+  expect_identical(nrow(edge.gof(small)), 1L)          # n <= 250: the default is ten groups
+  expect_identical(nrow(edge.gof(small, basis = "ensemble")), 1L)
+  expect_identical(nrow(edge.gof(fit, G = c(10, 10))), 1L)
 })

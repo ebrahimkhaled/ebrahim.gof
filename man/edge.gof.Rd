@@ -72,9 +72,12 @@ A \code{data.frame} of class \code{c("edge_gof", "data.frame")} with one row per
   sum of squares is the unit-form statistic), \code{O}, \code{E}, \code{V}, \code{size},
   \code{pbar} (the mean predicted risk of each group), \code{G}, \code{omega_diag} (the null
   variance of each residual: below one in-sample, one for frozen predictions),
-  \code{external}, \code{adjusted}, \code{role} and \code{partition}. A row without a
-  p-value, or with \code{basis = "ensemble"}, has \code{NULL} there. Subsetting or binding
-  the data frame drops the attribute.
+  \code{external}, \code{adjusted}, \code{role}, \code{partition} and \code{statistic}.
+  A row without a p-value, or with \code{basis = "ensemble"}, has \code{NULL} there.
+  Rows selected or reordered with \code{x[i, ]} keep the attribute whole, and
+  \code{plot()} finds the pieces of a row by its partition, role and statistic.
+  \code{subset()} and \code{merge()} drop the attribute, and rows bound from another
+  result have no pieces of their own; \code{plot()} then stops with a message.
 }
 \description{
 \code{edge.gof()} is the primary interface to the EDGE test (Efficient Directed

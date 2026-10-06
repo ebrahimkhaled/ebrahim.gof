@@ -37,8 +37,9 @@
   (see below). The columns, their values and the printed table are unchanged, and the result works
   as a data frame everywhere it did before. The grouped pieces behind each row (residuals, their
   projection on the basis, observed and expected counts, group sizes and mean risks, and the null
-  variance of each residual) are kept in `attr(, "details")`; subsetting or binding the data frame
-  drops them.
+  variance of each residual) are kept in `attr(, "details")`. Rows selected or reordered with
+  `x[i, ]` keep them, and `plot()` finds the pieces of a row by its partition, role and statistic;
+  `subset()` and `merge()` drop them, and rows bound from another result have none.
 
 * `ef.gof(G = "auto")` uses groups of about 25 records, `max(10, ceiling(n / 25))`, the choice the
   EF paper recommends for large samples, and `G = "paul"` the number of groups of Paul, Pennell and

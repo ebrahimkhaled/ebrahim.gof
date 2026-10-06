@@ -53,9 +53,15 @@ plot.deepgof1 <- function(x, colour = TRUE, digits = 1, ...) {
   ## second. With one covariate, cell (i - 1) K + j is drawn in row i from the top, column j.
   z <- if (one) t(m[K:1, , drop = FALSE]) else m
   graphics::image(seq_len(K), seq_len(K), z, zlim = c(-lim, lim), col = pal, axes = FALSE,
-                  xlab = if (one) sprintf("Quantile cells of %s, low to high, row by row", x$axes)
-                         else sprintf("%s (rank group)", x$axes[1]),
-                  ylab = if (one) "" else sprintf("%s (rank group)", x$axes[2]))
+                  xlab = "", ylab = "")
+  if (one) {
+    graphics::title(xlab = .fit_label(c(sprintf("Quantile cells of %s, low to high, row by row", x$axes),
+                                        sprintf("Cells of %s, row by row", x$axes),
+                                        "Cells, row by row"), 1))
+  } else {
+    graphics::title(xlab = .fit_label(c(sprintf("%s (rank group)", x$axes[1]), x$axes[1]), 1),
+                    ylab = .fit_label(c(sprintf("%s (rank group)", x$axes[2]), x$axes[2]), 2))
+  }
   if (one) {
     graphics::axis(1, at = seq_len(K), labels = seq_len(K))
     graphics::axis(2, at = seq_len(K), labels = (K:1 - 1L) * K + 1L)

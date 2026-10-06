@@ -48,9 +48,12 @@
 #'   sum of squares is the unit-form statistic), \code{O}, \code{E}, \code{V}, \code{size},
 #'   \code{pbar} (the mean predicted risk of each group), \code{G}, \code{omega_diag} (the null
 #'   variance of each residual: below one in-sample, one for frozen predictions),
-#'   \code{external}, \code{adjusted}, \code{role} and \code{partition}. A row without a
-#'   p-value, or with \code{basis = "ensemble"}, has \code{NULL} there. Subsetting or binding
-#'   the data frame drops the attribute.
+#'   \code{external}, \code{adjusted}, \code{role}, \code{partition} and \code{statistic}.
+#'   A row without a p-value, or with \code{basis = "ensemble"}, has \code{NULL} there.
+#'   Rows selected or reordered with \code{x[i, ]} keep the attribute whole, and
+#'   \code{plot()} finds the pieces of a row by its partition, role and statistic.
+#'   \code{subset()} and \code{merge()} drop the attribute, and rows bound from another
+#'   result have no pieces of their own; \code{plot()} then stops with a message.
 #'
 #' @references
 #' Ebrahim EK, Hussein OAE-A, El-Kotory A (2026). "A Grouped Calibration Test for Logistic
@@ -109,19 +112,20 @@ edge.gof <- function(object, predicted_probs = NULL, X = NULL, G = c("auto", 10)
          details = det)
   }
   Gs  <- lapply(as.list(G), function(g) if (identical(g, "auto")) g else as.numeric(g))
+  ## when n <= 250 the default partition is itself ten groups: report it once. The partitions
+  ## are compared by their number of groups, so a row without a statistic (basis = "ensemble")
+  ## is not taken for a repeat.
+  gn  <- vapply(Gs, function(g) if (identical(g, "auto")) .def_auto_G(n) else g, numeric(1))
+  Gs  <- Gs[!duplicated(gn)]
   res <- lapply(Gs, one)
   out <- do.call(rbind, lapply(res, `[[`, "row"))
   det <- lapply(res, `[[`, "details")
-  ## when n <= 250 the default partition is itself ten groups: report it once
-  if (nrow(out) == 2L && isTRUE(all.equal(out$Test_Statistic[1], out$Test_Statistic[2]))) {
-    out <- out[1, , drop = FALSE]
-    det <- det[1]
-  }
   out$Role <- c("verdict", "check", rep("check", max(0L, nrow(out) - 2L)))[seq_len(nrow(out))]
   out <- out[, c("Test", "Partition", "Role", setdiff(names(out), c("Test", "Partition", "Role")))]
   rownames(out) <- NULL
   det <- lapply(seq_along(det), function(i)
-    if (is.null(det[[i]])) NULL else c(det[[i]], role = out$Role[i], partition = out$Partition[i]))
+    if (is.null(det[[i]])) NULL else c(det[[i]], role = out$Role[i], partition = out$Partition[i],
+                                       statistic = out$Test_Statistic[i]))
   attr(out, "details") <- det
   class(out) <- c("edge_gof", "data.frame")
   out
@@ -198,9 +202,9 @@ plot.edge_gof <- function(x, row = c("verdict", "check"), scale = c("residual", 
                           band = c("simultaneous", "pointwise", "none"), colour = TRUE,
                           level = 0.95, ...) {
   det <- attr(x, "details")
-  if (is.null(det) || length(det) != nrow(x))
-    stop("no grouped details on this object: plot the result of edge.gof() itself, ",
-         "not a subset or a combination of it", call. = FALSE)
+  if (is.null(det) || !nrow(x))
+    stop("no grouped details on this object: plot the result of edge.gof(), or rows of it",
+         call. = FALSE)
   if (is.numeric(row)) {
     k <- as.integer(row[1])
     if (is.na(k) || k < 1L || k > nrow(x)) stop("'row' must be between 1 and ", nrow(x), call. = FALSE)
@@ -210,9 +214,15 @@ plot.edge_gof <- function(x, row = c("verdict", "check"), scale = c("residual", 
     if (is.na(k)) stop(sprintf("this result has no '%s' row; it has: %s", row,
                                paste(x$Role, collapse = ", ")), call. = FALSE)
   }
-  d <- det[[k]]
-  if (is.null(d))
-    stop("this row has no grouped details (it has no p-value, or basis = 'ensemble')", call. = FALSE)
+  ## A subset or a reordering of the rows keeps the attribute as it was, so the pieces are
+  ## found by the row's partition, role and statistic, not by its position.
+  d <- Filter(function(e) !is.null(e) && identical(e$partition, x$Partition[k]) &&
+                identical(e$role, x$Role[k]) && isTRUE(all.equal(e$statistic, x$Test_Statistic[k])),
+              det)
+  if (!length(d))
+    stop("this row has no grouped details: it has no p-value, has basis = 'ensemble', ",
+         "or was bound from another result", call. = FALSE)
+  d <- d[[1]]
   scale <- if (missing(scale)) "residual" else match.arg(scale, several.ok = TRUE)
   band  <- match.arg(band)
   if (!is.numeric(level) || length(level) != 1 || level <= 0 || level >= 1)
@@ -235,8 +245,9 @@ plot.edge_gof <- function(x, row = c("verdict", "check"), scale = c("residual", 
   crit <- switch(band, simultaneous = cs, pointwise = cp, none = Inf)
   flag <- is.finite(z) & abs(z) > crit
   kind <- if (isTRUE(d$external)) "" else if (isTRUE(d$adjusted)) " (approximate)" else " (conservative)"
-  word <- if (d$G == 10) "decile" else sprintf("group (%d groups)", as.integer(d$G))
-  xlab <- paste("Mean predicted risk in", word)
+  xlab <- if (d$G == 10) c("Mean predicted risk in decile", "Mean predicted risk") else
+    c(sprintf("Mean predicted risk in group (%d groups)", as.integer(d$G)),
+      sprintf("Mean predicted risk (%d groups)", as.integer(d$G)), "Mean predicted risk")
   o    <- order(d$pbar)
   xr   <- range(d$pbar) + c(-1, 1) * 0.03 * diff(range(d$pbar))
   pct  <- function(side) {
@@ -260,8 +271,9 @@ plot.edge_gof <- function(x, row = c("verdict", "check"), scale = c("residual", 
 
   if ("residual" %in% scale) {
     yl <- max(3, 1.12 * max(abs(c(z, crv)), na.rm = TRUE), if (band == "none") 0 else 1.12 * crit)
-    graphics::plot(NA, xlim = xr, ylim = c(-yl, yl), xaxt = "n", xlab = xlab,
+    graphics::plot(NA, xlim = xr, ylim = c(-yl, yl), xaxt = "n", xlab = "",
                    ylab = "Standardized residual")
+    graphics::title(xlab = .fit_label(xlab, 1))
     pct(1)
     u <- graphics::par("usr")
     if (band != "none") graphics::rect(u[1], -crit, u[2], crit, col = pal$band, border = NA)
@@ -279,7 +291,8 @@ plot.edge_gof <- function(x, row = c("verdict", "check"), scale = c("residual", 
     hi <- pmin(1, d$pbar + hw)
     yr <- range(c(ro, lo, hi, d$pbar), na.rm = TRUE)
     graphics::plot(NA, xlim = xr, ylim = yr + c(-1, 1) * 0.03 * diff(yr), xaxt = "n", yaxt = "n",
-                   xlab = xlab, ylab = "Observed event rate")
+                   xlab = "", ylab = "Observed event rate")
+    graphics::title(xlab = .fit_label(xlab, 1))
     pct(1); pct(2)
     if (band != "none")
       graphics::polygon(c(d$pbar[o], rev(d$pbar[o])), c(lo[o], rev(hi[o])), col = pal$band, border = NA)
@@ -323,4 +336,13 @@ plot.edge_gof <- function(x, row = c("verdict", "check"), scale = c("residual", 
                    seg.len = 1.6, ncol = 2L, bty = "n", cex = 0.8, text.col = pal$ink,
                    x.intersp = 0.6, text.width = NULL, xpd = NA)
   invisible(x)
+}
+
+# Internal: the first of the axis titles that fits the width (side 1) or the height (side 2) of
+# the current plot region, the last one whatever its length. Two panels side by side leave a
+# long title too little room, and the plot would cut it at the figure edge.
+.fit_label <- function(labs, side) {
+  room <- graphics::par("pin")[if (side == 1) 1L else 2L]
+  w <- graphics::strwidth(labs, units = "inches", cex = graphics::par("cex") * graphics::par("cex.lab"))
+  labs[c(which(w <= room), length(labs))[1]]
 }
