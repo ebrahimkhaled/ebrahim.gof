@@ -192,11 +192,13 @@ run.all.gof(fit, tests = c("EF", "DEF.poly3", "HL"))   # a chosen subset
 run.all.gof(y, fitted(fit))            # prediction-only tests (no model)
 ```
 
-Default fast battery (22 rows on fully sparse data): Pearson, Deviance,
-Osius-Rojek, McCullagh, Copas-RSS, Information-Matrix, Hosmer-Lemeshow (deciles
-and equal-width), Pigeon-Heyse, the F-test, EF, EF-normal, the four DEF bases
-(poly2, poly3, stukel, sym), Stukel's joint score test, Tsiatis, Xie,
-Pulkstenis-Robinson, and the two Cauchy-combination ensemble rows. With `include_slow = TRUE` it also runs
+Default fast battery (25 rows on fully sparse data with more than 250 records):
+Pearson, Deviance, Information-Matrix, Osius-Rojek, McCullagh, Copas-RSS,
+Hosmer-Lemeshow (deciles, large-sample and equal-width), Pigeon-Heyse, the F-test,
+EF, EF-normal, EDGE at its two partitions, the DEF bases poly2, stukel and sym,
+Stukel's joint score test, Tsiatis, Xie, Pulkstenis-Robinson, Cubic-LR and the two
+Cauchy-combination ensemble rows. The sparse Pearson and deviance statistics and the
+F-test are printed for comparison only and are not counted as rejections. With `include_slow = TRUE` it also runs
 le Cessie-van Houwelingen, the GAM-based tests (HL-GAM, PR-GAM, Xie-GAM; need
 `mgcv`), Stute-Zhu, eHL, BAGofT (computed by `bagoft.fast()`), the projection test of
 Liu et al. (2024) (`projection.gof()`), and the Lai & Liu standardized-power HL test.
