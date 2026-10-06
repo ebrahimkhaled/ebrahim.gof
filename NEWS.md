@@ -132,6 +132,20 @@
   reading (the covariate axis rule of 2.9.0). A departure that integrates to zero inside every grid
   cell has no direction at all, and is reported as such rather than as a near miss.
 
+## Performance
+
+* The `McCullagh`, `McCullagh (grouped)` and `Copas-RSS` rows of `run.all.gof()` no longer form
+  n by n matrices. The leverages and the quadratic forms they need are taken from the p by p
+  information matrix, so each row costs O(n p^2) time and O(n p) memory instead of O(n^3) time and
+  O(n^2) memory; McCullagh's row took about 15 seconds at n = 2000 and now takes milliseconds at
+  n = 20,000. The statistics agree with the n by n forms to rounding (a unit test keeps those forms
+  verbatim).
+
+* The `Copas-RSS` row prints its normal deviate with `df = NA`, like the other normal deviates;
+  its p-value, the two-sided normal tail, is unchanged. The notes of the `Osius-Rojek`,
+  `Copas-RSS` and `McCullagh` rows say which tail of the normal is used: two-sided for the first
+  two, the upper tail for McCullagh's, as in the GOFLOGIT macro.
+
 ## Documentation
 
 * References brought up to date. EDGE is cited as Ebrahim, Hussein and El-Kotory, "A grouped

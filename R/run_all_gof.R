@@ -41,17 +41,22 @@
 #'   \item \code{Osius-Rojek} -- rescues the Pearson statistic by standardizing
 #'     it with its asymptotic mean and variance computed under increasing sample
 #'     size rather than increasing cell counts, giving a normal reference that
-#'     stays valid when patterns are unique. Fast, parameter-free, and a
+#'     stays valid when patterns are unique; the deviate is referred two-sided.
+#'     Fast, parameter-free, and a
 #'     sensible default. It can be anti-conservative at small samples and
 #'     conservative under a strongly skewed covariate.
 #'   \item \code{McCullagh} -- standardizes the Pearson statistic by its
 #'     \emph{exact} conditional moments rather than asymptotic ones (computed by
 #'     the Kuss 2002 algorithm). Typically the most powerful of the global
-#'     statistics, at a cost that grows steeply with sample size.
+#'     statistics. The deviate is referred to the upper tail of the normal, as
+#'     in the GOFLOGIT macro, so a Pearson statistic below its conditional mean
+#'     is not counted as misfit. The moments are computed from the p x p
+#'     information matrix, so the cost is linear in the sample size.
 #'   \item \code{Copas-RSS} -- the unweighted sum of squares of the raw
-#'     residuals, referred to its own moments. Weighting each residual equally
-#'     rather than by its variance makes it comparatively sensitive to misfit in
-#'     the middle of the risk range.
+#'     residuals, standardized by its own moments and referred two-sided to the
+#'     normal (\code{df} is \code{NA}, as for the other normal deviates).
+#'     Weighting each residual equally rather than by its variance makes it
+#'     comparatively sensitive to misfit in the middle of the risk range.
 #'   \item \code{Information-Matrix} -- the White/Orme test. It compares two
 #'     estimators of the information matrix that agree only if the model is
 #'     correctly specified, so it is an omnibus check on the whole
@@ -919,11 +924,15 @@ gof_osius <- function(ctx, opts = list()) {
     return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: non-positive variance"))
   z <- (PrG - (J - p)) / sqrt(varz)
   list(Statistic = z, df = NA_real_, p_value = 2 * stats::pnorm(abs(z), lower.tail = FALSE),
-       Note = if (J < length(y)) sprintf("grouped to %d covariate patterns", J) else "")
+       Note = if (J < length(y)) sprintf("grouped to %d covariate patterns", J) else "normal deviate, two-sided")
 }
 
 # Copas (1989) unweighted residual-sum-of-squares test. Binary expansion is
 # trivial (one trial per observation). Ported from goflogit (7 tests.R).
+# The variance c'(I - W X (X'WX)^{-1} X') W c of goflogit is evaluated as
+# c'Wc - (c'WX)(X'WX)^{-1}(X'Wc): O(n p^2) time and O(n p) memory, where the
+# n x n form cost O(n^2 p) and O(n^2). The statistic is a normal deviate,
+# referred two-sided (the chi-square(1) of z^2 that goflogit reports).
 gof_copas <- function(ctx, opts = list()) {
   if (is.null(ctx$X))
     return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not applicable: needs the design matrix X (pass the fitted glm)"))
@@ -931,17 +940,17 @@ gof_copas <- function(ctx, opts = list()) {
   V <- ph * (1 - ph)
   copas    <- sum((y - ph)^2)
   meacopas <- sum(V)
-  W   <- diag(V)
   c12 <- 1 - 2 * ph
-  M   <- tryCatch(diag(length(ph)) - W %*% X %*% solve(t(X) %*% W %*% X) %*% t(X),
-                  error = function(e) NULL)
-  if (is.null(M))
+  b   <- crossprod(X, V * c12)                          # X'Wc
+  sb  <- tryCatch(solve(crossprod(X, V * X), b), error = function(e) NULL)
+  if (is.null(sb))
     return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: singular information matrix"))
-  varcopas <- as.numeric(t(c12) %*% M %*% W %*% c12)
+  varcopas <- sum(V * c12^2) - sum(b * sb)
   if (!is.finite(varcopas) || varcopas <= 0)
     return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: non-positive variance"))
   z <- (copas - meacopas) / sqrt(varcopas)
-  list(Statistic = z, df = 1, p_value = stats::pchisq(z^2, 1, lower.tail = FALSE), Note = "")
+  list(Statistic = z, df = NA_real_, p_value = 2 * stats::pnorm(abs(z), lower.tail = FALSE),
+       Note = "normal deviate, two-sided")
 }
 
 # White/Orme information-matrix (IM) test. Explained sum of squares from
@@ -1630,6 +1639,23 @@ gof_bagoft <- function(ctx, opts = list()) {
 # Pearson X^2 is standardized by its conditional mean and variance given the
 # fitted coefficients, then Z is referred to the normal. Verified to reproduce
 # the thesis low-birth-weight result (p = 0.937) to machine precision.
+# The macro forms the n x n hat matrix H = X (X'WX)^{-1} X'; only its diagonal (the
+# leverages) and its products with vectors are needed, so they are taken from the
+# p x p inverse instead: O(n p^2) time and O(n p) memory, the same numbers to rounding.
+# Z is referred to the upper tail, as in GOFLOGIT: a Pearson statistic smaller than
+# its conditional mean is not counted as misfit.
+.gof_mccullagh_moments <- function(X, P, V, k4) {
+  inv <- tryCatch(solve(crossprod(X, V * X)), error = function(e) NULL)
+  if (is.null(inv)) return(NULL)
+  h    <- rowSums((X %*% inv) * X)                        # diag(H)
+  u    <- (1 - 2 * P) / V
+  Xu   <- crossprod(X, V * u)                             # X'W u
+  uhat <- as.numeric(X %*% (inv %*% Xu))                  # H W u
+  k3   <- V * (1 - 2 * P)
+  list(Esub = 0.5 * sum(k4 * h / V) - 0.5 * sum(uhat * k3 * h),
+       RSSu = sum(V * u^2) - sum(Xu * (inv %*% Xu)))      # u'(W - W H W)u
+}
+
 gof_mccullagh <- function(ctx, opts = list()) {
   if (is.null(ctx$X))
     return(list(Statistic = NA, df = NA, p_value = NA,
@@ -1637,23 +1663,17 @@ gof_mccullagh <- function(ctx, opts = list()) {
   X <- ctx$X; ph <- ctx$ph; y <- ctx$y; n <- length(y); p <- ncol(X)
   V  <- ph * (1 - ph)
   X2 <- sum((y - ph)^2 / V)
-  W  <- diag(V)
-  inv <- tryCatch(solve(t(X) %*% W %*% X), error = function(e) NULL)
-  if (is.null(inv))
+  k4 <- ph - 7 * ph^2 + 12 * ph^3 - 6 * ph^4
+  mo <- .gof_mccullagh_moments(X, ph, V, k4)
+  if (is.null(mo))
     return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: singular information matrix"))
-  H    <- X %*% inv %*% t(X)               # X (X'WX)^{-1} X'
-  h    <- diag(H)                          # leverages
-  u    <- (1 - 2 * ph) / V
-  uhat <- as.numeric(H %*% W %*% u)
-  k2   <- V; k3 <- V * (1 - 2 * ph)
-  k4   <- ph - 7 * ph^2 + 12 * ph^3 - 6 * ph^4
-  E    <- (n - p) - 0.5 * sum(k4 * h / k2) + 0.5 * sum(uhat * k3 * h)
-  RSSu <- as.numeric(t(u) %*% (W - W %*% H %*% W) %*% u)
-  Var  <- (1 - p / n) * RSSu               # ungrouped: 2*sum((m-1)/m) = 0
+  E   <- (n - p) - mo$Esub
+  Var <- (1 - p / n) * mo$RSSu             # ungrouped: 2*sum((m-1)/m) = 0
   if (!is.finite(Var) || Var <= 0)
     return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: non-positive variance"))
   Z <- (X2 - E) / sqrt(Var)
-  list(Statistic = Z, df = NA_real_, p_value = stats::pnorm(Z, lower.tail = FALSE), Note = "")
+  list(Statistic = Z, df = NA_real_, p_value = stats::pnorm(Z, lower.tail = FALSE),
+       Note = "normal deviate, upper tail")
 }
 
 # ---------------------------------------------------------------------------
@@ -1711,16 +1731,12 @@ gof_mccullagh_grouped <- function(ctx, opts = list()) {
   m <- g$m; P <- g$Pg; yg <- g$yg; Xu <- g$Xu; J <- g$J; Ntot <- sum(m)
   V  <- m * P * (1 - P)
   X2 <- sum((yg - m * P)^2 / V)
-  W  <- diag(V)
-  inv <- tryCatch(solve(t(Xu) %*% W %*% Xu), error = function(e) NULL)
-  if (is.null(inv))
+  k4 <- m * P * (1 - P) * (1 - 6 * P * (1 - P))
+  mo <- .gof_mccullagh_moments(Xu, P, V, k4)
+  if (is.null(mo))
     return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: singular information matrix"))
-  H <- Xu %*% inv %*% t(Xu); h <- diag(H)
-  u <- (1 - 2 * P) / V; uhat <- as.numeric(H %*% W %*% u)
-  k2 <- V; k3 <- V * (1 - 2 * P); k4 <- m * P * (1 - P) * (1 - 6 * P * (1 - P))
-  E    <- (J - p) - 0.5 * sum(k4 * h / k2) + 0.5 * sum(uhat * k3 * h)
-  RSSu <- as.numeric(t(u) %*% (W - W %*% H %*% W) %*% u)
-  Var  <- 2 * sum((m - 1) / m) + (1 - p / Ntot) * RSSu   # grouped: 2*sum((m-1)/m) is nonzero
+  E    <- (J - p) - mo$Esub
+  Var  <- 2 * sum((m - 1) / m) + (1 - p / Ntot) * mo$RSSu   # grouped: 2*sum((m-1)/m) is nonzero
   if (!is.finite(Var) || Var <= 0)
     return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: non-positive variance"))
   Z <- (X2 - E) / sqrt(Var)
