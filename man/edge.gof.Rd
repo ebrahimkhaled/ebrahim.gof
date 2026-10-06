@@ -61,10 +61,20 @@ frozen. Requires \code{weights = "unit"} and a basis other than
 \code{edge.gof(y = y, predicted_probs = p, external = TRUE)}.}
 }
 \value{
-A \code{data.frame} with one row per partition and columns \code{Test}
-  (\code{"EDGE"}), \code{Partition}, \code{Role} (\code{"verdict"} for the first
-  row, \code{"check"} for the second), \code{Basis}, \code{Test_Statistic},
-  \code{df}, \code{Method} and \code{p_value}, as documented in \code{\link{def.gof}}.
+A \code{data.frame} of class \code{c("edge_gof", "data.frame")} with one row per
+  partition and columns \code{Test} (\code{"EDGE"}), \code{Partition}, \code{Role}
+  (\code{"verdict"} for the first row, \code{"check"} for the second), \code{Basis},
+  \code{Test_Statistic}, \code{df}, \code{Method} and \code{p_value}, as documented in
+  \code{\link{def.gof}}. It is a data frame in every respect; the class only adds a
+  \code{plot} method. The grouped pieces behind each row are kept in
+  \code{attr(, "details")}, a list with one element per row holding \code{r} (the grouped
+  residuals \eqn{(O_g - E_g)/\sqrt{V_g}}), \code{Pz_r} (their projection on the basis, whose
+  sum of squares is the unit-form statistic), \code{O}, \code{E}, \code{V}, \code{size},
+  \code{pbar} (the mean predicted risk of each group), \code{G}, \code{omega_diag} (the null
+  variance of each residual: below one in-sample, one for frozen predictions),
+  \code{external}, \code{adjusted}, \code{role} and \code{partition}. A row without a
+  p-value, or with \code{basis = "ensemble"}, has \code{NULL} there. Subsetting or binding
+  the data frame drops the attribute.
 }
 \description{
 \code{edge.gof()} is the primary interface to the EDGE test (Efficient Directed
@@ -92,6 +102,10 @@ results. The first row is marked \code{Role = "verdict"} and the second
 ten groups are the robustness check; to let ten groups decide, give
 \code{G = c(10, "auto")}. If only the default partition rejects, the signal sits in the
 extreme groups: check those records. Give a single \code{G} to get one row.
+
+\strong{The picture.} \code{plot()} on the result draws the grouped residuals of one row
+with the shape the test looked for and the bands that say which groups are out of line;
+see \code{\link{plot.edge_gof}}.
 }
 \examples{
 set.seed(1)
@@ -104,11 +118,12 @@ edge.gof(fit, basis = "stukel")    # Stukel-shape basis
 edge.gof(fit, basis = "sym")       # Stukel's symmetric direction, one column
 edge.gof(fit, basis = "sym", weights = "score")   # its score form
 edge.gof(fit, G = "auto")          # the default partition alone: max(10, ceiling(n / 25)) = 20 here
+plot(edge.gof(fit))                # the verdict row, on the residual scale
 
 }
 \references{
-Ebrahim EK, El-Kotory A (2026). "EDGE: A Closed-Form Directed Goodness-of-Fit
-Test for Sparse Logistic Regression." arXiv:2608.20511 [stat.ME].
+Ebrahim EK, Hussein OAE-A, El-Kotory A (2026). "A Grouped Calibration Test for Logistic
+Regression That Tolerates a Few Corrupted Records." arXiv:2608.20511 [stat.ME].
 \doi{10.48550/arXiv.2608.20511}
 
 Ebrahim EK, Khattab IG, El-Kotory A (2026). "A Modified Hosmer-Lemeshow
@@ -116,8 +131,9 @@ Goodness-of-Fit Test for Asymmetric Links: Second-Order Power and Robustness."
 arXiv:2607.15454 [stat.ME]. \doi{10.48550/arXiv.2607.15454}
 }
 \seealso{
-\code{\link{def.gof}} (legacy name), \code{\link{ef.gof}},
-  \code{\link{def.ensemble.gof}}, \code{\link{run.all.gof}}.
+\code{\link{plot.edge_gof}}, \code{\link{def.gof}} (legacy name),
+  \code{\link{edge.belt}}, \code{\link{ef.gof}}, \code{\link{def.ensemble.gof}},
+  \code{\link{run.all.gof}}.
 }
 \author{
 Ebrahim Khaled Ebrahim \email{ebrahimkhaled@alexu.edu.eg}

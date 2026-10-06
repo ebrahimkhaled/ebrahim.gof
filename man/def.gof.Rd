@@ -187,8 +187,8 @@ Ebrahim EK, Khattab IG, El-Kotory A (2026). "A Modified Hosmer-Lemeshow
 Goodness-of-Fit Test for Asymmetric Links: Second-Order Power and Robustness."
 arXiv:2607.15454 [stat.ME]. \doi{10.48550/arXiv.2607.15454}
 
-Ebrahim EK, El-Kotory A (2026). "EDGE: A Closed-Form Directed Goodness-of-Fit
-Test for Sparse Logistic Regression." arXiv:2608.20511 [stat.ME].
+Ebrahim EK, Hussein OAE-A, El-Kotory A (2026). "A Grouped Calibration Test for Logistic
+Regression That Tolerates a Few Corrupted Records." arXiv:2608.20511 [stat.ME].
 \doi{10.48550/arXiv.2608.20511}
 }
 \seealso{
