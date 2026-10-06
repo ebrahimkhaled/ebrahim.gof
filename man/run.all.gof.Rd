@@ -19,14 +19,21 @@ run.all.gof(
 )
 }
 \arguments{
-\item{object}{A fitted binary logistic \code{\link[stats]{glm}}, or a binary
-(0/1) response vector \code{y} (then supply \code{predicted_probs}).}
+\item{object}{A fitted binary logistic \code{\link[stats]{glm}}, with one row per
+binary record and no prior weights, or a binary (0/1) response vector \code{y}
+(then supply \code{predicted_probs}). A grouped (\code{cbind}) or weighted fit is
+refused: expand it to one row per record. Another link gives a warning, since
+most tests assume the logit. A warning is also given when some fitted risks are 0
+or 1 (separation) or when there are fewer than 10 events or non-events.}
 
 \item{predicted_probs}{Numeric predicted probabilities; required when
 \code{object} is a \code{y} vector.}
 
-\item{X}{Optional design matrix; lets the directed (DEF) tests run from the
-\code{(y, predicted_probs)} form.}
+\item{X}{Optional design matrix; lets the directed (DEF) and covariate-space tests
+run from the \code{(y, predicted_probs)} form. It should be the model matrix of
+the fit that gave \code{predicted_probs}: a data frame is coded with
+\code{model.matrix(~ ., X)}, and a matrix without a constant column gets an
+intercept column in front.}
 
 \item{tests}{Either \code{"all"} (default) or a character vector of test names
 to run (e.g. \code{c("EF","DEF.poly3","HL")}).}
@@ -123,6 +130,9 @@ fitted responses over the whole sample without grouping.
     chi-square reference assumes many observations per covariate pattern. On
     sparse data that assumption fails and the test is unreliable in both
     directions; it is reported for completeness and comparison, not for use.
+    It is printed without a significance flag and is not counted among the
+    rejections of the header or of \code{summary()}; the \code{Pearson (grouped)}
+    row, shown when covariate patterns repeat, is the one to read.
   \item \code{Deviance} -- the likelihood-ratio statistic against the
     saturated model. On ungrouped binary data its expectation depends on the
     fitted risks alone and not on whether they agree with the responses, so it
@@ -130,21 +140,27 @@ fitted responses over the whole sample without grouping.
     it when they are extreme; the direction of the error is set by the risk
     profile rather than by the fit. On a correctly specified model with
     mid-range risks it therefore rejects almost always. It is reported for
-    completeness and comparison, not for use.
+    completeness and comparison, not for use, and like \code{Pearson} it is not
+    counted among the rejections.
   \item \code{Osius-Rojek} -- rescues the Pearson statistic by standardizing
     it with its asymptotic mean and variance computed under increasing sample
     size rather than increasing cell counts, giving a normal reference that
-    stays valid when patterns are unique. Fast, parameter-free, and a
+    stays valid when patterns are unique; the deviate is referred two-sided.
+    Fast, parameter-free, and a
     sensible default. It can be anti-conservative at small samples and
     conservative under a strongly skewed covariate.
   \item \code{McCullagh} -- standardizes the Pearson statistic by its
     \emph{exact} conditional moments rather than asymptotic ones (computed by
     the Kuss 2002 algorithm). Typically the most powerful of the global
-    statistics, at a cost that grows steeply with sample size.
+    statistics. The deviate is referred to the upper tail of the normal, as
+    in the GOFLOGIT macro, so a Pearson statistic below its conditional mean
+    is not counted as misfit. The moments are computed from the p x p
+    information matrix, so the cost is linear in the sample size.
   \item \code{Copas-RSS} -- the unweighted sum of squares of the raw
-    residuals, referred to its own moments. Weighting each residual equally
-    rather than by its variance makes it comparatively sensitive to misfit in
-    the middle of the risk range.
+    residuals, standardized by its own moments and referred two-sided to the
+    normal (\code{df} is \code{NA}, as for the other normal deviates).
+    Weighting each residual equally rather than by its variance makes it
+    comparatively sensitive to misfit in the middle of the risk range.
   \item \code{Information-Matrix} -- the White/Orme test. It compares two
     estimators of the information matrix that agree only if the model is
     correctly specified, so it is an omnibus check on the whole
@@ -171,7 +187,16 @@ and compare observed with expected counts group by group.
     non-rejection carries less weight than the nominal level suggests.
   \item \code{F-test} -- deviance residuals compared across the risk groups by
     a one-way analysis of variance. It is markedly liberal under sparsity and
-    grows more so with sample size; it is included for comparison.
+    grows more so with sample size; it is included for comparison, printed
+    without a significance flag and not counted among the rejections.
+  \item \code{EF}, \code{EF-normal} -- the Ebrahim-Farrington test,
+    Farrington's correction on the Hosmer-Lemeshow risk groups. \code{EF} uses
+    the chi-square reference on \eqn{G - 2} degrees of freedom at the battery's
+    \code{G}; \code{EF-normal} uses the plug-in normal reference, which is the
+    reference for many groups, at \code{G = "auto"} (groups of about 25 records)
+    unless \code{control = list("EF-normal" = list(G = ...))} sets another
+    number; it needs the model or \code{X}. See \code{\link{ef.gof}}. Tied fitted
+    risks are put in random order.
   \item \code{Lai-Liu-HL} -- Lai and Liu's procedure for using the
     Hosmer-Lemeshow test in large samples, where any test eventually rejects.
     It standardizes power to a reference sample size \code{n0} and so returns
@@ -193,11 +218,13 @@ and compare observed with expected counts group by group.
 ask whether a \emph{particular} shape of departure is present, which buys
 power when the guess is right.
 \itemize{
-  \item \code{EF}, \code{EF-normal} -- the omnibus Ebrahim-Farrington test,
-    Farrington's correction on the Hosmer-Lemeshow risk groups, with the
-    chi-square reference on \eqn{G - 2} degrees of freedom and with the
-    plug-in normal reference for many groups (needs the model or \code{X});
-    see \code{\link{ef.gof}}. Tied fitted risks are put in random order.
+  \item \code{EDGE}, \code{EDGE.G10} -- the EDGE test (the cubic basis of
+    \code{\link{edge.gof}}) at its default partition, \code{G = "auto"}, and at
+    ten groups, whatever the battery's \code{G}. When the default partition has
+    ten groups (\eqn{n \le 250}) the two are one test and only \code{EDGE} is
+    shown. The statistic \eqn{S} is a weighted sum of chi-squares: the note
+    says when its p-value comes from \eqn{S/c \sim \chi^2_{df}}
+    (Satterthwaite), so \code{Statistic} and \code{df} alone do not give it.
   \item \code{DEF.poly2}, \code{DEF.poly3}, \code{DEF.stukel}, \code{DEF.sym} --
     the directed forms, each aiming the test at a smooth departure in the shape
     of the calibration curve: a quadratic or cubic drift in the linear
@@ -206,7 +233,9 @@ power when the guess is right.
     misfit resembles the chosen basis, weaker when it does not. Each row takes
     \code{weights} and \code{G} through \code{control}, for example
     \code{control = list(DEF.sym = list(weights = "score", G = "auto"))}; see
-    \code{\link{def.gof}}. On a sample with no event, or no non-event, there is
+    \code{\link{def.gof}}. In the full battery \code{DEF.poly3} is left out
+    when it would repeat \code{EDGE.G10} (the battery's \code{G} is 10 and
+    \code{control} does not move either row); name it in \code{tests} to get it. On a sample with no event, or no non-event, there is
     no fitted model; these rows and the \code{Stukel} row are then \code{NA}, and
     \code{Note} says why.
   \item \code{Stukel} -- a score test against Stukel's generalized logistic
@@ -265,7 +294,9 @@ reference, these build one by simulation.
     accumulated along the fitted linear predictor and the largest excursion of
     that path is compared with a parametric bootstrap. It needs no binning and
     no bandwidth, and in practice it is the best-behaved test in the battery
-    on size. Set the number of resamples with
+    on size. The p-value is \eqn{(1 + k)/(1 + B)}, with \eqn{k} the number of
+    bootstrap statistics at least as large as the observed one, so it is never
+    0. Set the number of resamples with
     \code{control = list("Stute-Zhu" = list(B = ...))}.
   \item \code{BAGofT} -- the binary adaptive test, which splits the data, uses
     one part to learn a partition that separates fitted from observed, and
@@ -277,7 +308,9 @@ reference, these build one by simulation.
     p-value as the \pkg{BAGofT} package for the same seed and needs only
     \pkg{randomForest} (and \pkg{dcov} above five covariates);
     \code{control = list(BAGofT = list(engine = "package"))} calls
-    \pkg{BAGofT} itself.
+    \pkg{BAGofT} itself. When no simulated statistic is as extreme as the
+    observed one, \pkg{BAGofT} returns 0; the row then reports
+    \eqn{1/(nsim + 1)}, the smallest Monte Carlo p-value, and says so.
   \item \code{Projection} -- the projection test of Escanciano (2006) as
     defined for logistic regression by Liu et al. (2024): the cumulative
     residual process is taken along every direction of the covariate space,
@@ -297,7 +330,9 @@ directly whether predicted risks match observed frequencies.
     whether it departs from the identity, under the internal and external
     development assumptions respectively. The two are \emph{not}
     interchangeable: on data used to fit the model the internal form is the
-    appropriate one. It also produces the calibration belt, which shows
+    appropriate one, so the full battery runs \code{GiViTI} only, and
+    \code{GiViTI-external} runs when it is named in \code{tests}. For frozen
+    predictions on new data use \code{\link{run.all.external}}. It also produces the calibration belt, which shows
     \emph{where} on the risk scale a model drifts; see
     \code{calibration_plot}. Wraps \pkg{givitiR} in an isolated \pkg{callr}
     subprocess, so a failure inside its compiled dependencies returns

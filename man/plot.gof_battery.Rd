@@ -19,3 +19,10 @@ Draws the GiViTI calibration belt stored on a \code{\link{run.all.gof}} result
 that was produced with \code{calibration_plot = TRUE}. The belt shows the
 fitted calibration curve with a confidence region against the 45-degree line.
 }
+\examples{
+\donttest{
+fit <- glm(outcome ~ age + bmi + sex + treatment, data = gof_demo, family = binomial)
+res <- run.all.gof(fit, tests = "GiViTI", calibration_plot = TRUE, install = "no")
+plot(res)
+}
+}

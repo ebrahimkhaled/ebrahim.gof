@@ -8,7 +8,8 @@ test_that("run.all.gof returns a tidy battery for a model", {
   res <- run.all.gof(make_fit(), include_slow = FALSE)
   expect_s3_class(res, "data.frame")
   expect_equal(names(res), c("Test", "Family", "Statistic", "df", "p_value", "Note"))
-  expect_true(all(c("EF", "DEF.poly3", "DEF.sym", "HL", "Stukel") %in% res$Test))
+  expect_true(all(c("EF", "EDGE.G10", "DEF.sym", "HL", "Stukel") %in% res$Test))
+  expect_false("DEF.poly3" %in% res$Test)          # EDGE.G10 is the same test at G = 10
   expect_true(any(grepl("Ensemble", res$Test)))
   pv <- res$p_value[is.finite(res$p_value)]
   expect_true(all(pv >= 0 & pv <= 1))
@@ -37,10 +38,11 @@ test_that("the ensemble rows stay on the unit form at the battery G, and say so"
   expect_true(all(plain$Note[ens] == "Cauchy combination of the directed tests"))
   moved <- run.all.gof(fit, include_slow = FALSE, install = "no",
                        control = list(DEF.poly3 = list(weights = "score"), DEF.stukel = list(G = "auto")))
-  expect_identical(moved$Test, plain$Test)
-  expect_true(all(grepl("unit form, G = 10", moved$Note[ens])))
+  expect_identical(setdiff(moved$Test, "DEF.poly3"), plain$Test)   # moved off EDGE.G10, so it is shown
+  ens_m <- grepl("^Ensemble", moved$Test)
+  expect_true(all(grepl("unit form, G = 10", moved$Note[ens_m])))
   expect_match(moved$Note[moved$Test == "DEF.poly3"], "score form")
-  expect_equal(moved$p_value[ens], plain$p_value[ens])
+  expect_equal(moved$p_value[ens_m], plain$p_value[ens])
   expect_equal(moved$p_value[moved$Test == "Ensemble.Vote(3DEF)"], def.ensemble.gof(fit)$p_value)
   expect_equal(moved$p_value[moved$Test == "Ensemble.Univ(3DEF+EF)"],
                def.ensemble.gof(fit, add_ef = TRUE)$p_value)
@@ -97,8 +99,8 @@ test_that("EF appears in both chisq and normal forms", {
   fit <- glm(rbinom(n, 1, plogis(0.5 * x)) ~ x, family = binomial())
   res <- run.all.gof(fit, include_slow = FALSE)
   expect_true(all(c("EF", "EF-normal") %in% res$Test))
-  expect_equal(res$p_value[res$Test == "EF-normal"],
-               ef.gof(fit, reference = "normal")$p_value, tolerance = 1e-8)
+  expect_equal(res$p_value[res$Test == "EF-normal"],                 # many groups: G = "auto"
+               ef.gof(fit, G = "auto", reference = "normal")$p_value, tolerance = 1e-8)
   expect_equal(res$p_value[res$Test == "EF"], ef.gof(fit)$p_value, tolerance = 1e-8)
   expect_equal(res$df[res$Test == "EF"], 8)
 })

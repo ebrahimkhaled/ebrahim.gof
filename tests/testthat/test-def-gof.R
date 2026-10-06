@@ -161,7 +161,7 @@ test_that("def.gof warns, but still returns a p-value, with fewer events than gr
   }
   expect_equal(count(def.ensemble.gof(fit)), 1L)                    # once, not once per basis
   expect_equal(count(bat <- run.all.gof(fit, include_slow = FALSE, install = "no")), 0L)
-  expect_match(bat$Note[bat$Test == "DEF.poly3"], "fewer events than groups")
+  expect_match(bat$Note[bat$Test == "EDGE.G10"], "fewer events than groups")
 })
 
 test_that("a sample with no event or no non-event gives NA, with a def_degenerate warning", {

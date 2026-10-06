@@ -31,6 +31,47 @@
   to the normal, is deprecated: it still works, with a warning, to reproduce earlier results. The
   `EF-normal` row of `run.all.gof()` now uses the Theorem-3 reference, so its p-value changes.
 
+* The full battery of `run.all.gof()` no longer prints one test twice or a test outside its
+  setting, and its counts leave out the rows that are there for comparison:
+  - `DEF.poly3` is the cubic basis at the battery's `G`, which is `EDGE.G10` when `G = 10`, and
+    `EDGE.G10` is `EDGE` itself when the default partition has ten groups (n <= 250). The repeated
+    row is left out (unless `control` moves it to other weights or another `G`); name it in
+    `tests` to get it.
+  - `GiViTI-external` assumes that the model was developed on other data, which the fitted `glm`
+    of `run.all.gof()` never is. It runs only when named in `tests`; `run.all.external()` has the
+    GiViTI test for frozen predictions.
+  - The sparse `Pearson` and `Deviance` statistics and the `F-test` do not hold their level on
+    ungrouped binary data (in a null simulation the deviance rejected 84 % of the time at the 5 %
+    level, the F-test 23 %). They are still printed, for comparison, but without a significance
+    flag, with a note, and they are not counted among the rejections of the header or of
+    `summary()`, nor offered as a family's smallest p-value.
+  - The `(grouped)` rows are left out whenever every record is its own covariate pattern. The
+    rule used to compare the two numbers, which could differ in the last digits and print a
+    duplicate row.
+
+* `EF-normal` runs at `G = "auto"` (groups of about 25 records), since the normal reference is the
+  reference for many groups; it used the battery's `G` (10 by default). `EF` and `EF-normal` are
+  now in the `Partition` family, beside the Hosmer-Lemeshow test they correct, as the help page
+  already described them.
+
+* `run.all.gof()` refuses a fit with prior weights or a grouped (`cbind`) response, which used to
+  give nonsense rows: expand the data to one row per binary record. It warns when the link is not
+  the logit, when some fitted risks are 0 or 1 to machine precision (separation), and when there
+  are fewer than 10 events or non-events. The `(y, predicted_probs, X)` form codes a data frame `X`
+  with `model.matrix()` and adds an intercept column when `X` has none, so the directed and
+  covariate-space rows agree with the `glm` form. The Pulkstenis-Robinson, le Cessie and GAM rows
+  no longer take an `(offset)` or `(weights)` column of the model frame for a covariate.
+
+* The `Stute-Zhu` p-value is `(1 + k) / (1 + B)`, with `k` the number of bootstrap statistics at
+  least as large as the observed one; it was `k / B` and could be 0. When BAGofT returns 0 (no
+  simulated statistic as extreme), the `BAGofT` row reports `1 / (nsim + 1)` and says so.
+
+* Printing: whole-number degrees of freedom are printed in full (`2997`, not `3e+03`), the header
+  says "1 test", notes and the `summary()` lines are wrapped to `getOption("width")`, a long test
+  name in the `Given by` column of `summary()` is shortened, and the directed rows say when their
+  p-value comes from `S / c ~ chi-square(df)` (Satterthwaite), so that `Statistic` and `df` alone
+  do not give it. The message about slow tests is printed only for the full battery.
+
 ## New features
 
 * `edge.gof()` returns a data frame of class `c("edge_gof", "data.frame")`, so `plot()` can draw it

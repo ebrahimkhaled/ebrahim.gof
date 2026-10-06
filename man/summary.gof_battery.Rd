@@ -21,7 +21,8 @@
 \value{
 An object of class \code{"summary.gof_battery"}: a data frame with columns
   \code{Family}, \code{Tests} (rows in the battery), \code{With_p} (rows with a p-value),
-  \code{Rejected} (p-values at most \code{alpha}), \code{Smallest_p} and \code{Smallest_test},
+  \code{Rejected} (p-values at most \code{alpha}, comparison rows left out),
+  \code{Smallest_p} and \code{Smallest_test},
   in the family order of the printed battery, with the attribute \code{alpha}.
 }
 \description{
@@ -35,6 +36,11 @@ The counts are descriptive. The tests within a family are strongly correlated an
 multiplicity adjustment is made, so a count of rejections is not itself a test; for an
 error-controlled statement of which part of the model is wrong, use
 \code{\link{localize.gof}} or \code{\link{localize.external}}.
+
+The rows that \code{\link{run.all.gof}} prints for comparison only (the sparse
+\code{Pearson} and \code{Deviance} statistics and the \code{F-test}, which do not hold
+their level on ungrouped binary data) are counted in \code{Tests} and \code{With_p} but
+not in \code{Rejected}, and never give \code{Smallest_p}.
 }
 \examples{
 fit <- glm(outcome ~ age + bmi + sex + treatment, data = gof_demo, family = binomial)

@@ -10,12 +10,18 @@
 #' error-controlled statement of which part of the model is wrong, use
 #' \code{\link{localize.gof}} or \code{\link{localize.external}}.
 #'
+#' The rows that \code{\link{run.all.gof}} prints for comparison only (the sparse
+#' \code{Pearson} and \code{Deviance} statistics and the \code{F-test}, which do not hold
+#' their level on ungrouped binary data) are counted in \code{Tests} and \code{With_p} but
+#' not in \code{Rejected}, and never give \code{Smallest_p}.
+#'
 #' @param object A \code{gof_battery} object.
 #' @param alpha Level at which a p-value counts as a rejection. Default \code{0.05}.
 #' @param ... Not used.
 #' @return An object of class \code{"summary.gof_battery"}: a data frame with columns
 #'   \code{Family}, \code{Tests} (rows in the battery), \code{With_p} (rows with a p-value),
-#'   \code{Rejected} (p-values at most \code{alpha}), \code{Smallest_p} and \code{Smallest_test},
+#'   \code{Rejected} (p-values at most \code{alpha}, comparison rows left out),
+#'   \code{Smallest_p} and \code{Smallest_test},
 #'   in the family order of the printed battery, with the attribute \code{alpha}.
 #' @examples
 #' fit <- glm(outcome ~ age + bmi + sex + treatment, data = gof_demo, family = binomial)
@@ -33,8 +39,9 @@ summary.gof_battery <- function(object, alpha = 0.05, ...) {
     s <- d[d$Family == f, , drop = FALSE]
     p <- s$p_value
     has <- !is.na(p)
-    j <- if (any(has)) which(has)[which.min(p[has])] else NA_integer_
-    data.frame(Family = f, Tests = nrow(s), With_p = sum(has), Rejected = sum(has & p <= alpha),
+    use <- has & .gof_counted(s)
+    j <- if (any(use)) which(use)[which.min(p[use])] else NA_integer_
+    data.frame(Family = f, Tests = nrow(s), With_p = sum(has), Rejected = sum(use & p <= alpha),
                Smallest_p = if (is.na(j)) NA_real_ else p[j],
                Smallest_test = if (is.na(j)) NA_character_ else s$Test[j],
                stringsAsFactors = FALSE)
@@ -58,15 +65,25 @@ print.summary.gof_battery <- function(x, ...) {
   fp <- vapply(d$Smallest_p, function(p)
     if (is.na(p)) "-" else if (p < 1e-4) sprintf("%.1e", p) else formatC(p, format = "f", digits = 4),
     character(1))
+  w <- max(40L, getOption("width", 80L))
+  by <- ifelse(is.na(d$Smallest_test), "", d$Smallest_test)
+  ## the test that gives the smallest p goes last; a long name is cut so a row fits the console
+  room <- w - 1L - (max(nchar(d$Family), 6L) + 1L) - 6L - 7L - 9L - 11L
+  room <- max(room, 12L)
+  by <- ifelse(nchar(by) > room, paste0(substr(by, 1L, room - 3L), "..."), by)
   tab <- data.frame(Family = d$Family, Tests = d$Tests, `With p` = d$With_p,
-                    Rejected = d$Rejected, `Smallest p` = fp,
-                    `Given by` = ifelse(is.na(d$Smallest_test), "", d$Smallest_test),
+                    Rejected = d$Rejected, `Smallest p` = fp, `Given by` = by,
                     check.names = FALSE, stringsAsFactors = FALSE)
-  cat(sprintf("\nGoodness-of-fit battery by family: %d tests, %d with a p-value, %d reject at %g\n\n",
-              sum(d$Tests), sum(d$With_p), sum(d$Rejected), alpha))
+  cat("\n", paste(strwrap(sprintf(
+    "Goodness-of-fit battery by family: %d %s, %d with a p-value, %d %s at %g",
+    sum(d$Tests), ngettext(sum(d$Tests), "test", "tests"), sum(d$With_p), sum(d$Rejected),
+    ngettext(sum(d$Rejected), "rejects", "reject"), alpha), width = w - 1L), collapse = "\n"),
+    "\n\n", sep = "")
   print(tab, row.names = FALSE, right = FALSE)
-  cat("\nCounts are descriptive: the tests in a family are correlated and not adjusted for",
-      "multiplicity.\n")
+  cat("\n", paste(strwrap(paste(
+    "Counts are descriptive: the tests in a family are correlated and not adjusted for",
+    "multiplicity. Rows printed for comparison only are not counted as rejections."),
+    width = w - 1L), collapse = "\n"), "\n", sep = "")
   invisible(x)
 }
 

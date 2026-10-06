@@ -21,3 +21,13 @@ for very small values, \code{"-"} when not available), and a significance
 flag. The object is still a plain \code{data.frame} underneath, so all the
 raw columns remain available for programmatic use.
 }
+\details{
+The header counts the rows that reject at the 0.05 level. The rows printed for
+comparison only (the sparse \code{Pearson} and \code{Deviance} statistics and the
+\code{F-test}; see \code{\link{run.all.gof}}) carry no significance flag and are not
+counted. Notes are wrapped to \code{getOption("width")}.
+}
+\examples{
+fit <- glm(outcome ~ age + bmi + sex + treatment, data = gof_demo, family = binomial)
+print(run.all.gof(fit, include_slow = FALSE, install = "no"))
+}

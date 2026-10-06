@@ -30,6 +30,9 @@
 #'     chi-square reference assumes many observations per covariate pattern. On
 #'     sparse data that assumption fails and the test is unreliable in both
 #'     directions; it is reported for completeness and comparison, not for use.
+#'     It is printed without a significance flag and is not counted among the
+#'     rejections of the header or of \code{summary()}; the \code{Pearson (grouped)}
+#'     row, shown when covariate patterns repeat, is the one to read.
 #'   \item \code{Deviance} -- the likelihood-ratio statistic against the
 #'     saturated model. On ungrouped binary data its expectation depends on the
 #'     fitted risks alone and not on whether they agree with the responses, so it
@@ -37,7 +40,8 @@
 #'     it when they are extreme; the direction of the error is set by the risk
 #'     profile rather than by the fit. On a correctly specified model with
 #'     mid-range risks it therefore rejects almost always. It is reported for
-#'     completeness and comparison, not for use.
+#'     completeness and comparison, not for use, and like \code{Pearson} it is not
+#'     counted among the rejections.
 #'   \item \code{Osius-Rojek} -- rescues the Pearson statistic by standardizing
 #'     it with its asymptotic mean and variance computed under increasing sample
 #'     size rather than increasing cell counts, giving a normal reference that
@@ -83,7 +87,16 @@
 #'     non-rejection carries less weight than the nominal level suggests.
 #'   \item \code{F-test} -- deviance residuals compared across the risk groups by
 #'     a one-way analysis of variance. It is markedly liberal under sparsity and
-#'     grows more so with sample size; it is included for comparison.
+#'     grows more so with sample size; it is included for comparison, printed
+#'     without a significance flag and not counted among the rejections.
+#'   \item \code{EF}, \code{EF-normal} -- the Ebrahim-Farrington test,
+#'     Farrington's correction on the Hosmer-Lemeshow risk groups. \code{EF} uses
+#'     the chi-square reference on \eqn{G - 2} degrees of freedom at the battery's
+#'     \code{G}; \code{EF-normal} uses the plug-in normal reference, which is the
+#'     reference for many groups, at \code{G = "auto"} (groups of about 25 records)
+#'     unless \code{control = list("EF-normal" = list(G = ...))} sets another
+#'     number; it needs the model or \code{X}. See \code{\link{ef.gof}}. Tied fitted
+#'     risks are put in random order.
 #'   \item \code{Lai-Liu-HL} -- Lai and Liu's procedure for using the
 #'     Hosmer-Lemeshow test in large samples, where any test eventually rejects.
 #'     It standardizes power to a reference sample size \code{n0} and so returns
@@ -105,11 +118,13 @@
 #' ask whether a \emph{particular} shape of departure is present, which buys
 #' power when the guess is right.
 #' \itemize{
-#'   \item \code{EF}, \code{EF-normal} -- the omnibus Ebrahim-Farrington test,
-#'     Farrington's correction on the Hosmer-Lemeshow risk groups, with the
-#'     chi-square reference on \eqn{G - 2} degrees of freedom and with the
-#'     plug-in normal reference for many groups (needs the model or \code{X});
-#'     see \code{\link{ef.gof}}. Tied fitted risks are put in random order.
+#'   \item \code{EDGE}, \code{EDGE.G10} -- the EDGE test (the cubic basis of
+#'     \code{\link{edge.gof}}) at its default partition, \code{G = "auto"}, and at
+#'     ten groups, whatever the battery's \code{G}. When the default partition has
+#'     ten groups (\eqn{n \le 250}) the two are one test and only \code{EDGE} is
+#'     shown. The statistic \eqn{S} is a weighted sum of chi-squares: the note
+#'     says when its p-value comes from \eqn{S/c \sim \chi^2_{df}}
+#'     (Satterthwaite), so \code{Statistic} and \code{df} alone do not give it.
 #'   \item \code{DEF.poly2}, \code{DEF.poly3}, \code{DEF.stukel}, \code{DEF.sym} --
 #'     the directed forms, each aiming the test at a smooth departure in the shape
 #'     of the calibration curve: a quadratic or cubic drift in the linear
@@ -118,7 +133,9 @@
 #'     misfit resembles the chosen basis, weaker when it does not. Each row takes
 #'     \code{weights} and \code{G} through \code{control}, for example
 #'     \code{control = list(DEF.sym = list(weights = "score", G = "auto"))}; see
-#'     \code{\link{def.gof}}. On a sample with no event, or no non-event, there is
+#'     \code{\link{def.gof}}. In the full battery \code{DEF.poly3} is left out
+#'     when it would repeat \code{EDGE.G10} (the battery's \code{G} is 10 and
+#'     \code{control} does not move either row); name it in \code{tests} to get it. On a sample with no event, or no non-event, there is
 #'     no fitted model; these rows and the \code{Stukel} row are then \code{NA}, and
 #'     \code{Note} says why.
 #'   \item \code{Stukel} -- a score test against Stukel's generalized logistic
@@ -177,7 +194,9 @@
 #'     accumulated along the fitted linear predictor and the largest excursion of
 #'     that path is compared with a parametric bootstrap. It needs no binning and
 #'     no bandwidth, and in practice it is the best-behaved test in the battery
-#'     on size. Set the number of resamples with
+#'     on size. The p-value is \eqn{(1 + k)/(1 + B)}, with \eqn{k} the number of
+#'     bootstrap statistics at least as large as the observed one, so it is never
+#'     0. Set the number of resamples with
 #'     \code{control = list("Stute-Zhu" = list(B = ...))}.
 #'   \item \code{BAGofT} -- the binary adaptive test, which splits the data, uses
 #'     one part to learn a partition that separates fitted from observed, and
@@ -189,7 +208,9 @@
 #'     p-value as the \pkg{BAGofT} package for the same seed and needs only
 #'     \pkg{randomForest} (and \pkg{dcov} above five covariates);
 #'     \code{control = list(BAGofT = list(engine = "package"))} calls
-#'     \pkg{BAGofT} itself.
+#'     \pkg{BAGofT} itself. When no simulated statistic is as extreme as the
+#'     observed one, \pkg{BAGofT} returns 0; the row then reports
+#'     \eqn{1/(nsim + 1)}, the smallest Monte Carlo p-value, and says so.
 #'   \item \code{Projection} -- the projection test of Escanciano (2006) as
 #'     defined for logistic regression by Liu et al. (2024): the cumulative
 #'     residual process is taken along every direction of the covariate space,
@@ -209,7 +230,9 @@
 #'     whether it departs from the identity, under the internal and external
 #'     development assumptions respectively. The two are \emph{not}
 #'     interchangeable: on data used to fit the model the internal form is the
-#'     appropriate one. It also produces the calibration belt, which shows
+#'     appropriate one, so the full battery runs \code{GiViTI} only, and
+#'     \code{GiViTI-external} runs when it is named in \code{tests}. For frozen
+#'     predictions on new data use \code{\link{run.all.external}}. It also produces the calibration belt, which shows
 #'     \emph{where} on the risk scale a model drifts; see
 #'     \code{calibration_plot}. Wraps \pkg{givitiR} in an isolated \pkg{callr}
 #'     subprocess, so a failure inside its compiled dependencies returns
@@ -272,12 +295,19 @@
 #' \code{\link{shrink.gof}}. These take the design, the response and the penalty rather
 #' than a fitted \code{glm}, so they are called separately from the battery.
 #'
-#' @param object A fitted binary logistic \code{\link[stats]{glm}}, or a binary
-#'   (0/1) response vector \code{y} (then supply \code{predicted_probs}).
+#' @param object A fitted binary logistic \code{\link[stats]{glm}}, with one row per
+#'   binary record and no prior weights, or a binary (0/1) response vector \code{y}
+#'   (then supply \code{predicted_probs}). A grouped (\code{cbind}) or weighted fit is
+#'   refused: expand it to one row per record. Another link gives a warning, since
+#'   most tests assume the logit. A warning is also given when some fitted risks are 0
+#'   or 1 (separation) or when there are fewer than 10 events or non-events.
 #' @param predicted_probs Numeric predicted probabilities; required when
 #'   \code{object} is a \code{y} vector.
-#' @param X Optional design matrix; lets the directed (DEF) tests run from the
-#'   \code{(y, predicted_probs)} form.
+#' @param X Optional design matrix; lets the directed (DEF) and covariate-space tests
+#'   run from the \code{(y, predicted_probs)} form. It should be the model matrix of
+#'   the fit that gave \code{predicted_probs}: a data frame is coded with
+#'   \code{model.matrix(~ ., X)}, and a matrix without a constant column gets an
+#'   intercept column in front.
 #' @param tests Either \code{"all"} (default) or a character vector of test names
 #'   to run (e.g. \code{c("EF","DEF.poly3","HL")}).
 #' @param G Integer number of groups passed to the grouping tests (default 10), or
@@ -586,8 +616,13 @@ run.all.gof <- function(object, predicted_probs = NULL, X = NULL,
   if (!identical(G, "auto") && (!is.numeric(G) || length(G) != 1))
     stop("run.all.gof: 'G' must be a single number or 'auto'.")
   ctx <- .gof_context(object, predicted_probs, X, G = G)
-  sel <- if (identical(tests, "all")) names(.GOF_REGISTRY) else intersect(tests, names(.GOF_REGISTRY))
+  all_tests <- identical(tests, "all")
+  sel <- if (all_tests) {
+    # rows run only on request: GiViTI-external assumes the model was developed elsewhere
+    names(.GOF_REGISTRY)[!vapply(.GOF_REGISTRY, function(e) isTRUE(e$on_request), logical(1))]
+  } else intersect(tests, names(.GOF_REGISTRY))
   if (length(sel) == 0) stop("run.all.gof: no known tests selected.")
+  if (all_tests) sel <- setdiff(sel, .gof_repeated_rows(ctx, control))
 
   # Optional PSOCK cluster for the slow bootstrap loops (Stute-Zhu, Lai-Liu-HL).
   # Reproducible: clusterSetRNGStream is seeded deterministically from the
@@ -616,8 +651,7 @@ run.all.gof <- function(object, predicted_probs = NULL, X = NULL,
   # to install it (interactive sessions only, with confirmation -- see
   # gof_install_suggests). Non-interactive runs are never touched.
   .gof_maybe_install(sel, include_slow, install)
-  if (isTRUE(include_slow) &&
-      any(vapply(sel, function(nm) isTRUE(.GOF_REGISTRY[[nm]]$slow), logical(1))))
+  if (all_tests && isTRUE(include_slow))
     message("run.all.gof: running the full battery, including the slow tests ",
             "(le-Cessie, the GAM tests, Stute-Zhu, eHL, BAGofT, Projection, GiViTI). ",
             "For a quick run with the fast tests only, set include_slow = FALSE.")
@@ -646,18 +680,23 @@ run.all.gof <- function(object, predicted_probs = NULL, X = NULL,
 
   # Drop redundant "(grouped)" rows when covariate patterns do not repeat. On
   # fully sparse data (every observation its own pattern) the grouped and
-  # per-observation forms of Pearson / deviance / McCullagh coincide exactly, so
-  # the "(grouped)" row is an identical duplicate. Keep it only when the two
-  # genuinely differ (i.e., some pattern has m_g > 1).
+  # per-observation forms of Pearson / deviance / McCullagh are the same test, so
+  # the "(grouped)" row is a duplicate. It is kept only when some pattern holds
+  # more than one record; the numerical comparison is the fallback when the
+  # patterns cannot be counted.
   .eq_gof <- function(x, y) (is.na(x) && is.na(y)) ||
     (!is.na(x) && !is.na(y) && isTRUE(all.equal(x, y, tolerance = 1e-8)))
   gi <- grep(" \\(grouped\\)$", out$Test)
+  J  <- if (length(gi) && !is.null(ctx$X))
+          tryCatch(.gof_patterns(ctx$X, ctx$ph, ctx$y)$J, error = function(e) NA_integer_)
+        else NA_integer_
   drop_rows <- integer(0)
   for (k in gi) {
     base <- sub(" \\(grouped\\)$", "", out$Test[k])
     bi <- which(out$Test == base)
-    if (length(bi) == 1L && .eq_gof(out$Statistic[k], out$Statistic[bi]) &&
-        .eq_gof(out$p_value[k], out$p_value[bi]))
+    if (isTRUE(J == ctx$n) ||
+        (length(bi) == 1L && .eq_gof(out$Statistic[k], out$Statistic[bi]) &&
+         .eq_gof(out$p_value[k], out$p_value[bi])))
       drop_rows <- c(drop_rows, k)
   }
   if (length(drop_rows)) out <- out[-drop_rows, , drop = FALSE]
@@ -732,6 +771,12 @@ run.all.gof <- function(object, predicted_probs = NULL, X = NULL,
 #' @param x A \code{gof_battery} object from \code{\link{run.all.gof}}.
 #' @param ... Passed to the \pkg{givitiR} plot method.
 #' @return \code{x}, invisibly.
+#' @examples
+#' \donttest{
+#' fit <- glm(outcome ~ age + bmi + sex + treatment, data = gof_demo, family = binomial)
+#' res <- run.all.gof(fit, tests = "GiViTI", calibration_plot = TRUE, install = "no")
+#' plot(res)
+#' }
 #' @importFrom graphics plot
 #' @exportS3Method plot gof_battery
 plot.gof_battery <- function(x, ...) {
@@ -757,9 +802,17 @@ plot.gof_battery <- function(x, ...) {
 #' flag. The object is still a plain \code{data.frame} underneath, so all the
 #' raw columns remain available for programmatic use.
 #'
+#' The header counts the rows that reject at the 0.05 level. The rows printed for
+#' comparison only (the sparse \code{Pearson} and \code{Deviance} statistics and the
+#' \code{F-test}; see \code{\link{run.all.gof}}) carry no significance flag and are not
+#' counted. Notes are wrapped to \code{getOption("width")}.
+#'
 #' @param x A \code{gof_battery} object returned by \code{\link{run.all.gof}}.
 #' @param ... Ignored.
 #' @return \code{x}, invisibly.
+#' @examples
+#' fit <- glm(outcome ~ age + bmi + sex + treatment, data = gof_demo, family = binomial)
+#' print(run.all.gof(fit, include_slow = FALSE, install = "no"))
 #' @exportS3Method print gof_battery
 print.gof_battery <- function(x, ...) {
   d <- as.data.frame(x)
@@ -775,12 +828,17 @@ print.gof_battery <- function(x, ...) {
   fp <- vapply(d$p_value, function(p)
     if (is.na(p)) "-" else if (p < 1e-4) sprintf("%.1e", p)
     else formatC(p, format = "f", digits = 4), character(1))
+  counted <- .gof_counted(d)
   sig <- vapply(d$p_value, function(p)
     if (is.na(p)) "" else if (p < .001) "***" else if (p < .01) "**"
     else if (p < .05) "*" else if (p < .1) "." else "", character(1))
+  sig[!counted] <- ""                     # comparison rows carry no flag
   fnum <- function(v, dig) vapply(v, function(z)
     if (is.na(z)) "" else formatC(z, format = "g", digits = dig), character(1))
-  st <- fnum(d$Statistic, 4); df <- fnum(d$df, 3)
+  st <- fnum(d$Statistic, 4)
+  df <- vapply(d$df, function(z)           # whole-number df in full (2997, not 3e+03)
+    if (is.na(z)) "" else if (abs(z - round(z)) < 1e-8) sprintf("%.0f", z)
+    else formatC(z, format = "g", digits = 3), character(1))
 
   tname <- paste0(d$Test, mk)
   wT <- max(nchar(tname), nchar("Test"))
@@ -795,9 +853,9 @@ print.gof_battery <- function(x, ...) {
     cat(" ", padL(t, wT), "  ", padR(s, wS), " ", padR(dd, wD), "  ",
         padR(p, wP), " ", padL(g, wG), tag, "\n", sep = "")
 
-  nrej <- sum(!is.na(d$p_value) & d$p_value < .05)
-  cat(sprintf("\nGoodness-of-fit battery: %d tests  (%d reject at 0.05)\n",
-              nrow(d), nrej))
+  nrej <- sum(counted & !is.na(d$p_value) & d$p_value < .05)
+  cat(sprintf("\nGoodness-of-fit battery: %d %s  (%d reject at 0.05)\n",
+              nrow(d), ngettext(nrow(d), "test", "tests"), nrej))
   cat(strrep("=", tw), "\n", sep = "")
   row("Test", "Statistic", "df", "p-value", "")
   fam_now <- ""
@@ -813,7 +871,10 @@ print.gof_battery <- function(x, ...) {
   cat(" Signif.:  *** <.001   ** <.01   * <.05   . <.1\n")
   if (length(uniq)) {
     cat(" Notes:\n")
-    for (u in uniq) cat("   [", marks[u], "] ", u, "\n", sep = "")
+    w <- max(30L, getOption("width", 80L) - 1L)
+    for (u in uniq)
+      cat(strwrap(u, width = w - 7L, initial = paste0("   [", marks[u], "] "),
+                  prefix = strrep(" ", 7L)), sep = "\n")
   }
   invisible(x)
 }
@@ -821,12 +882,72 @@ print.gof_battery <- function(x, ...) {
 # Coerce a possibly-NULL/empty scalar to a numeric (NA if missing).
 .gof_num <- function(x) if (is.null(x) || length(x) == 0) NA_real_ else as.numeric(x)[1]
 
+# Rows of the full battery that would repeat another row exactly: DEF.poly3 is the cubic
+# basis at the battery's G, which is EDGE.G10 when that G is 10, and EDGE.G10 is EDGE
+# itself when the default partition has ten groups (n <= 250). Rows that control moves to
+# other weights or another G are kept.
+.gof_repeated_rows <- function(ctx, control) {
+  untouched <- function(nm) is.null(control[[nm]]$weights) && is.null(control[[nm]]$G)
+  drop <- character(0)
+  if (isTRUE(ctx$G == 10) && untouched("DEF.poly3") && untouched("EDGE.G10"))
+    drop <- c(drop, "DEF.poly3")
+  if (.def_auto_G(ctx$n) == 10 && untouched("EDGE.G10") && untouched("EDGE"))
+    drop <- c(drop, "EDGE.G10")
+  drop
+}
+
+# Rows printed for comparison only: on ungrouped binary data the sparse Pearson and
+# deviance statistics have no chi-square reference, and the F-test on deviance residuals
+# is liberal. They are not counted among the rejections of print() and summary().
+.battery_comparison_only <- c("Pearson", "Deviance", "F-test")
+.gof_counted <- function(d) !(d$Test %in% .battery_comparison_only)
+
+# The X of the (y, predicted_probs, X) form must be the model matrix of the fit: numeric,
+# intercept first. A data frame is coded with model.matrix(), and a matrix without a
+# constant column gets one, so the directed and covariate-space rows see the same design
+# as from the fitted glm.
+.gof_design <- function(X, n) {
+  if (is.data.frame(X)) X <- stats::model.matrix(~ ., data = X)
+  X <- as.matrix(X)
+  if (!is.numeric(X) || NROW(X) != n)
+    stop("run.all.gof: 'X' must be numeric (or a data frame) with one row per record.", call. = FALSE)
+  if (anyNA(X)) stop("run.all.gof: 'X' has missing values.", call. = FALSE)
+  const <- which(apply(X, 2L, function(v) all(abs(v - 1) < 1e-12)))
+  if (!length(const)) X <- cbind(`(Intercept)` = 1, X)
+  else if (const[1] != 1L) X <- X[, c(const[1], setdiff(seq_len(ncol(X)), const[1])), drop = FALSE]
+  X
+}
+
+# Warn when the data cannot support the battery: fitted risks of 0 or 1 (separation)
+# make the standardized and partition statistics explode, and very few events or
+# non-events leave the grouped references without support.
+.gof_check_support <- function(y, ph) {
+  if (any(ph < 1e-8 | ph > 1 - 1e-8))
+    warning("run.all.gof: some fitted risks are 0 or 1 to machine precision; the data may be ",
+            "separated, and the standardized, partition and directed rows are unreliable.",
+            call. = FALSE)
+  k <- min(sum(y), length(y) - sum(y))
+  if (k < 10)
+    warning(sprintf(paste0("run.all.gof: only %d %s; the large-sample references of the ",
+                           "battery are unreliable at this size."),
+                    k, if (sum(y) <= length(y) - sum(y)) "events" else "non-events"),
+            call. = FALSE)
+  invisible(NULL)
+}
+
 # Build the one context object every test reads from.
 .gof_context <- function(object, predicted_probs = NULL, X = NULL, G = 10) {
   ctx <- if (inherits(object, "glm")) {
     if (object$family$family != "binomial")
       stop("run.all.gof: the model must be a binomial glm.")
     y  <- as.numeric(object$y)
+    if (!all(y %in% c(0, 1)) || any(object$prior.weights != 1))
+      stop("run.all.gof: the tests need one row per binary (0/1) record and no prior weights; ",
+           "expand grouped (cbind) or weighted data to one row per record first.", call. = FALSE)
+    if (!identical(object$family$link, "logit"))
+      warning("run.all.gof: the model uses the '", object$family$link, "' link; most tests ",
+              "here assume a logit fit (the Stukel row says so in its note).", call. = FALSE)
+    .gof_check_support(y, as.numeric(object$fitted.values))
     ph <- pmin(pmax(as.numeric(object$fitted.values), 1e-6), 1 - 1e-6)
     list(y = y, ph = ph, X = stats::model.matrix(object),
          data = tryCatch(stats::model.frame(object), error = function(e) NULL),
@@ -843,6 +964,8 @@ print.gof_battery <- function(x, ...) {
       stop("run.all.gof: 'object' (y) and 'predicted_probs' lengths differ.")
     if (!all(y %in% c(0, 1)))
       stop("run.all.gof: 'object' must be a binary (0/1) vector or a glm.")
+    if (!is.null(X)) X <- .gof_design(X, length(y))
+    .gof_check_support(y, as.numeric(predicted_probs))
     list(y = y, ph = ph, X = X, data = NULL, model = NULL, G = G, n = length(y),
          has_model = FALSE, p = if (is.null(X)) NA_integer_ else ncol(X))
   }
@@ -877,7 +1000,8 @@ gof_pearson <- function(ctx, opts = list()) {
   X2 <- sum((ctx$y - ctx$ph)^2 / V)
   df <- if (ctx$has_model) ctx$model$df.residual else ctx$n - 1
   list(Statistic = X2, df = df, p_value = stats::pchisq(X2, df, lower.tail = FALSE),
-       Note = if (ctx$has_model) "" else "df = n-1 (no model)")
+       Note = if (ctx$has_model) "sparse form; comparison only, not counted"
+              else "df = n-1 (no model); comparison only, not counted")
 }
 
 gof_deviance <- function(ctx, opts = list()) {
@@ -887,7 +1011,8 @@ gof_deviance <- function(ctx, opts = list()) {
     D  <- -2 * sum(ctx$y * log(ctx$ph) + (1 - ctx$y) * log(1 - ctx$ph)); df <- ctx$n - 1
   }
   list(Statistic = D, df = df, p_value = stats::pchisq(D, df, lower.tail = FALSE),
-       Note = if (ctx$has_model) "" else "df = n-1 (no model)")
+       Note = if (ctx$has_model) "sparse form; comparison only, not counted"
+              else "df = n-1 (no model); comparison only, not counted")
 }
 
 # Osius-Rojek normal-approximation test, matching LogisticDx::gof.glm exactly.
@@ -1048,14 +1173,17 @@ gof_ef <- function(ctx, opts = list()) {
   list(Statistic = r$Test_Statistic, df = r$df, p_value = r$p_value, Note = note)
 }
 
-# EF with the plug-in normal reference of the EF paper (Theorem 3), the reference for many groups.
+# EF with the plug-in normal reference, the reference for many groups: it runs at
+# G = "auto" (groups of about 25 records) whatever the battery's G, unless
+# control = list("EF-normal" = list(G = ...)) says otherwise.
 gof_ef_normal <- function(ctx, opts = list()) {
   if (!ctx$has_model && is.null(ctx$X))
     return(list(Statistic = NA, df = NA, p_value = NA, Note = "needs a glm model or X"))
-  r <- if (ctx$has_model) ef.gof(ctx$model, G = ctx$G, reference = "normal")
-       else ef.gof(ctx$y, ctx$ph, G = ctx$G, reference = "normal", X = ctx$X)
+  G <- if (is.null(opts$G)) "auto" else opts$G
+  r <- if (ctx$has_model) ef.gof(ctx$model, G = G, reference = "normal")
+       else ef.gof(ctx$y, ctx$ph, G = G, reference = "normal", X = ctx$X)
   list(Statistic = r$Test_Statistic, df = NA, p_value = r$p_value,
-       Note = "normal reference (Theorem 3 of the EF paper)")
+       Note = sprintf("normal reference, many groups (G = %d)", as.integer(r$G)))
 }
 
 gof_def <- function(ctx, opts = list()) {
@@ -1077,6 +1205,7 @@ gof_def <- function(ctx, opts = list()) {
           def_degenerate = keep_few, def_no_information = keep_few))
   auto <- identical(opts$G, "auto") || (is.null(opts$G) && isTRUE(ctx$G_auto))
   note <- c(if (r$Method == "score") "score form",
+            if (r$Method == "satterthwaite") "S/c ~ chi-square(df), Satterthwaite",
             if (auto) sprintf("G = %d (auto)", as.integer(G)), few)
   list(Statistic = r$Test_Statistic, df = r$df, p_value = r$p_value,
        Note = paste(note, collapse = "; "))
@@ -1270,8 +1399,10 @@ gof_pr <- function(ctx, opts = list()) {
   if (!ctx$has_model || is.null(ctx$data))
     return(list(Statistic = NA, df = NA, p_value = NA,
                 Note = "needs a glm model (for categorical covariates)"))
-  # model.frame stores the response in column 1; the rest are the model terms.
+  # model.frame stores the response in column 1; the rest are the model terms, and
+  # "(offset)" or "(weights)" columns, which are not covariates.
   cand <- names(ctx$data)[-1]
+  cand <- cand[!startsWith(cand, "(")]
   maxlev <- getOption("ebrahim.gof.pr.maxlev", 6)
   cat_vars <- if (!is.null(opts$cat_var)) opts$cat_var else
     cand[vapply(cand, function(v) {
@@ -1318,6 +1449,7 @@ gof_lecessie <- function(ctx, opts = list()) {
   resids <- ctx$y - fits
   N      <- length(resids)
   covs   <- ctx$data[, -1, drop = FALSE]                 # model.frame minus response
+  covs   <- covs[, !startsWith(names(covs), "("), drop = FALSE]   # no "(offset)" column
   if (ncol(covs) < 1)
     return(list(Statistic = NA, df = NA, p_value = NA, Note = "no covariates"))
 
@@ -1414,6 +1546,7 @@ gof_lecessie <- function(ctx, opts = list()) {
   dat   <- ctx$data
   resp  <- names(dat)[1]
   preds <- names(dat)[-1]
+  preds <- preds[!startsWith(preds, "(")]
   if (length(preds) == 0) return(NULL)
   maxlev <- getOption("ebrahim.gof.pr.maxlev", 6)
   is_cat <- vapply(preds, function(v) {
@@ -1504,7 +1637,9 @@ gof_stutezhu <- function(ctx, opts = list()) {
   } else {
     vapply(seq_len(B), one_rep, numeric(1), probs = ph, Xmat = X)
   }
-  list(Statistic = Tobs, df = NA_real_, p_value = mean(Tb >= Tobs, na.rm = TRUE),
+  # Monte Carlo p-value (1 + #{T_b >= T}) / (1 + B): never 0, valid for any B
+  list(Statistic = Tobs, df = NA_real_,
+       p_value = (1 + sum(Tb >= Tobs, na.rm = TRUE)) / (1 + sum(!is.na(Tb))),
        Note = paste0(B, " bootstrap reps",
                      if (!is.null(ctx$cl))
                        paste0(" (parallel, ", length(ctx$cl), " workers)") else ""))
@@ -1601,10 +1736,10 @@ gof_bagoft <- function(ctx, opts = list()) {
       error = function(e) NULL)
     if (is.null(r) || is.null(r$p.value))
       return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: BAGofT computation failed"))
-    return(list(Statistic = NA_real_, df = NA_real_, p_value = as.numeric(r$p.value),
+    return(list(Statistic = NA_real_, df = NA_real_, p_value = .bagoft_row_p(r$p.value, nsim),
                 Note = paste0("adaptive RF partition; nsim=", nsim, extra,
                               if (added_const) "; constant column added (single predictor)" else "",
-                              "; fast engine")))
+                              "; fast engine", .bagoft_row_note(r$p.value, nsim))))
   }
   if (!requireNamespace("BAGofT", quietly = TRUE))
     return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: install the 'BAGofT' package"))
@@ -1628,11 +1763,18 @@ gof_bagoft <- function(ctx, opts = list()) {
                   error = function(e) NULL))))
   if (is.null(r) || is.null(r$p.value))
     return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: BAGofT computation failed"))
-  list(Statistic = NA_real_, df = NA_real_, p_value = as.numeric(r$p.value),
+  list(Statistic = NA_real_, df = NA_real_, p_value = .bagoft_row_p(r$p.value, nsim),
        Note = paste0("adaptive RF partition; nsim=", nsim, extra,
                      if (added_const) "; constant column added (single predictor)" else "",
-                     "; BAGofT package"))
+                     "; BAGofT package", .bagoft_row_note(r$p.value, nsim)))
 }
+
+# BAGofT's p-value is the share of nsim simulated statistics more extreme than the
+# observed one, so it is 0 when none is. A Monte Carlo p-value from nsim draws cannot be
+# below 1 / (nsim + 1); the row reports that bound and says so.
+.bagoft_row_p <- function(p, nsim) max(as.numeric(p), 1 / (nsim + 1))
+.bagoft_row_note <- function(p, nsim)
+  if (isTRUE(as.numeric(p) < 1 / (nsim + 1))) "; no simulated statistic as extreme, p set to 1/(nsim+1)" else ""
 
 # McCullagh (1985) exact-conditional-moments standardization of the Pearson
 # statistic (SAS GOFLOGIT / Kuss 2002 algorithm, ungrouped binary case). The
@@ -1845,7 +1987,7 @@ gof_ftest <- function(ctx, opts = list()) {
   if (is.null(av) || !("grp" %in% rownames(av)))
     return(list(Statistic = NA, df = NA, p_value = NA, Note = "Not run: ANOVA failed"))
   list(Statistic = av["grp", "F value"], df = av["grp", "Df"],
-       p_value = av["grp", "Pr(>F)"], Note = "deviance residuals ~ groups (ANOVA F)")
+       p_value = av["grp", "Pr(>F)"], Note = "ANOVA F on deviance residuals; comparison only, not counted")
 }
 
 # Registry of the bundled tests (test wrappers are internal, not exported).
@@ -1864,8 +2006,8 @@ gof_ftest <- function(ctx, opts = list()) {
   "HL-equalwidth" = list(fn = gof_hlw,      family = "Partition",    needs_model = FALSE, slow = FALSE),
   "Pigeon-Heyse"  = list(fn = gof_ph_test,  family = "Partition",    needs_model = FALSE, slow = FALSE),
   "F-test"        = list(fn = gof_ftest,    family = "Partition",    needs_model = FALSE, slow = FALSE),
-  "EF"            = list(fn = gof_ef,       family = "Standardized", needs_model = FALSE, slow = FALSE),
-  "EF-normal"     = list(fn = gof_ef_normal, family = "Standardized", needs_model = FALSE, slow = FALSE),
+  "EF"            = list(fn = gof_ef,       family = "Partition",    needs_model = FALSE, slow = FALSE),
+  "EF-normal"     = list(fn = gof_ef_normal, family = "Partition",   needs_model = FALSE, slow = FALSE),
   ## EDGE, the cubic basis, at both partitions of the EDGE paper whatever the battery's G
   "EDGE"          = list(fn = function(ctx, opts) gof_def(ctx, list(basis = "poly3", weights = opts$weights, G = "auto")), family = "Directed", needs_model = TRUE, slow = FALSE),
   "EDGE.G10"      = list(fn = function(ctx, opts) gof_def(ctx, list(basis = "poly3", weights = opts$weights, G = 10)), family = "Directed", needs_model = TRUE, slow = FALSE),
@@ -1885,7 +2027,8 @@ gof_ftest <- function(ctx, opts = list()) {
   "eHL"                 = list(fn = gof_ehl,        family = "Calibration",    needs_model = FALSE, slow = TRUE),
   "GiViTI"              = list(fn = gof_giviti,      family = "Calibration",    needs_model = FALSE, slow = TRUE),
   "GiViTI-external"     = list(fn = function(ctx, opts) gof_giviti(ctx, list(devel = "external")),
-                                                       family = "Calibration",  needs_model = FALSE, slow = TRUE),
+                                                       family = "Calibration",  needs_model = FALSE, slow = TRUE,
+                                                       on_request = TRUE),
   "Cubic-LR"            = list(fn = gof_cubic_lr,    family = "Calibration",    needs_model = FALSE, slow = FALSE),
   "BAGofT"              = list(fn = gof_bagoft,     family = "Bootstrap",      needs_model = TRUE,  slow = TRUE),
   "Lai-Liu-HL"          = list(fn = gof_lailiu,     family = "Bootstrap",      needs_model = TRUE,  slow = TRUE),
