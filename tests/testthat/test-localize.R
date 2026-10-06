@@ -237,3 +237,16 @@ test_that("plot() draws a verdict in both settings and returns it invisibly", {
   expect_silent(plot(ri))
   expect_error(plot(re, which = "radar"), "should be one of")
 })
+
+test_that("plot = TRUE draws the verdict as the result is computed", {
+  d <- loc_data()
+  f <- tempfile(fileext = ".pdf"); grDevices::pdf(f)
+  on.exit({ grDevices::dev.off(); unlink(f) })
+  before <- grDevices::recordPlot()
+  r <- localize.external(d$y, d$p, d$X, M = 49, seed = 1, plot = TRUE)
+  expect_s3_class(r, "gof_localize")
+  expect_identical(r$named, localize.external(d$y, d$p, d$X, M = 49, seed = 1, plot = FALSE)$named)
+  expect_error(localize.external(d$y, d$p, d$X, M = 19, plot = NA), "TRUE or FALSE")
+  expect_false(interactive())   # so the default does not draw under R CMD check
+})
+

@@ -152,6 +152,10 @@
   X
 }
 
+## a single TRUE or FALSE
+.loc_check_flag <- function(v, name)
+  if (!is.logical(v) || length(v) != 1L || is.na(v)) stop("'", name, "' must be TRUE or FALSE", call. = FALSE)
+
 ## assemble the returned object
 .loc_result <- function(cl, P, groups, alpha, setting, calibration, draws, method, data.name, n, robust,
                         dealiased = NULL) {
@@ -248,6 +252,9 @@
 #' @param robust if \code{TRUE}, build the bases on normal scores of the score and the
 #'   covariates; see Details.
 #' @param seed optional integer, passed to \code{set.seed()} before the reference draws.
+#' @param plot if \code{TRUE}, draw the verdict with \code{\link{plot.gof_localize}} (a misfit
+#'   compass beside the lattice of closed tests). The default draws it in an interactive session
+#'   and not in scripts, simulations or examples.
 #'
 #' @return An object of class \code{"gof_localize"}: a list with \code{named} (the groups named,
 #'   in hierarchy order), \code{highest} (the highest of them, or \code{NA}), \code{action} (the
@@ -300,8 +307,9 @@
 #' @export
 localize.external <- function(y, p, X, M = 999L, alpha = 0.05, calibration = c("montecarlo", "multiplier"),
                               cov_df = 5, naming = c("closure", "holm", "bonferroni"), robust = FALSE,
-                              seed = NULL) {
+                              seed = NULL, plot = interactive()) {
   dn <- paste(paste(deparse(substitute(y)), collapse = " "), "and", paste(deparse(substitute(p)), collapse = " "))
+  .loc_check_flag(plot, "plot")
   calibration <- match.arg(calibration); naming <- match.arg(naming)
   .loc_check_flag(robust, "robust")
   y <- as.numeric(y); p <- as.numeric(p)
@@ -327,12 +335,14 @@ localize.external <- function(y, p, X, M = 999L, alpha = 0.05, calibration = c("
   P <- do.call(rbind, lapply(unlist(mem, recursive = FALSE), function(f) f(R)))
   groups <- lapply(names(mem), function(g) grep(paste0("^", g, "\\."), rownames(P)))
   names(groups) <- names(mem)
-  .loc_result(.loc_closure(P, groups, alpha, naming), P, groups, alpha,
-              setting = "external validation of frozen predictions",
-              calibration = if (calibration == "montecarlo") "Monte Carlo" else "multiplier",
-              draws = as.integer(M), n = length(y), robust = robust,
-              method = "Localization of misfit: closed testing over orthogonal groups",
-              data.name = dn)
+  out <- .loc_result(.loc_closure(P, groups, alpha, naming), P, groups, alpha,
+                     setting = "external validation of frozen predictions",
+                     calibration = if (calibration == "montecarlo") "Monte Carlo" else "multiplier",
+                     draws = as.integer(M), n = length(y), robust = robust,
+                     method = "Localization of misfit: closed testing over orthogonal groups",
+                     data.name = dn)
+  if (plot) graphics::plot(out)
+  out
 }
 
 #' Localize the misfit of a fitted logistic model, with error control
@@ -390,6 +400,9 @@ localize.external <- function(y, p, X, M = 999L, alpha = 0.05, calibration = c("
 #' @param cov_df,naming as in \code{\link{localize.external}}.
 #' @param robust if \code{TRUE}, build the bases on normal scores; see Details.
 #' @param seed optional integer, passed to \code{set.seed()} before the bootstrap.
+#' @param plot if \code{TRUE}, draw the verdict with \code{\link{plot.gof_localize}} (a misfit
+#'   compass beside the lattice of closed tests). The default draws it in an interactive session
+#'   and not in scripts, simulations or examples.
 #'
 #' @return An object of class \code{"gof_localize"}, as described in
 #'   \code{\link{localize.external}}; \code{draws} is the number of bootstrap replicates used
@@ -411,8 +424,10 @@ localize.external <- function(y, p, X, M = 999L, alpha = 0.05, calibration = c("
 #' @concept familywise error
 #' @export
 localize.gof <- function(fit, X = NULL, B = 199L, alpha = 0.05, dealias = FALSE, cov_df = 5,
-                         naming = c("closure", "holm", "bonferroni"), robust = FALSE, seed = NULL) {
+                         naming = c("closure", "holm", "bonferroni"), robust = FALSE, seed = NULL,
+                         plot = interactive()) {
   dn <- paste(deparse(substitute(fit)), collapse = " ")
+  .loc_check_flag(plot, "plot")
   if (!inherits(fit, "glm") || !identical(fit$family$family, "binomial") || !identical(fit$family$link, "logit"))
     stop("localize.gof() needs a glm fitted with family = binomial(link = \"logit\"). ",
          "For a model with another link, or any other model, use localize.external() on its ",
@@ -468,12 +483,14 @@ localize.gof <- function(fit, X = NULL, B = 199L, alpha = 0.05, dealias = FALSE,
   if (ncol(P) - 1L < 19L) stop("too few usable bootstrap replicates (", ncol(P) - 1L, ")", call. = FALSE)
   gn <- Filter(function(g) any(grepl(paste0("^", g, "\\."), rn)), c("LINK", "COV"))   # COV is absent with one covariate
   groups <- lapply(gn, function(g) grep(paste0("^", g, "\\."), rn)); names(groups) <- gn
-  .loc_result(.loc_closure(P, groups, alpha, naming), P, groups, alpha,
-              setting = "in-sample checking of a fitted logistic model",
-              calibration = "parametric bootstrap", draws = ncol(P) - 1L, n = length(y0), robust = robust,
-              method = "Localization of misfit: closed testing over orthogonal groups",
-              data.name = dn,
-              dealiased = colnames(mm)[-1][dcols])
+  out <- .loc_result(.loc_closure(P, groups, alpha, naming), P, groups, alpha,
+                     setting = "in-sample checking of a fitted logistic model",
+                     calibration = "parametric bootstrap", draws = ncol(P) - 1L, n = length(y0), robust = robust,
+                     method = "Localization of misfit: closed testing over orthogonal groups",
+                     data.name = dn,
+                     dealiased = colnames(mm)[-1][dcols])
+  if (plot) graphics::plot(out)
+  out
 }
 
 ## input checks shared by both functions

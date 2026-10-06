@@ -13,7 +13,8 @@ localize.gof(
   cov_df = 5,
   naming = c("closure", "holm", "bonferroni"),
   robust = FALSE,
-  seed = NULL
+  seed = NULL,
+  plot = interactive()
 )
 }
 \arguments{
@@ -38,6 +39,10 @@ curved in the score; see Details.}
 \item{robust}{if \code{TRUE}, build the bases on normal scores; see Details.}
 
 \item{seed}{optional integer, passed to \code{set.seed()} before the bootstrap.}
+
+\item{plot}{if \code{TRUE}, draw the verdict with \code{\link{plot.gof_localize}} (a misfit
+compass beside the lattice of closed tests). The default draws it in an interactive session
+and not in scripts, simulations or examples.}
 }
 \value{
 An object of class \code{"gof_localize"}, as described in

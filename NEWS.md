@@ -7,6 +7,8 @@
   lattice of closed tests (every set of parts with its p-value; a part is named when every set that
   contains it rejects). The highest part named and the next step are written underneath.
   `which = "compass"` or `"lattice"` draws one panel; `colour = FALSE` draws in greys.
+  `localize.external()` and `localize.gof()` draw it themselves in an interactive session
+  (`plot = interactive()`); set `plot = FALSE` to turn it off.
 
 * `localize.external(y, p, X)` says which part of the misfit is present when frozen predictions are
   checked on validation data, with the familywise error rate held at `alpha`. The misfit is split
