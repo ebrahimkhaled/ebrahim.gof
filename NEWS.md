@@ -1,4 +1,4 @@
-# ebrahim.gof 2.9.0.9000 (development version)
+# ebrahim.gof 2.10.0
 
 ## Behaviour change
 
@@ -33,6 +33,13 @@
 
 ## New features
 
+* `edge.gof()` returns a data frame of class `c("edge_gof", "data.frame")`, so `plot()` can draw it
+  (see below). The columns, their values and the printed table are unchanged, and the result works
+  as a data frame everywhere it did before. The grouped pieces behind each row (residuals, their
+  projection on the basis, observed and expected counts, group sizes and mean risks, and the null
+  variance of each residual) are kept in `attr(, "details")`; subsetting or binding the data frame
+  drops them.
+
 * `ef.gof(G = "auto")` uses groups of about 25 records, `max(10, ceiling(n / 25))`, the choice the
   EF paper recommends for large samples, and `G = "paul"` the number of groups of Paul, Pennell and
   Lemeshow (2013). `groups = "pattern"` keeps each covariate pattern (records with the same fitted
@@ -43,6 +50,26 @@
   to the Note of the `EF` row.
 
 ## New functions
+
+* `plot()` for the result of `edge.gof()` draws one row (`row = "verdict"`, `"check"` or a number):
+  the standardized residual of each risk group against its mean predicted risk, the projection of
+  the residuals on the basis (the shape the test squared) as a curve, a pointwise band and a
+  simultaneous band (`band = "simultaneous"`, `"pointwise"` or `"none"`), with the groups beyond the
+  band drawn as triangles. The simultaneous band is the Sidak form of the Bonferroni band over the
+  `G` groups. For frozen predictions (`external = TRUE`) the residuals are independent with unit
+  variance and the bands are exact, as in the EDGE paper. In-sample each residual is divided by its
+  null standard deviation, the square root of the diagonal of Omega, and the legend calls the bands
+  approximate. `scale = "rate"` shows observed against predicted event rates with the same band, and
+  `scale = c("residual", "rate")` both panels; `colour = FALSE` draws in greys. The figure has no
+  title, so it can go into a paper as it is.
+
+* `plot()` for the result of `deepgof1()` or `deepgof1.external()` draws the K by K residual map that
+  the network scored, each cell with its value, coloured blue (fewer events than predicted) to
+  vermilion (more), with the two covariates of the map on the axes.
+
+* `summary()` for the result of `run.all.gof()` or `run.all.external()` gives one line per test
+  family: the number of tests, how many returned a p-value, how many reject at `alpha` (default
+  0.05), and the smallest p-value with the test that gave it.
 
 * `plot()` for the result of `localize.external()` or `localize.gof()` draws the verdict: a misfit
   compass (one wedge per part, its length the strength of evidence, the parts named filled) beside the
@@ -103,6 +130,35 @@
   departures are comparable. With a fitted model the direction is taken on the map of the default
   reading (the covariate axis rule of 2.9.0). A departure that integrates to zero inside every grid
   cell has no direction at all, and is reported as such rather than as a near miss.
+
+## Documentation
+
+* References brought up to date. EDGE is cited as Ebrahim, Hussein and El-Kotory, "A grouped
+  calibration test for logistic regression that tolerates a few corrupted records",
+  arXiv:2608.20511; EF as Ebrahim, Khattab and El-Kotory, "A modified Hosmer-Lemeshow
+  goodness-of-fit test for asymmetric links: second-order power and robustness",
+  arXiv:2607.15454; DeepGOF-1 as Ebrahim, Hussein and El-Kotory, "Where does a logistic risk model
+  fail? An audited neural goodness-of-fit test for model development and external validation",
+  arXiv:2609.29575; the shrinkage paper behind `shrink.gof()` with its arXiv identifier,
+  arXiv:2609.06413; `calm.gof()` with the title of its paper, "A closed-form goodness-of-fit
+  reference for penalised logistic regression in the proportional regime"; the localization paper
+  with its third author, O. A. E.-A. Hussein; and the benchmark study as published in the Journal
+  of Intelligent Computing and Data Science 2(2), 97-128 (doi:10.21608/jicds.2026.505341.1048).
+
+* `citation("ebrahim.gof")` now lists the package itself, the EDGE and EF preprints and the
+  published benchmark study.
+
+* `?def.gof` says which weighting to use for each basis, and when the quality of the data overrides
+  that choice.
+
+* The Description field names `run.all.external()`, `edge.stream()`, `localize.gof()`,
+  `localize.external()`, `projection.gof()` and `bagoft.fast()`.
+
+* The vignette "A goodness-of-fit and calibration toolbox for logistic regression" has new sections
+  on the EDGE picture, external validation of frozen predictions, localizing the misfit and
+  monitoring a deployed model with `edge.stream()`, and shows `summary()` of the battery. The
+  sentence on a GPU backend for le Cessie's test and the projection test is gone: that code is not
+  part of the package.
 
 ## Bug fix
 

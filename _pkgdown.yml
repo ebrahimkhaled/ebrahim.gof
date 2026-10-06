@@ -29,6 +29,7 @@ reference:
   contents:
   - ef.gof
   - edge.gof
+  - edge.belt
   - edges.gof
   - cdef.gof
   - def.gof
@@ -52,6 +53,7 @@ reference:
   - legoft.localize
   - deepgof1
   - deepgof1.external
+  - gof_certificate
 
 - title: Localizing the misfit
   desc: >
@@ -65,11 +67,13 @@ reference:
 - title: Comparison tests
   desc: >
     Published tests implemented here so the battery can be compared with them
-    on the same data: the projection test of Liu et al. (2024) and a fast
-    implementation of the adaptive-partition test BAGofT.
+    on the same data: the projection test of Liu et al. (2024), a fast
+    implementation of the adaptive-partition test BAGofT, and the cubic calibration
+    likelihood-ratio test.
   contents:
   - projection.gof
   - bagoft.fast
+  - cubic.calib.gof
 
 - title: Building your own scorer
   contents:
@@ -85,7 +89,11 @@ reference:
 - title: Printing and plotting
   contents:
   - print.gof_battery
+  - summary.gof_battery
   - plot.gof_battery
+  - plot.edge_gof
+  - plot.deepgof1
+  - plot.gof_localize
 
 articles:
 - title: Guides
