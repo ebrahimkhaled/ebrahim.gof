@@ -52,6 +52,16 @@
   recomputed. With `external = TRUE` the belt carries the external test (Omega = I, constant
   column, d + 1 df), so its band is exact rather than conservative.
 
+* `gof_certificate()` answers, before any bootstrap is run, whether `deepgof1()` is consistent
+  against a departure you name. The scored statistic is piecewise affine, so its recession function
+  is the same network with every offset set to zero, and one forward pass on the frozen weights
+  returns a slope whose sign decides whether power tends to one. Name the departure as true
+  probabilities (`pi_star`), as the omitted term on the linear-predictor scale (`eta_shift`), or as
+  a 6 by 6 map `direction`. The slope is reported at unit map norm, so that margins from different
+  departures are comparable. With a fitted model the direction is taken on the map of the default
+  reading (the covariate axis rule of 2.9.0). A departure that integrates to zero inside every grid
+  cell has no direction at all, and is reported as such rather than as a near miss.
+
 ## Bug fix
 
 * `deepgof1.external()` took the names of `y` and `p` for the printed `data:` line after converting
