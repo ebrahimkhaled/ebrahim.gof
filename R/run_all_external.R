@@ -33,6 +33,11 @@
 #'     intercept is 0 with the slope held at 1: \eqn{(O - E)/\sqrt{\sum p(1-p)}}.
 #'   \item \code{Spiegelhalter-z} [Calibration] -- Spiegelhalter's (1986) \eqn{z} test,
 #'     two-sided.
+#'   \item \code{Osius-Rojek (external)} [Standardized] -- the Pearson statistic
+#'     \eqn{X^2 = \sum (y - p)^2 / \{p(1-p)\}} standardized with its moments under frozen
+#'     predictions, \eqn{E X^2 = n} and \eqn{\mathrm{Var}\, X^2 = \sum (1-2p)^2 / \{p(1-p)\}}
+#'     (Osius and Rojek 1992), two-sided. In-sample, \code{run.all.gof()} uses the
+#'     version that removes the part of the variance taken by the fitted coefficients.
 #'   \item \code{GiViTI} [Calibration] -- the GiViTI calibration test in its external
 #'     mode (Nattino et al. 2014), run in an isolated \pkg{callr} process; needs
 #'     \pkg{givitiR} and \pkg{callr}. When it selects a polynomial of degree one it
@@ -121,6 +126,11 @@ run.all.external <- function(y, p, G = 10, X = NULL, include_slow = FALSE) {
                    stats::pchisq(zl^2, 1, lower.tail = FALSE), sprintf("O/E = %.3f", sum(y) / sum(p)))
   zs <- sum((y - p) * (1 - 2 * p)) / sqrt(sum((1 - 2 * p)^2 * v))
   rows$spz <- row("Spiegelhalter-z", "Calibration", zs, NA_real_, 2 * stats::pnorm(-abs(zs)), "two-sided z")
+  # Osius-Rojek on frozen predictions: each Pearson term (y - p)^2 / v has mean 1 and
+  # variance (1 - 2p)^2 / v, and no fitted coefficients are projected out
+  zor <- (sum((y - p)^2 / v) - n) / sqrt(sum((1 - 2 * p)^2 / v))
+  rows$or <- row("Osius-Rojek (external)", "Standardized", zor, NA_real_, 2 * stats::pnorm(-abs(zor)),
+                 "two-sided z, record-level Pearson")
   rows$giviti <- gof_giviti(list(y = y, ph = p), list(devel = "external"))
   rows$giviti <- row("GiViTI", "Calibration", rows$giviti$Statistic, rows$giviti$df,
                      rows$giviti$p_value, rows$giviti$Note)

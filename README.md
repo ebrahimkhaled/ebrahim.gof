@@ -128,7 +128,8 @@ run.all.external(y, p, G = 10, X = NULL, include_slow = FALSE)
 ```
 
 It returns the directed test in external mode (ten groups and `G = "auto"`), Cox's recalibration test,
-calibration in the large, Spiegelhalter's z, the GiViTI test (external), the Hosmer-Lemeshow statistic on
+calibration in the large, Spiegelhalter's z, Osius-Rojek's standardized Pearson statistic with its
+external moments, the GiViTI test (external), the Hosmer-Lemeshow statistic on
 chi-squared(G), Stukel's test on the frozen linear predictor, le Cessie's test when `X` is given and
 `include_slow = TRUE`, and the O/E ratio, calibration slope and c-statistic.
 

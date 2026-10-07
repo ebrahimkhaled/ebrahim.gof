@@ -57,6 +57,11 @@ these tests conservative.
     intercept is 0 with the slope held at 1: \eqn{(O - E)/\sqrt{\sum p(1-p)}}.
   \item \code{Spiegelhalter-z} [Calibration] -- Spiegelhalter's (1986) \eqn{z} test,
     two-sided.
+  \item \code{Osius-Rojek (external)} [Standardized] -- the Pearson statistic
+    \eqn{X^2 = \sum (y - p)^2 / \{p(1-p)\}} standardized with its moments under frozen
+    predictions, \eqn{E X^2 = n} and \eqn{\mathrm{Var}\, X^2 = \sum (1-2p)^2 / \{p(1-p)\}}
+    (Osius and Rojek 1992), two-sided. In-sample, \code{run.all.gof()} uses the
+    version that removes the part of the variance taken by the fitted coefficients.
   \item \code{GiViTI} [Calibration] -- the GiViTI calibration test in its external
     mode (Nattino et al. 2014), run in an isolated \pkg{callr} process; needs
     \pkg{givitiR} and \pkg{callr}. When it selects a polynomial of degree one it

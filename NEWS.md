@@ -75,6 +75,11 @@
 
 ## New features
 
+* `run.all.external()` has an `Osius-Rojek (external)` row (family "Standardized"): the record-level
+  Pearson statistic standardized with its moments under frozen predictions, mean `n` and variance
+  `sum((1 - 2p)^2 / (p(1 - p)))`, two-sided. Nothing is projected out, since no coefficient was fitted
+  to the validation data. **The external battery has one more row.**
+
 * `edge.gof()` returns a data frame of class `c("edge_gof", "data.frame")`, so `plot()` can draw it
   (see below). The columns, their values and the printed table are unchanged, and the result works
   as a data frame everywhere it did before. The grouped pieces behind each row (residuals, their
