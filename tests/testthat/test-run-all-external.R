@@ -54,6 +54,26 @@ test_that("the closed-form rows match hand computations", {
   expect_equal(out$p_value[out$Test == "Osius-Rojek (external)"], 2 * pnorm(-abs(zor)), tolerance = 1e-12)
 })
 
+test_that("Stukel (offset) is the score test of the two terms at the null", {
+  set.seed(16)
+  n <- 800
+  p <- plogis(rnorm(n, -1, 1.3))
+  y <- rbinom(n, 1, p)
+  out <- run.all.external(y, p)
+  lp <- qlogis(p); v <- p * (1 - p)
+  Z <- cbind(0.5 * lp^2 * (lp >= 0), -0.5 * lp^2 * (lp < 0))
+  U <- crossprod(Z, y - p)
+  S <- as.numeric(t(U) %*% solve(t(Z) %*% (Z * v)) %*% U)
+  expect_equal(out$Statistic[out$Test == "Stukel (offset)"], S, tolerance = 1e-10)
+  expect_equal(out$df[out$Test == "Stukel (offset)"], 2)
+  # no risk above one half: the upper term is empty and the test has one degree of freedom
+  p2 <- plogis(rnorm(n, -3, 0.5)); p2 <- pmin(p2, 0.49)
+  y2 <- rbinom(n, 1, p2)
+  out2 <- run.all.external(y2, p2)
+  expect_equal(out2$df[out2$Test == "Stukel (offset)"], 1)
+  expect_true(is.finite(out2$p_value[out2$Test == "Stukel (offset)"]))
+})
+
 test_that("the external Osius-Rojek moments are exact for Bernoulli outcomes", {
   p <- c(0.05, 0.2, 0.5, 0.7, 0.93)
   v <- p * (1 - p)

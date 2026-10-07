@@ -75,6 +75,13 @@
 
 ## New features
 
+* `run.all.external()`: the `Stukel (offset)` row is now the score test of Stukel's two terms at the
+  null, with no model fitted, in place of the likelihood ratio. The likelihood ratio rejected too
+  often at low event rates, when only a few records have risks above 0.5: 0.078 at a 10% event rate
+  and 0.061 at 3% with heavy-tailed risks, against 0.035 to 0.053 for the score form in the same
+  4,000-replicate null simulations. When no prediction reaches 0.5 the empty upper term is dropped and
+  the test has one degree of freedom. **The Stukel (offset) p-values change.**
+
 * `run.all.external()` has an `Osius-Rojek (external)` row (family "Standardized"): the record-level
   Pearson statistic standardized with its moments under frozen predictions, mean `n` and variance
   `sum((1 - 2p)^2 / (p(1 - p)))`, two-sided. Nothing is projected out, since no coefficient was fitted

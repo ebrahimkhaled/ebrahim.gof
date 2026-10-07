@@ -69,7 +69,10 @@ these tests conservative.
   \item \code{Hosmer-Lemeshow (external)} [Partition] -- \eqn{G} equal-frequency risk
     groups, referred to \eqn{\chi^2_G}.
   \item \code{Stukel (offset)} [Directed] -- Stukel's two terms added to the frozen
-    linear predictor, likelihood-ratio \eqn{\chi^2_2}.
+    linear predictor, score test at the null referred to \eqn{\chi^2_2} (one degree of
+    freedom when no prediction reaches 0.5, so the upper term is empty). The score form
+    is used because the likelihood ratio rejects too often when only a few records have
+    risks above 0.5, as happens at low event rates.
   \item \code{le Cessie (external)} [Smoothing] -- le Cessie and van Houwelingen's
     kernel statistic over covariate space with \eqn{\Omega = I}; only when \code{X}
     is given and \code{include_slow = TRUE}, because it builds an \eqn{n \times n}
