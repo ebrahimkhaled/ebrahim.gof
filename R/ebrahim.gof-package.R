@@ -75,8 +75,9 @@
 #' # the directed test, when misfit is expected in the calibration shape
 #' edge.gof(fit)
 #'
-#' @seealso The vignette
-#'   \code{vignette("ebrahim-gof-toolbox", package = "ebrahim.gof")}.
+#' @seealso The vignettes
+#'   \code{vignette("ebrahim-gof-toolbox", package = "ebrahim.gof")} and
+#'   \code{vignette("extensions", package = "ebrahim.gof")}.
 #'
 #' @concept goodness-of-fit
 #' @concept calibration

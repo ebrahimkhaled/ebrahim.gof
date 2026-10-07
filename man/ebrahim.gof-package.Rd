@@ -91,8 +91,9 @@ edge.gof(fit)
 
 }
 \seealso{
-The vignette
-  \code{vignette("ebrahim-gof-toolbox", package = "ebrahim.gof")}.
+The vignettes
+  \code{vignette("ebrahim-gof-toolbox", package = "ebrahim.gof")} and
+  \code{vignette("extensions", package = "ebrahim.gof")}.
 }
 \author{
 \strong{Maintainer}: Ebrahim Khaled Ebrahim \email{ebrahimkhaled@alexu.edu.eg} (\href{https://orcid.org/0009-0006-7839-8778}{ORCID})

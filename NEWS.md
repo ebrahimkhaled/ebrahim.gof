@@ -222,6 +222,13 @@
   sentence on a GPU backend for le Cessie's test and the projection test is gone: that code is not
   part of the package.
 
+* New vignette "Further examples: grouped data, the EF read-out, monitoring and ridge fits"
+  (`vignette("extensions", package = "ebrahim.gof")`): the sparse and grouped forms on
+  `gof_demo_grouped`, the per-group EF read-out, `localize.gof(dealias = TRUE)`, monitoring a
+  deployed model with `edge.stream()`, and `shrink.gof()` and `calm.gof()` on a ridge fit,
+  including the two scales of `lambda`. It holds the examples of the JSS paper that did not fit
+  in its pages, with the same code and seeds as the paper's replication script.
+
 ## Bug fix
 
 * `deepgof1.external()` took the names of `y` and `p` for the printed `data:` line after converting
