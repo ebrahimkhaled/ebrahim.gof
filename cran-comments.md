@@ -1,13 +1,19 @@
-<!-- On the day of submission: set Date in DESCRIPTION to that day and rebuild the tarball
-     (R CMD build) on that day, or the incoming check notes that the Date field and the build
-     time stamp are over a month old. -->
-
 # ebrahim.gof 2.10.0
 
 CRAN has 2.9.0 (published 2026-10-01).
 
-## Why this release
+## Why this release, and why it follows 2.9.0 so soon
 
+I am aware that this update comes only ten days after 2.9.0 and that the package has been updated
+often this year. I would not send it so soon if it did not correct test results that users rely
+on. The first item below is a correctness fix:
+
+* `run.all.external()`: the `Stukel (offset)` row used the likelihood-ratio statistic, which
+  rejects too often at low event rates when only a few records have predicted risks above 0.5
+  (type I error 0.061 to 0.078 at a nominal 0.05 in 4,000-replicate null simulations). It is now
+  the score test of the same two terms at the null, which holds its level (0.035 to 0.053) and
+  needs no model fit. A new `Osius-Rojek (external)` row uses the exact moments of the Pearson
+  statistic under frozen predictions.
 * `ef.gof()` now computes the Ebrahim-Farrington test as its paper defines it (equal-size groups,
   tied risks in random order, the Theorem-3 normal reference). Its default p-value changes for some
   data; NEWS.md lists each change and gives the call that reproduces a 2.9.0 p-value.
@@ -30,10 +36,10 @@ None adds a dependency.
 0 errors | 0 warnings | 2 notes
 
     checking CRAN incoming feasibility ... NOTE
-    Days since last update: 5
     Number of updates in past 6 months: 7
 
-The note will read differently on the day of submission.
+The reason for this update so soon after 2.9.0 is given at the top: it corrects the type I error
+of a test in run.all.external().
 
     checking for future file timestamps ... NOTE
     unable to verify current time
