@@ -30,6 +30,10 @@ degrees of freedom on the shapes where structured misfit concentrates.
   : Ebrahim-Farrington Goodness-of-Fit Test for Logistic Regression
 - [`edge.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edge.gof.md)
   : EDGE: Directed Goodness-of-Fit Test for Binary Logistic Regression
+- [`edge.belt()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edge.belt.md)
+  [`print(`*`<edge_belt>`*`)`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edge.belt.md)
+  [`plot(`*`<edge_belt>`*`)`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edge.belt.md)
+  : EDGE-Belt: the grouped calibration picture behind the EDGE test
 - [`edges.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edges.gof.md)
   : EDGES: Cauchy-Combination Ensemble of Directed GOF Tests (Alias)
 - [`cdef.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/cdef.gof.md)
@@ -69,17 +73,35 @@ same p-value. Nothing is retrained at call time.
 - [`deepgof1.external()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/deepgof1.external.md)
   : DeepGOF-1 for frozen predictions: external validation of a risk
   model
+- [`gof_certificate()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/gof_certificate.md)
+  : Can DeepGOF-1 detect this departure? A certificate from the frozen
+  weights
+
+## Localizing the misfit
+
+Which part of the misfit is present – the intercept, the slope, the link
+or the covariates – with familywise error control, and the update it
+calls for. For frozen predictions on validation data, or a fitted
+logistic model.
+
+- [`localize.external()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/localize.external.md)
+  : Localize the misfit of frozen predictions, with error control
+- [`localize.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/localize.gof.md)
+  : Localize the misfit of a fitted logistic model, with error control
 
 ## Comparison tests
 
 Published tests implemented here so the battery can be compared with
-them on the same data: the projection test of Liu et al. (2024) and a
-fast implementation of the adaptive-partition test BAGofT.
+them on the same data: the projection test of Liu et al. (2024), a fast
+implementation of the adaptive-partition test BAGofT, and the cubic
+calibration likelihood-ratio test.
 
 - [`projection.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/projection.gof.md)
   : Projection Goodness-of-Fit Test for Binary Regression
 - [`bagoft.fast()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/bagoft.fast.md)
   : Fast BAGofT: the Binary Adaptive Goodness-of-Fit Test
+- [`cubic.calib.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/cubic.calib.gof.md)
+  : Cubic Calibration Likelihood-Ratio Test for Logistic Regression
 
 ## Building your own scorer
 
@@ -109,5 +131,15 @@ fast implementation of the adaptive-partition test BAGofT.
 
 - [`print(`*`<gof_battery>`*`)`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/print.gof_battery.md)
   : Print a goodness-of-fit battery
+- [`summary(`*`<gof_battery>`*`)`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/summary.gof_battery.md)
+  [`print(`*`<summary.gof_battery>`*`)`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/summary.gof_battery.md)
+  : Summarise a goodness-of-fit battery by family
 - [`plot(`*`<gof_battery>`*`)`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/plot.gof_battery.md)
   : Plot the GiViTI calibration belt from a goodness-of-fit battery
+- [`plot(`*`<edge_gof>`*`)`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/plot.edge_gof.md)
+  : Plot an EDGE result: the grouped residuals, the shape tested and the
+  bands
+- [`plot(`*`<deepgof1>`*`)`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/plot.deepgof1.md)
+  : Plot the residual map of a DeepGOF-1 test
+- [`plot(`*`<gof_localize>`*`)`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/plot.gof_localize.md)
+  : Plot a localization verdict

@@ -75,6 +75,15 @@ makes every one of these tests conservative.
 - `Spiegelhalter-z` \[Calibration\] – Spiegelhalter's (1986) \\z\\ test,
   two-sided.
 
+- `Osius-Rojek (external)` \[Standardized\] – the Pearson statistic
+  \\X^2 = \sum (y - p)^2 / \\p(1-p)\\\\ standardized with its moments
+  under frozen predictions, \\E X^2 = n\\ and \\\mathrm{Var}\\ X^2 =
+  \sum (1-2p)^2 / \\p(1-p)\\\\ (Osius and Rojek 1992), two-sided.
+  In-sample,
+  [`run.all.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/run.all.gof.md)
+  uses the version that removes the part of the variance taken by the
+  fitted coefficients.
+
 - `GiViTI` \[Calibration\] – the GiViTI calibration test in its external
   mode (Nattino et al. 2014), run in an isolated callr process; needs
   givitiR and callr. When it selects a polynomial of degree one it
@@ -84,7 +93,11 @@ makes every one of these tests conservative.
   risk groups, referred to \\\chi^2_G\\.
 
 - `Stukel (offset)` \[Directed\] – Stukel's two terms added to the
-  frozen linear predictor, likelihood-ratio \\\chi^2_2\\.
+  frozen linear predictor, score test at the null referred to
+  \\\chi^2_2\\ (one degree of freedom when no prediction reaches 0.5, so
+  the upper term is empty). The score form is used because the
+  likelihood ratio rejects too often when only a few records have risks
+  above 0.5, as happens at low event rates.
 
 - `le Cessie (external)` \[Smoothing\] – le Cessie and van Houwelingen's
   kernel statistic over covariate space with \\\Omega = I\\; only when
@@ -123,35 +136,38 @@ p <- plogis(-1 + 0.8 * x)                 # a published model, frozen
 y <- rbinom(n, 1, plogis(-1 + 0.6 * x))    # new patients: the model is overfitted
 run.all.external(y, p)
 #> 
-#> Goodness-of-fit battery: 11 tests  (5 reject at 0.05)
-#> ============================================================
-#>  Test                            Statistic   df  p-value    
-#>  --- Partition ---------------------------------------------
-#>  Hosmer-Lemeshow (external) [a]      24.66   10   0.0060 ** 
-#>  --- Directed ----------------------------------------------
-#>  EDGE (G=10) [b]                     14.86    4   0.0050 ** 
-#>  EDGE (G=auto, 40) [b]               17.42    4   0.0016 ** 
-#>  Stukel (offset) [c]                 5.342    2   0.0692 .  
-#>  --- Calibration -------------------------------------------
-#>  Cox recalibration [d]                13.2    2   0.0014 ** 
-#>  Calibration-in-the-large [e]       0.8792    1   0.3484    
-#>  Spiegelhalter-z [f]                 1.565        0.1176    
-#>  GiViTI [g]                                       0.0014 ** 
-#>  --- Descriptive -------------------------------------------
-#>  O/E ratio [h]                      0.9566             -    
-#>  Calibration slope [i]              0.6643             -    
-#>  c-statistic (AUC) [j]              0.6474             -    
-#> ------------------------------------------------------------
+#> Goodness-of-fit battery: 12 tests  (7 reject at 0.05)
+#> ==========================================================
+#>  Test                            Statistic df  p-value    
+#>  --- Standardized ----------------------------------------
+#>  Osius-Rojek (external) [a]          2.243      0.0249 *  
+#>  --- Partition -------------------------------------------
+#>  Hosmer-Lemeshow (external) [b]      24.66 10   0.0060 ** 
+#>  --- Directed --------------------------------------------
+#>  EDGE (G=10) [c]                     14.86  4   0.0050 ** 
+#>  EDGE (G=auto, 40) [c]               17.42  4   0.0016 ** 
+#>  Stukel (offset) [d]                 5.994  2   0.0499 *  
+#>  --- Calibration -----------------------------------------
+#>  Cox recalibration [e]                13.2  2   0.0014 ** 
+#>  Calibration-in-the-large [f]       0.8792  1   0.3484    
+#>  Spiegelhalter-z [g]                 1.565      0.1176    
+#>  GiViTI [h]                                     0.0014 ** 
+#>  --- Descriptive -----------------------------------------
+#>  O/E ratio [i]                      0.9566           -    
+#>  Calibration slope [j]              0.6643           -    
+#>  c-statistic (AUC) [k]              0.6474           -    
+#> ----------------------------------------------------------
 #>  Signif.:  *** <.001   ** <.01   * <.05   . <.1
 #>  Notes:
-#>    [a] 10 groups, chi-square(10)
-#>    [b] external mode, cubic basis + constant
-#>    [c] terms added to logit(p)
-#>    [d] intercept -0.337, slope 0.664
-#>    [e] O/E = 0.957
-#>    [f] two-sided z
-#>    [g] calibration belt; devel=external
-#>    [h] 1 = calibrated in the large
-#>    [i] 1 = calibrated; < 1 = overfitted
-#>    [j] discrimination, not calibration
+#>    [a] two-sided z, record-level Pearson
+#>    [b] 10 groups, chi-square(10)
+#>    [c] external mode, cubic basis + constant
+#>    [d] score test, terms added to logit(p)
+#>    [e] intercept -0.337, slope 0.664
+#>    [f] O/E = 0.957
+#>    [g] two-sided z
+#>    [h] calibration belt; devel=external
+#>    [i] 1 = calibrated in the large
+#>    [j] 1 = calibrated; < 1 = overfitted
+#>    [k] discrimination, not calibration
 ```

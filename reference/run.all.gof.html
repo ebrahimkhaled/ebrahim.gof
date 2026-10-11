@@ -15,7 +15,7 @@ one test never aborts the whole run."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">ebrahim.gof</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.9.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.10.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -28,6 +28,7 @@ one test never aborts the whole run."></head><body>
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/ebrahim-gof-toolbox.html">A goodness-of-fit and calibration toolbox for logistic regression</a></li>
     <li><a class="dropdown-item" href="../articles/ebrahim-farrington-intro.html">Introduction to the Ebrahim-Farrington Goodness-of-Fit Test</a></li>
+    <li><a class="dropdown-item" href="../articles/extensions.html">Further examples: grouped data, the EF read-out, monitoring and ridge fits</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -76,8 +77,12 @@ one test never aborts the whole run.</p>
 
 
 <dl><dt id="arg-object">object<a class="anchor" aria-label="anchor" href="#arg-object"></a></dt>
-<dd><p>A fitted binary logistic <code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></code>, or a binary
-(0/1) response vector <code>y</code> (then supply <code>predicted_probs</code>).</p></dd>
+<dd><p>A fitted binary logistic <code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></code>, with one row per
+binary record and no prior weights, or a binary (0/1) response vector <code>y</code>
+(then supply <code>predicted_probs</code>). A grouped (<code>cbind</code>) or weighted fit is
+refused: expand it to one row per record. Another link gives a warning, since
+most tests assume the logit. A warning is also given when some fitted risks are 0
+or 1 (separation) or when there are fewer than 10 events or non-events.</p></dd>
 
 
 <dt id="arg-predicted-probs">predicted_probs<a class="anchor" aria-label="anchor" href="#arg-predicted-probs"></a></dt>
@@ -86,8 +91,11 @@ one test never aborts the whole run.</p>
 
 
 <dt id="arg-x">X<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
-<dd><p>Optional design matrix; lets the directed (DEF) tests run from the
-<code>(y, predicted_probs)</code> form.</p></dd>
+<dd><p>Optional design matrix; lets the directed (DEF) and covariate-space tests
+run from the <code>(y, predicted_probs)</code> form. It should be the model matrix of
+the fit that gave <code>predicted_probs</code>: a data frame is coded with
+<code>model.matrix(~ ., X)</code>, and a matrix without a constant column gets an
+intercept column in front.</p></dd>
 
 
 <dt id="arg-tests">tests<a class="anchor" aria-label="anchor" href="#arg-tests"></a></dt>
@@ -190,7 +198,10 @@ those labels: find the label in the output, then the section of the same name he
 fitted responses over the whole sample without grouping.</p><ul><li><p><code>Pearson</code> – the sum of squared Pearson residuals. Its
     chi-square reference assumes many observations per covariate pattern. On
     sparse data that assumption fails and the test is unreliable in both
-    directions; it is reported for completeness and comparison, not for use.</p></li>
+    directions; it is reported for completeness and comparison, not for use.
+    It is printed without a significance flag and is not counted among the
+    rejections of the header or of <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>; the <code>Pearson (grouped)</code>
+    row, shown when covariate patterns repeat, is the one to read.</p></li>
 <li><p><code>Deviance</code> – the likelihood-ratio statistic against the
     saturated model. On ungrouped binary data its expectation depends on the
     fitted risks alone and not on whether they agree with the responses, so it
@@ -198,21 +209,27 @@ fitted responses over the whole sample without grouping.</p><ul><li><p><code>Pea
     it when they are extreme; the direction of the error is set by the risk
     profile rather than by the fit. On a correctly specified model with
     mid-range risks it therefore rejects almost always. It is reported for
-    completeness and comparison, not for use.</p></li>
+    completeness and comparison, not for use, and like <code>Pearson</code> it is not
+    counted among the rejections.</p></li>
 <li><p><code>Osius-Rojek</code> – rescues the Pearson statistic by standardizing
     it with its asymptotic mean and variance computed under increasing sample
     size rather than increasing cell counts, giving a normal reference that
-    stays valid when patterns are unique. Fast, parameter-free, and a
+    stays valid when patterns are unique; the deviate is referred two-sided.
+    Fast, parameter-free, and a
     sensible default. It can be anti-conservative at small samples and
     conservative under a strongly skewed covariate.</p></li>
 <li><p><code>McCullagh</code> – standardizes the Pearson statistic by its
     <em>exact</em> conditional moments rather than asymptotic ones (computed by
     the Kuss 2002 algorithm). Typically the most powerful of the global
-    statistics, at a cost that grows steeply with sample size.</p></li>
+    statistics. The deviate is referred to the upper tail of the normal, as
+    in the GOFLOGIT macro, so a Pearson statistic below its conditional mean
+    is not counted as misfit. The moments are computed from the p x p
+    information matrix, so the cost is linear in the sample size.</p></li>
 <li><p><code>Copas-RSS</code> – the unweighted sum of squares of the raw
-    residuals, referred to its own moments. Weighting each residual equally
-    rather than by its variance makes it comparatively sensitive to misfit in
-    the middle of the risk range.</p></li>
+    residuals, standardized by its own moments and referred two-sided to the
+    normal (<code>df</code> is <code>NA</code>, as for the other normal deviates).
+    Weighting each residual equally rather than by its variance makes it
+    comparatively sensitive to misfit in the middle of the risk range.</p></li>
 <li><p><code>Information-Matrix</code> – the White/Orme test. It compares two
     estimators of the information matrix that agree only if the model is
     correctly specified, so it is an omnibus check on the whole
@@ -235,7 +252,16 @@ and compare observed with expected counts group by group.</p><ul><li><p><code>HL
     non-rejection carries less weight than the nominal level suggests.</p></li>
 <li><p><code>F-test</code> – deviance residuals compared across the risk groups by
     a one-way analysis of variance. It is markedly liberal under sparsity and
-    grows more so with sample size; it is included for comparison.</p></li>
+    grows more so with sample size; it is included for comparison, printed
+    without a significance flag and not counted among the rejections.</p></li>
+<li><p><code>EF</code>, <code>EF-normal</code> – the Ebrahim-Farrington test,
+    Farrington's correction on the Hosmer-Lemeshow risk groups. <code>EF</code> uses
+    the chi-square reference on \(G - 2\) degrees of freedom at the battery's
+    <code>G</code>; <code>EF-normal</code> uses the plug-in normal reference, which is the
+    reference for many groups, at <code>G = "auto"</code> (groups of about 25 records)
+    unless <code>control = list("EF-normal" = list(G = ...))</code> sets another
+    number; it needs the model or <code>X</code>. See <code><a href="ef.gof.html">ef.gof</a></code>. Tied fitted
+    risks are put in random order.</p></li>
 <li><p><code>Lai-Liu-HL</code> – Lai and Liu's procedure for using the
     Hosmer-Lemeshow test in large samples, where any test eventually rejects.
     It standardizes power to a reference sample size <code>n0</code> and so returns
@@ -253,9 +279,13 @@ and compare observed with expected counts group by group.</p><ul><li><p><code>HL
     thousands and above; in small samples it is conservative.</p></li>
 </ul><p><strong>Directed tests</strong> (<code>Family</code> "Directed"). Rather than asking whether anything is wrong, these
 ask whether a <em>particular</em> shape of departure is present, which buys
-power when the guess is right.</p><ul><li><p><code>EF</code>, <code>EF-normal</code> – the omnibus Ebrahim-Farrington test,
-    with the chi-square and normal references respectively. Built for sparse
-    data, where the classical grouped statistics lose their reference.</p></li>
+power when the guess is right.</p><ul><li><p><code>EDGE</code>, <code>EDGE.G10</code> – the EDGE test (the cubic basis of
+    <code><a href="edge.gof.html">edge.gof</a></code>) at its default partition, <code>G = "auto"</code>, and at
+    ten groups, whatever the battery's <code>G</code>. When the default partition has
+    ten groups (\(n \le 250\)) the two are one test and only <code>EDGE</code> is
+    shown. The statistic \(S\) is a weighted sum of chi-squares: the note
+    says when its p-value comes from \(S/c \sim \chi^2_{df}\)
+    (Satterthwaite), so <code>Statistic</code> and <code>df</code> alone do not give it.</p></li>
 <li><p><code>DEF.poly2</code>, <code>DEF.poly3</code>, <code>DEF.stukel</code>, <code>DEF.sym</code> –
     the directed forms, each aiming the test at a smooth departure in the shape
     of the calibration curve: a quadratic or cubic drift in the linear
@@ -264,7 +294,9 @@ power when the guess is right.</p><ul><li><p><code>EF</code>, <code>EF-normal</c
     misfit resembles the chosen basis, weaker when it does not. Each row takes
     <code>weights</code> and <code>G</code> through <code>control</code>, for example
     <code>control = list(DEF.sym = list(weights = "score", G = "auto"))</code>; see
-    <code><a href="def.gof.html">def.gof</a></code>. On a sample with no event, or no non-event, there is
+    <code><a href="def.gof.html">def.gof</a></code>. In the full battery <code>DEF.poly3</code> is left out
+    when it would repeat <code>EDGE.G10</code> (the battery's <code>G</code> is 10 and
+    <code>control</code> does not move either row); name it in <code>tests</code> to get it. On a sample with no event, or no non-event, there is
     no fitted model; these rows and the <code>Stukel</code> row are then <code>NA</code>, and
     <code>Note</code> says why.</p></li>
 <li><p><code>Stukel</code> – a score test against Stukel's generalized logistic
@@ -311,7 +343,9 @@ reference, these build one by simulation.</p><ul><li><p><code>Stute-Zhu</code> �
     accumulated along the fitted linear predictor and the largest excursion of
     that path is compared with a parametric bootstrap. It needs no binning and
     no bandwidth, and in practice it is the best-behaved test in the battery
-    on size. Set the number of resamples with
+    on size. The p-value is \((1 + k)/(1 + B)\), with \(k\) the number of
+    bootstrap statistics at least as large as the observed one, so it is never
+    0. Set the number of resamples with
     <code>control = list("Stute-Zhu" = list(B = ...))</code>.</p></li>
 <li><p><code>BAGofT</code> – the binary adaptive test, which splits the data, uses
     one part to learn a partition that separates fitted from observed, and
@@ -323,7 +357,9 @@ reference, these build one by simulation.</p><ul><li><p><code>Stute-Zhu</code> �
     p-value as the <span class="pkg">BAGofT</span> package for the same seed and needs only
     <span class="pkg">randomForest</span> (and <span class="pkg">dcov</span> above five covariates);
     <code>control = list(BAGofT = list(engine = "package"))</code> calls
-    <span class="pkg">BAGofT</span> itself.</p></li>
+    <span class="pkg">BAGofT</span> itself. When no simulated statistic is as extreme as the
+    observed one, <span class="pkg">BAGofT</span> returns 0; the row then reports
+    \(1/(nsim + 1)\), the smallest Monte Carlo p-value, and says so.</p></li>
 <li><p><code>Projection</code> – the projection test of Escanciano (2006) as
     defined for logistic regression by Liu et al. (2024): the cumulative
     residual process is taken along every direction of the covariate space,
@@ -339,7 +375,9 @@ directly whether predicted risks match observed frequencies.</p><ul><li><p><code
     whether it departs from the identity, under the internal and external
     development assumptions respectively. The two are <em>not</em>
     interchangeable: on data used to fit the model the internal form is the
-    appropriate one. It also produces the calibration belt, which shows
+    appropriate one, so the full battery runs <code>GiViTI</code> only, and
+    <code>GiViTI-external</code> runs when it is named in <code>tests</code>. For frozen
+    predictions on new data use <code><a href="run.all.external.html">run.all.external</a></code>. It also produces the calibration belt, which shows
     <em>where</em> on the risk scale a model drifts; see
     <code>calibration_plot</code>. Wraps <span class="pkg">givitiR</span> in an isolated <span class="pkg">callr</span>
     subprocess, so a failure inside its compiled dependencies returns
@@ -349,6 +387,13 @@ directly whether predicted risks match observed frequencies.</p><ul><li><p><code
     \(p = \min(1, 1/e)\). E-values are safe under optional stopping, which
     conventional p-values are not, but the conversion shown here is
     conservative.</p></li>
+<li><p><code>Cubic-LR</code> – the cubic calibration likelihood-ratio test: the
+    square and cube of the logit of the fitted risk are added to a logistic
+    regression of the outcome on it, and the drop in deviance is referred to
+    chi-squared on 2 degrees of freedom. It is the goodness-of-link idea of
+    Pregibon (1980) with the cubic logistic model of Morgan (1985), and a
+    fixed-degree relative of the GiViTI polynomial; fast, and needs only the
+    predictions. See <code><a href="cubic.calib.gof.html">cubic.calib.gof</a></code>, which documents its origin.</p></li>
 </ul><p><strong>Combinations</strong> (<code>Family</code> "Ensemble"). Rather than choosing one test, these pool several.</p><ul><li><p><code>Ensemble.Vote(3DEF)</code> and <code>Ensemble.Univ(3DEF+EF)</code> – Cauchy
     combinations of the directed tests, and of those plus the omnibus EF. The
     Cauchy combination is valid without knowing how the members correlate,
@@ -500,29 +545,33 @@ Medicine</em>, <strong>16</strong>(9), 965–980.
 <p>The methods introduced by this package, and the studies that evaluate them,
 are reported in the following. Reproduction materials for each are archived
 and citable.</p>
-<p>Ebrahim EK, El-Kotory A (2026). "A Directional Hosmer-Lemeshow
-Goodness-of-Fit Test for Sparse Logistic Regression." arXiv:2607.15454
-[stat.ME]. <a href="https://doi.org/10.48550/arXiv.2607.15454" class="external-link">doi:10.48550/arXiv.2607.15454</a></p>
+<p>Ebrahim EK, Khattab IG, El-Kotory A (2026). "A Modified Hosmer-Lemeshow
+Goodness-of-Fit Test for Asymmetric Links: Second-Order Power and Robustness."
+arXiv:2607.15454 [stat.ME]. <a href="https://doi.org/10.48550/arXiv.2607.15454" class="external-link">doi:10.48550/arXiv.2607.15454</a></p>
 <p>Ebrahim EK, El-Kotory A (2026). "Benchmarking Goodness-of-Fit and Calibration
 Algorithms for Logistic Regression Classifiers: A Large-Scale Simulation
 Study under Sparse Data." <em>Journal of Intelligent Computing and Data
-Science</em>, in press. arXiv:2607.16344 [stat.ME].
-<a href="https://doi.org/10.48550/arXiv.2607.16344" class="external-link">doi:10.48550/arXiv.2607.16344</a>
- Reproduction materials:
-<a href="https://doi.org/10.5281/zenodo.21286171" class="external-link">doi:10.5281/zenodo.21286171</a></p>
+Science</em>, <b>2</b>(2), 97-128. <a href="https://doi.org/10.21608/jicds.2026.505341.1048" class="external-link">doi:10.21608/jicds.2026.505341.1048</a>
+
+Reproduction materials: <a href="https://doi.org/10.5281/zenodo.21286171" class="external-link">doi:10.5281/zenodo.21286171</a></p>
 <p>Ebrahim EK (2026). "Goodness-of-Fit Tests and Calibration Machine-Learning
 Algorithms for Logistic Regression with Sparse Data." M.Sc. thesis,
 Alexandria University. arXiv:2608.11140 [stat.ME].
 <a href="https://doi.org/10.48550/arXiv.2608.11140" class="external-link">doi:10.48550/arXiv.2608.11140</a></p>
-<p>Ebrahim EK (2026). "EDGE: a directed goodness-of-fit test for sparse logistic
-regression." Reproduction materials. <a href="https://doi.org/10.5281/zenodo.21247541" class="external-link">doi:10.5281/zenodo.21247541</a></p>
+<p>Ebrahim EK, Hussein OAE-A, El-Kotory A (2026). "A Grouped Calibration Test for Logistic
+Regression That Tolerates a Few Corrupted Records." arXiv:2608.20511 [stat.ME].
+<a href="https://doi.org/10.48550/arXiv.2608.20511" class="external-link">doi:10.48550/arXiv.2608.20511</a>
+ Reproduction materials (first version):
+<a href="https://doi.org/10.5281/zenodo.21247541" class="external-link">doi:10.5281/zenodo.21247541</a></p>
 <p>Ebrahim EK (2026). "EDGES: A Selection-Free Ensemble Goodness-of-Fit Test."
 Reproduction materials. <a href="https://doi.org/10.5281/zenodo.21320865" class="external-link">doi:10.5281/zenodo.21320865</a></p>
 <p>Ebrahim EK (2026). "Detection Subspaces: A Theory of Goodness-of-Fit Tests."
 Reproduction materials. <a href="https://doi.org/10.5281/zenodo.21687498" class="external-link">doi:10.5281/zenodo.21687498</a></p>
-<p>Ebrahim EK (2026). "Shrinkage Invalidates the Hosmer-Lemeshow Test."
-Reproduction materials for <code><a href="shrink.gof.html">shrink.gof</a></code>.
-<a href="https://doi.org/10.5281/zenodo.21900114" class="external-link">doi:10.5281/zenodo.21900114</a></p>
+<p>Ebrahim EK (2026). "Shrinkage Invalidates the Hosmer-Lemeshow Test: Goodness of Fit
+for Penalized Logistic Regression, with an Application to Glaucoma Diagnosis."
+arXiv:2609.06413 [stat.ME]. <a href="https://doi.org/10.48550/arXiv.2609.06413" class="external-link">doi:10.48550/arXiv.2609.06413</a>
+ Reproduction materials
+for <code><a href="shrink.gof.html">shrink.gof</a></code>: <a href="https://doi.org/10.5281/zenodo.21900114" class="external-link">doi:10.5281/zenodo.21900114</a></p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -547,69 +596,75 @@ Reproduction materials for <code><a href="shrink.gof.html">shrink.gof</a></code>
 <span class="r-in"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu">run.all.gof</span><span class="op">(</span><span class="va">fit</span>, include_slow <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">res</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Goodness-of-fit battery: 25 tests  (1 reject at 0.05)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Goodness-of-fit battery: 25 tests  (0 reject at 0.05)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ========================================================</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Test                        Statistic   df  p-value    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  --- Global --------------------------------------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Pearson                         497.5  498   0.4982    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Deviance                          587  498   0.0036 ** </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Pearson [a]                     497.5  498   0.4982    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Deviance [a]                      587  498   0.0036    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Information-Matrix              1.022    2   0.5999    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  --- Standardized --------------------------------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Osius-Rojek                   -0.1689        0.8659    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  McCullagh                     -0.7955        0.7868    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Copas-RSS                      0.9692    1   0.3324    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  EF                              -1.12    8   0.8976    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  EF-normal [a]                   -1.12    8   0.8686    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Osius-Rojek [b]               -0.1689        0.8659    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  McCullagh [c]                 -0.7955        0.7868    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Copas-RSS [b]                  0.9692        0.3324    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  --- Partition -----------------------------------------</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  HL                              3.423    8   0.9051    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  HL-largeN [b]                   3.423    8   0.9052    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  HL-largeN [d]                   3.423    8   0.9052    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  HL-equalwidth                   6.803    6   0.3394    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Pigeon-Heyse                     3.43    9   0.9448    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  F-test [c]                      1.174    9   0.3094    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  F-test [e]                      1.174    9   0.3094    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  EF                               3.52    8   0.8976    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  EF-normal [f]                  -1.673        0.9529    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  --- Covariate-space -----------------------------------</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Tsiatis                         6.089    9   0.7310    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Xie                             5.338  8.5   0.7649    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Pulkstenis-Robinson [d]                           -    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Pulkstenis-Robinson [g]                           -    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  --- Directed ------------------------------------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  EDGE [e]                       0.9478 2.01   0.6221    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  EDGE.G10                        1.291 2.02   0.5265    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  DEF.poly2                     0.01459 1.03   0.9089    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  DEF.poly3                       1.291 2.02   0.5265    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  DEF.stukel                      1.223 1.86   0.4450    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  DEF.sym                        0.1795    1   0.2175    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  EDGE [h]                       0.9478 2.01   0.6221    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  EDGE.G10 [i]                    1.291 2.02   0.5265    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  DEF.poly2 [i]                 0.01459 1.03   0.9089    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  DEF.stukel [i]                  1.223 1.86   0.4450    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  DEF.sym [i]                    0.1795    1   0.2175    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Stukel                          1.271    2   0.5297    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  --- Calibration ---------------------------------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Cubic-LR [j]                   0.9124    2   0.6337    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  --- Ensemble ------------------------------------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Ensemble.Vote(3DEF) [f]                      0.7654    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Ensemble.Univ(3DEF+EF) [f]                   0.8201    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Ensemble.Vote(3DEF) [k]                      0.7654    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Ensemble.Univ(3DEF+EF) [k]                   0.8201    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> --------------------------------------------------------</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Signif.:  *** &lt;.001   ** &lt;.01   * &lt;.05   . &lt;.1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Notes:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [a] normal reference (thesis)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [b] H0: eps &lt;= 2.74e-03 (n0 = 1e+06); eps_hat = 0.00e+00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [c] deviance residuals ~ groups (ANOVA F)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [d] Not applicable: needs a categorical covariate</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [e] G = 20 (auto)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [f] Cauchy combination of the directed tests</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [a] sparse form; comparison only, not counted</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [b] normal deviate, two-sided</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [c] normal deviate, upper tail</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [d] H0: eps &lt;= 2.74e-03 (n0 = 1e+06); eps_hat = 0.00e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [e] ANOVA F on deviance residuals; comparison only, not counted</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [f] normal reference, many groups (G = 20)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [g] Not applicable: needs a categorical covariate</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [h] S/c ~ chi-square(df), Satterthwaite; G = 20 (auto)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [i] S/c ~ chi-square(df), Satterthwaite</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [j] eta^2 and eta^3 added to a logit fit on eta</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [k] Cauchy combination of the directed tests</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## The return value is a plain data.frame, so the panel can be read</span></span></span>
 <span class="r-in"><span><span class="co">## programmatically as well as printed.</span></span></span>
 <span class="r-in"><span><span class="va">res</span><span class="op">[</span><span class="va">res</span><span class="op">$</span><span class="va">p_value</span> <span class="op">&lt;</span> <span class="fl">0.05</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Test"</span>, <span class="st">"Family"</span>, <span class="st">"p_value"</span><span class="op">)</span><span class="op">]</span>   <span class="co"># what rejected</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Goodness-of-fit battery: 2 tests  (1 reject at 0.05)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Goodness-of-fit battery: 2 tests  (0 reject at 0.05)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ====================================</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Test      Statistic df  p-value    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  --- Global ------------------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Deviance         NA NA   0.0036 ** </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Deviance         NA NA   0.0036    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  --- NA ----------------------------</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  NA               NA NA        -    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ------------------------------------</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Signif.:  *** &lt;.001   ** &lt;.01   * &lt;.05   . &lt;.1</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">res</span><span class="op">$</span><span class="va">Family</span><span class="op">)</span>                                        <span class="co"># coverage by family</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Covariate-space        Directed        Ensemble          Global       Partition </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>               3               7               2               3               5 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    Standardized </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>               5 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Calibration Covariate-space        Directed        Ensemble          Global </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>               1               3               6               2               3 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       Partition    Standardized </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>               7               3 </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## A correctly specified model: the panel should mostly agree, and any</span></span></span>
 <span class="r-in"><span><span class="co">## isolated rejection is the false positive you expect at the 5 percent level.</span></span></span>
@@ -621,95 +676,103 @@ Reproduction materials for <code><a href="shrink.gof.html">shrink.gof</a></code>
 <span class="r-in"><span><span class="va">bad</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">y2</span> <span class="op">~</span> <span class="va">x</span>, family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">binomial</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">run.all.gof</span><span class="op">(</span><span class="va">bad</span>, include_slow <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Goodness-of-fit battery: 25 tests  (22 reject at 0.05)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Goodness-of-fit battery: 25 tests  (20 reject at 0.05)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ========================================================</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Test                        Statistic   df  p-value    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  --- Global --------------------------------------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Pearson                         471.2  498   0.8007    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Deviance                        565.5  498   0.0192 *  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Pearson [a]                     471.2  498   0.8007    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Deviance [a]                    565.5  498   0.0192    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Information-Matrix              73.91    2  8.9e-17 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  --- Standardized --------------------------------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Osius-Rojek                    -7.002       2.5e-12 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  McCullagh                      -7.515        1.0000    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Copas-RSS                        8.11    1  5.0e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  EF                              16.83    8  4.3e-13 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  EF-normal [a]                   16.83    8  0.0e+00 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Osius-Rojek [b]                -7.002       2.5e-12 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  McCullagh [c]                  -7.515        1.0000    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Copas-RSS [b]                    8.11       5.0e-16 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  --- Partition -----------------------------------------</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  HL                               74.8    8  5.4e-13 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  HL-largeN [b]                    74.8    8  5.5e-13 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  HL-largeN [d]                    74.8    8  5.5e-13 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  HL-equalwidth                   54.63    3  8.2e-12 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Pigeon-Heyse                    74.85    9  1.7e-12 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  F-test [c]                      9.571    9  1.7e-13 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  F-test [e]                      9.571    9  1.7e-13    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  EF                              75.31    8  4.3e-13 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  EF-normal [f]                   10.28       4.3e-25 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  --- Covariate-space -----------------------------------</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Tsiatis                         75.23    9  1.4e-12 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Xie                             77.52  8.5  2.8e-13 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Pulkstenis-Robinson [d]                           -    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Pulkstenis-Robinson [g]                           -    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  --- Directed ------------------------------------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  EDGE [e]                        71.54 2.01  2.7e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  EDGE.G10                        69.47 2.02  6.9e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  DEF.poly2                       69.03 1.02  6.7e-17 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  DEF.poly3                       69.47 2.02  6.9e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  DEF.stukel                      31.34 1.01  1.4e-14 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  DEF.sym                         4.285    1  7.4e-13 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  EDGE [h]                        71.54 2.01  2.7e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  EDGE.G10 [i]                    69.47 2.02  6.9e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  DEF.poly2 [i]                   69.03 1.02  6.7e-17 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  DEF.stukel [i]                  31.34 1.01  1.4e-14 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  DEF.sym [i]                     4.285    1  7.4e-13 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Stukel                          68.54    2  1.3e-15 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  --- Calibration ---------------------------------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Cubic-LR [j]                    88.89    2  5.0e-20 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  --- Ensemble ------------------------------------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Ensemble.Vote(3DEF) [f]                     1.4e-15 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Ensemble.Univ(3DEF+EF) [f]                  1.9e-15 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Ensemble.Vote(3DEF) [k]                     1.4e-15 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Ensemble.Univ(3DEF+EF) [k]                  1.9e-15 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> --------------------------------------------------------</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Signif.:  *** &lt;.001   ** &lt;.01   * &lt;.05   . &lt;.1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Notes:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [a] normal reference (thesis)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [b] H0: eps &lt;= 2.74e-03 (n0 = 1e+06); eps_hat = 3.65e-01</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [c] deviance residuals ~ groups (ANOVA F)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [d] Not applicable: needs a categorical covariate</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [e] G = 20 (auto)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [f] Cauchy combination of the directed tests</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [a] sparse form; comparison only, not counted</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [b] normal deviate, two-sided</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [c] normal deviate, upper tail</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [d] H0: eps &lt;= 2.74e-03 (n0 = 1e+06); eps_hat = 3.65e-01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [e] ANOVA F on deviance residuals; comparison only, not counted</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [f] normal reference, many groups (G = 20)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [g] Not applicable: needs a categorical covariate</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [h] S/c ~ chi-square(df), Satterthwaite; G = 20 (auto)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [i] S/c ~ chi-square(df), Satterthwaite</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [j] eta^2 and eta^3 added to a logit fit on eta</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [k] Cauchy combination of the directed tests</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## Pick specific tests, for instance one per family, which is the pairing the</span></span></span>
 <span class="r-in"><span><span class="co">## package recommends over relying on any single statistic.</span></span></span>
 <span class="r-in"><span><span class="fu">run.all.gof</span><span class="op">(</span><span class="va">fit</span>, tests <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"McCullagh"</span>, <span class="st">"HL"</span>, <span class="st">"Stukel"</span>, <span class="st">"Tsiatis"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Goodness-of-fit battery: 4 tests  (0 reject at 0.05)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> =======================================</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Test       Statistic   df  p-value    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  --- Standardized ---------------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  McCullagh    -0.7955        0.7868    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  --- Partition ------------------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  HL             3.423    8   0.9051    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  --- Covariate-space ------------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Tsiatis        6.089    9   0.7310    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  --- Directed -------------------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Stukel         1.271    2   0.5297    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ---------------------------------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> =========================================</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Test           Statistic df  p-value    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  --- Standardized -----------------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  McCullagh [a]    -0.7955      0.7868    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  --- Partition --------------------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  HL                 3.423  8   0.9051    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  --- Covariate-space --------------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Tsiatis            6.089  9   0.7310    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  --- Directed ---------------------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Stukel             1.271  2   0.5297    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -----------------------------------------</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Signif.:  *** &lt;.001   ** &lt;.01   * &lt;.05   . &lt;.1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Notes:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [a] normal deviate, upper tail</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## Grouping tests take the number of groups; the choice is a convention</span></span></span>
 <span class="r-in"><span><span class="co">## rather than a derived optimum, so it is worth varying.</span></span></span>
 <span class="r-in"><span><span class="kw">for</span> <span class="op">(</span><span class="va">g</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">5</span>, <span class="fl">10</span>, <span class="fl">20</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu">run.all.gof</span><span class="op">(</span><span class="va">fit</span>, tests <span class="op">=</span> <span class="st">"HL"</span>, G <span class="op">=</span> <span class="va">g</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Goodness-of-fit battery: 1 tests  (0 reject at 0.05)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ==================================</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Test  Statistic   df  p-value    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  --- Partition -------------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  HL         1.99    3   0.5745    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ----------------------------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Goodness-of-fit battery: 1 test  (0 reject at 0.05)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ================================</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Test  Statistic df  p-value    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  --- Partition -----------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  HL         1.99  3   0.5745    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> --------------------------------</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Signif.:  *** &lt;.001   ** &lt;.01   * &lt;.05   . &lt;.1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Goodness-of-fit battery: 1 tests  (0 reject at 0.05)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ==================================</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Test  Statistic   df  p-value    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  --- Partition -------------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  HL        3.423    8   0.9051    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ----------------------------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Goodness-of-fit battery: 1 test  (0 reject at 0.05)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ================================</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Test  Statistic df  p-value    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  --- Partition -----------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  HL        3.423  8   0.9051    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> --------------------------------</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Signif.:  *** &lt;.001   ** &lt;.01   * &lt;.05   . &lt;.1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Goodness-of-fit battery: 1 tests  (0 reject at 0.05)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ==================================</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Test  Statistic   df  p-value    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  --- Partition -------------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  HL        7.616   18   0.9838    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ----------------------------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Goodness-of-fit battery: 1 test  (0 reject at 0.05)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ================================</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Test  Statistic df  p-value    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  --- Partition -----------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  HL        7.616 18   0.9838    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> --------------------------------</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Signif.:  *** &lt;.001   ** &lt;.01   * &lt;.05   . &lt;.1</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># \donttest{</span></span></span>
@@ -725,77 +788,81 @@ Reproduction materials for <code><a href="shrink.gof.html">shrink.gof</a></code>
 <span class="r-in"><span>                           Projection <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>B <span class="op">=</span> <span class="fl">99</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> run.all.gof: running the full battery, including the slow tests (le-Cessie, the GAM tests, Stute-Zhu, eHL, BAGofT, Projection, GiViTI). For a quick run with the fast tests only, set include_slow = FALSE.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Goodness-of-fit battery: 36 tests  (1 reject at 0.05)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Goodness-of-fit battery: 35 tests  (0 reject at 0.05)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ========================================================</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Test                        Statistic   df  p-value    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  --- Global --------------------------------------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Pearson                         497.5  498   0.4982    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Deviance                          587  498   0.0036 ** </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Pearson [a]                     497.5  498   0.4982    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Deviance [a]                      587  498   0.0036    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Information-Matrix              1.022    2   0.5999    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  --- Standardized --------------------------------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Osius-Rojek                   -0.1689        0.8659    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  McCullagh                     -0.7955        0.7868    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Copas-RSS                      0.9692    1   0.3324    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  EF                              -1.12    8   0.8976    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  EF-normal [a]                   -1.12    8   0.8686    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Osius-Rojek [b]               -0.1689        0.8659    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  McCullagh [c]                 -0.7955        0.7868    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Copas-RSS [b]                  0.9692        0.3324    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  --- Partition -----------------------------------------</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  HL                              3.423    8   0.9051    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  HL-largeN [b]                   3.423    8   0.9052    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  HL-largeN [d]                   3.423    8   0.9052    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  HL-equalwidth                   6.803    6   0.3394    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Pigeon-Heyse                     3.43    9   0.9448    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  F-test [c]                      1.174    9   0.3094    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  F-test [e]                      1.174    9   0.3094    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  EF                               3.52    8   0.8976    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  EF-normal [f]                  -1.673        0.9529    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  --- Covariate-space -----------------------------------</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Tsiatis                         6.089    9   0.7310    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Xie                             5.338  8.5   0.7649    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Pulkstenis-Robinson [d]                           -    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Pulkstenis-Robinson [g]                           -    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  --- Directed ------------------------------------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  EDGE [e]                       0.9478 2.01   0.6221    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  EDGE.G10                        1.291 2.02   0.5265    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  DEF.poly2                     0.01459 1.03   0.9089    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  DEF.poly3                       1.291 2.02   0.5265    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  DEF.stukel                      1.223 1.86   0.4450    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  DEF.sym                        0.1795    1   0.2175    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  EDGE [h]                       0.9478 2.01   0.6221    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  EDGE.G10 [i]                    1.291 2.02   0.5265    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  DEF.poly2 [i]                 0.01459 1.03   0.9089    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  DEF.stukel [i]                  1.223 1.86   0.4450    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  DEF.sym [i]                    0.1795    1   0.2175    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Stukel                          1.271    2   0.5297    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  --- Smoothing -----------------------------------------</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  le-Cessie                       3.073 4.17   0.5720    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  --- GAM -----------------------------------------------</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  HL-GAM                          3.423    8   0.9051    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  PR-GAM [d]                                        -    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  PR-GAM [g]                                        -    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Xie-GAM                         5.338    8   0.7209    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  --- Bootstrap -----------------------------------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Stute-Zhu [f]                0.008052        0.7000    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  BAGofT [g]                                   0.4000    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Lai-Liu-HL [h]                    0.3             -    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Projection [i]               0.008052        0.7600    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Stute-Zhu [j]                0.008052        0.7059    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  BAGofT [k]                                   0.4000    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Lai-Liu-HL [l]                    0.3             -    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Projection [m]               0.008052        0.7600    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  --- Calibration ---------------------------------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  eHL [j]                       0.02288        1.0000    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  GiViTI [k]                                   0.8531    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  GiViTI-external [l]                          1.0000    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  eHL [n]                       0.02288        1.0000    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  GiViTI [o]                                   0.8531    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Cubic-LR [p]                   0.9124    2   0.6337    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  --- Ensemble ------------------------------------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Ensemble.Vote(3DEF) [m]                      0.7654    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Ensemble.Univ(3DEF+EF) [m]                   0.8201    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Ensemble.Vote(3DEF) [q]                      0.7654    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Ensemble.Univ(3DEF+EF) [q]                   0.8201    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> --------------------------------------------------------</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Signif.:  *** &lt;.001   ** &lt;.01   * &lt;.05   . &lt;.1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Notes:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [a] normal reference (thesis)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [b] H0: eps &lt;= 2.74e-03 (n0 = 1e+06); eps_hat = 0.00e+00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [c] deviance residuals ~ groups (ANOVA F)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [d] Not applicable: needs a categorical covariate</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [e] G = 20 (auto)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [f] 50 bootstrap reps</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [g] adaptive RF partition; nsim=20; constant column added (single predictor); fast engine</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [h] standardized power=0.3 (n0=500); decision: REJECT H0 (lack of fit)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [i] 99 model-based bootstrap refits</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [j] e-value test (reported as p = min(1, 1/e))</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [k] calibration belt; devel=internal</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [l] calibration belt; devel=external</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [m] Cauchy combination of the directed tests</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [a] sparse form; comparison only, not counted</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [b] normal deviate, two-sided</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [c] normal deviate, upper tail</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [d] H0: eps &lt;= 2.74e-03 (n0 = 1e+06); eps_hat = 0.00e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [e] ANOVA F on deviance residuals; comparison only, not counted</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [f] normal reference, many groups (G = 20)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [g] Not applicable: needs a categorical covariate</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [h] S/c ~ chi-square(df), Satterthwaite; G = 20 (auto)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [i] S/c ~ chi-square(df), Satterthwaite</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [j] 50 bootstrap reps</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [k] adaptive RF partition; nsim=20; constant column added (single</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        predictor); fast engine</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [l] standardized power=0.3 (n0=500); decision: REJECT H0 (lack of</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        fit)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [m] 99 model-based bootstrap refits</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [n] e-value test (reported as p = min(1, 1/e))</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [o] calibration belt; devel=internal</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [p] eta^2 and eta^3 added to a logit fit on eta</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [q] Cauchy combination of the directed tests</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## The GiViTI calibration belt shows WHERE on the risk scale a model drifts,</span></span></span>
 <span class="r-in"><span><span class="co">## which a single p-value cannot.</span></span></span>
 <span class="r-in"><span><span class="va">res2</span> <span class="op">&lt;-</span> <span class="fu">run.all.gof</span><span class="op">(</span><span class="va">fit</span>, tests <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"McCullagh"</span>, <span class="st">"GiViTI"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>                    calibration_plot <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> run.all.gof: running the full battery, including the slow tests (le-Cessie, the GAM tests, Stute-Zhu, eHL, BAGofT, Projection, GiViTI). For a quick run with the fast tests only, set include_slow = FALSE.</span>
 <span class="r-plt img"><img src="run.all.gof-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">res2</span><span class="op">)</span>   <span class="co"># redraw the stored belt</span></span></span>
 <span class="r-in"><span></span></span>
@@ -804,13 +871,12 @@ Reproduction materials for <code><a href="shrink.gof.html">shrink.gof</a></code>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">run.all.gof</span><span class="op">(</span><span class="va">fit</span>, tests <span class="op">=</span> <span class="st">"Stute-Zhu"</span>, parallel <span class="op">=</span> <span class="cn">TRUE</span>, ncores <span class="op">=</span> <span class="fl">2</span>,</span></span>
 <span class="r-in"><span>            control <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"Stute-Zhu"</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>B <span class="op">=</span> <span class="fl">50</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> run.all.gof: running the full battery, including the slow tests (le-Cessie, the GAM tests, Stute-Zhu, eHL, BAGofT, Projection, GiViTI). For a quick run with the fast tests only, set include_slow = FALSE.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Goodness-of-fit battery: 1 tests  (0 reject at 0.05)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Goodness-of-fit battery: 1 test  (0 reject at 0.05)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> =========================================</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Test           Statistic df  p-value    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  --- Bootstrap --------------------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Stute-Zhu [a]   0.008052      0.7800    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Stute-Zhu [a]   0.008052      0.7843    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> -----------------------------------------</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Signif.:  *** &lt;.001   ** &lt;.01   * &lt;.05   . &lt;.1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Notes:</span>

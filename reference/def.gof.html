@@ -23,7 +23,7 @@ as a fully supported legacy name.'></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">ebrahim.gof</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.9.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.10.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,6 +36,7 @@ as a fully supported legacy name.'></head><body>
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/ebrahim-gof-toolbox.html">A goodness-of-fit and calibration toolbox for logistic regression</a></li>
     <li><a class="dropdown-item" href="../articles/ebrahim-farrington-intro.html">Introduction to the Ebrahim-Farrington Goodness-of-Fit Test</a></li>
+    <li><a class="dropdown-item" href="../articles/extensions.html">Further examples: grouped data, the EF read-out, monitoring and ridge fits</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -182,10 +183,26 @@ A column whose information after the fit is below \(10^{-10}\) times its
 information before the fit (\(Z_s'Z_s\), with \(Z_s\) the weighted columns)
 is one the model already spans, as when the fitted logit is constant. It is
 left out, and when no column is left the p-value is <code>NA</code>, with a warning of
-class <code>def_no_information</code>.
-The unit form is the statistic as published;
-the score form keeps a shape on the logit scale from losing its signal when the
-group variances differ strongly, as they do at high discrimination.</p>
+class <code>def_no_information</code>.</p>
+<p><strong>Which weighting to use.</strong> The unit form is the statistic as published and
+is the recommended default. Which weighting is better depends on the basis, and
+the two bases go opposite ways:</p><ul><li><p><code>basis = "poly3"</code> (and the other polynomial bases): use
+    <code>weights = "unit"</code>. Over the 32 power scenarios of the EDGE paper the
+    score form was behind in 24 and ahead in 1, by a mean of 0.039.</p></li>
+<li><p><code>basis = "sym"</code>: the score form is usually the better choice, and at
+    high discrimination it is decisively so. It was ahead in 21 of the same 32
+    scenarios; against a probit truth at high discrimination its power was 0.598
+    against the unit form's 0.096, and 0.834 against 0.506, at nominal size.
+    Weighting each column by \(\sqrt{V_g}\) gives the extreme groups more
+    weight, and the symmetric shape \(\eta|\eta|\) is carried by those groups;
+    the cubic basis already spans them through its own columns.</p></li>
+</ul><p><strong>Data quality overrides this.</strong> The score weighting is the more fragile of
+the two when a few records carry corrupted predictions, because it leans on
+exactly the extreme groups such records occupy. With 25 corrupted covariates in
+1000 observations and a correct model otherwise, <code>poly3</code> with
+<code>weights = "score"</code> raised its false-alarm rate to 0.894 where the unit
+form reached 0.344. When the data may contain corrupted predictors, use
+<code>weights = "unit"</code> whatever the basis.</p>
 <p><strong>External mode.</strong> With <code>external = TRUE</code> the predicted probabilities
 are taken as frozen, as when a published model is checked on new data with its
 coefficients fixed. Nothing is estimated from these data, so \(\Omega = I\)
@@ -210,11 +227,11 @@ maximum-likelihood fit, and the p-value is <code>NA</code>, with a warning of cl
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
-    <p>Ebrahim EK, El-Kotory A (2026). "A Directional Hosmer-Lemeshow Goodness-of-Fit
-Test for Sparse Logistic Regression." arXiv:2607.15454 [stat.ME].
-<a href="https://doi.org/10.48550/arXiv.2607.15454" class="external-link">doi:10.48550/arXiv.2607.15454</a></p>
-<p>Ebrahim EK, El-Kotory A (2026). "EDGE: A Closed-Form Directed Goodness-of-Fit
-Test for Sparse Logistic Regression." arXiv:2608.20511 [stat.ME].
+    <p>Ebrahim EK, Khattab IG, El-Kotory A (2026). "A Modified Hosmer-Lemeshow
+Goodness-of-Fit Test for Asymmetric Links: Second-Order Power and Robustness."
+arXiv:2607.15454 [stat.ME]. <a href="https://doi.org/10.48550/arXiv.2607.15454" class="external-link">doi:10.48550/arXiv.2607.15454</a></p>
+<p>Ebrahim EK, Hussein OAE-A, El-Kotory A (2026). "A Grouped Calibration Test for Logistic
+Regression That Tolerates a Few Corrupted Records." arXiv:2608.20511 [stat.ME].
 <a href="https://doi.org/10.48550/arXiv.2608.20511" class="external-link">doi:10.48550/arXiv.2608.20511</a></p>
     </div>
     <div class="section level2">

@@ -131,25 +131,33 @@ The main function that performs the goodness-of-fit test:
 
 ``` r
 
-ef.gof(y, predicted_probs, G = 10, model = NULL, m = NULL,
-       method = c("chisq", "normal"))
+ef.gof(y, predicted_probs = NULL, model = NULL, m = NULL, G = 10,
+       method = NULL, reference = c("chisq", "normal"), X = NULL, groups = NULL)
 ```
 
 **Parameters:** - `y`: a fitted binary-logistic `glm` (then
-`predicted_probs` is taken from it), or a binary response vector (0/1) /
-success counts for grouped data - `predicted_probs`: Vector of predicted
-probabilities from logistic model - `G`: Number of groups for binary
-data (default: 10) - `method`: reference distribution for the grouped
-statistic. `"chisq"` (default, new in 2.0.0) refers T_EF to a chi-square
-with G-2 df; `"normal"` uses the standardized Z_EF (the behaviour of
-versions \<= 1.0.0) - `model`: Optional glm object (required for the
-original Farrington test only) - `m`: Optional vector of trial counts
-(for grouped data; original Farrington only)
+`predicted_probs` and `X` are taken from it), or a binary response
+vector (0/1) / success counts for grouped data - `predicted_probs`:
+Vector of predicted probabilities from logistic model - `G`: Number of
+groups (default: 10); `"auto"` for groups of about 25 records; `"paul"`
+for the rule of Paul, Pennell and Lemeshow (2013) - `reference`:
+`"chisq"` (default) refers EF to a chi-square with G-2 df; `"normal"` is
+the plug-in normal reference for many groups (needs the fitted `glm` or
+`X`) - `groups`: `NULL` (equal-size groups by fitted risk, ties at
+random), `"pattern"` (one group per covariate pattern), or a vector of
+group labels - `method`: deprecated; `method = "normal"` reproduces the
+standardization of versions up to 2.9.0 - `model`: Optional glm object
+(required for the original Farrington test only) - `m`: Optional vector
+of trial counts (for grouped data; original Farrington only)
 
-> **Note (breaking change in 2.0.0):**
-> [`ef.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/ef.gof.md)
-> now defaults to `method = "chisq"`. Use `method = "normal"` to
-> reproduce p-values from version 1.0.0.
+The result carries `C = HL - EF` and, in `attr(result, "groups")`, the
+per-group read-out `c = b r`.
+
+> **Note (behaviour change in 2.10.0):** the groups are equal in size to
+> within one record, tied fitted risks are put in random order (call
+> [`set.seed()`](https://rdrr.io/r/base/Random.html) first), and
+> `Test_Statistic` is EF itself. See NEWS for how to reproduce an
+> earlier p-value.
 
 **Returns:** A data frame with test name, test statistic, and p-value.
 
@@ -167,7 +175,8 @@ run.all.external(y, p, G = 10, X = NULL, include_slow = FALSE)
 
 It returns the directed test in external mode (ten groups and
 `G = "auto"`), Cox’s recalibration test, calibration in the large,
-Spiegelhalter’s z, the GiViTI test (external), the Hosmer-Lemeshow
+Spiegelhalter’s z, Osius-Rojek’s standardized Pearson statistic with its
+external moments, the GiViTI test (external), the Hosmer-Lemeshow
 statistic on chi-squared(G), Stukel’s test on the frozen linear
 predictor, le Cessie’s test when `X` is given and `include_slow = TRUE`,
 and the O/E ratio, calibration slope and c-statistic.
@@ -253,14 +262,17 @@ run.all.gof(fit, tests = c("EF", "DEF.poly3", "HL"))   # a chosen subset
 run.all.gof(y, fitted(fit))            # prediction-only tests (no model)
 ```
 
-Default fast battery (22 rows on fully sparse data): Pearson, Deviance,
-Osius-Rojek, McCullagh, Copas-RSS, Information-Matrix, Hosmer-Lemeshow
-(deciles and equal-width), Pigeon-Heyse, the F-test, EF, EF-normal, the
-four DEF bases (poly2, poly3, stukel, sym), Stukel’s joint score test,
-Tsiatis, Xie, Pulkstenis-Robinson, and the two Cauchy-combination
-ensemble rows. With `include_slow = TRUE` it also runs le Cessie-van
-Houwelingen, the GAM-based tests (HL-GAM, PR-GAM, Xie-GAM; need `mgcv`),
-Stute-Zhu, eHL, BAGofT (computed by
+Default fast battery (25 rows on fully sparse data with more than 250
+records): Pearson, Deviance, Information-Matrix, Osius-Rojek, McCullagh,
+Copas-RSS, Hosmer-Lemeshow (deciles, large-sample and equal-width),
+Pigeon-Heyse, the F-test, EF, EF-normal, EDGE at its two partitions, the
+DEF bases poly2, stukel and sym, Stukel’s joint score test, Tsiatis,
+Xie, Pulkstenis-Robinson, Cubic-LR and the two Cauchy-combination
+ensemble rows. The sparse Pearson and deviance statistics and the F-test
+are printed for comparison only and are not counted as rejections. With
+`include_slow = TRUE` it also runs le Cessie-van Houwelingen, the
+GAM-based tests (HL-GAM, PR-GAM, Xie-GAM; need `mgcv`), Stute-Zhu, eHL,
+BAGofT (computed by
 [`bagoft.fast()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/bagoft.fast.md)),
 the projection test of Liu et al. (2024)
 ([`projection.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/projection.gof.md)),
@@ -379,8 +391,7 @@ y <- rbinom(n, 1, prob)
 model <- glm(y ~ x1 + x2, family = binomial())
 predicted_probs <- fitted(model)
 
-# Test goodness of fit (chi-square reference by default in 2.0.0;
-# use method = "normal" for the version 1.0.0 p-value)
+# Test goodness of fit (EF on ten groups, chi-square reference on G - 2 df)
 result <- ef.gof(y, predicted_probs, G = 10)
 print(result)
 #>                 Test Test_Statistic p_value
@@ -643,7 +654,7 @@ If you use this package in your research, please cite it (run
 `citation("ebrahim.gof")` in R for the up-to-date entries):
 
     Ebrahim, E. K. (2026). ebrahim.gof: Goodness-of-Fit and Calibration Tests
-    for Logistic Regression. R package version 2.4.0.
+    for Logistic Regression. R package version 2.10.0.
     https://github.com/ebrahimkhaled/ebrahim.gof
 
 ### Related papers
@@ -655,19 +666,40 @@ author (please cite the relevant one alongside the package):
   ([`edge.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edge.gof.md)
   /
   [`def.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/def.gof.md)):
-  Ebrahim, E. K. & El-Kotory, A. (2026). *EDGE: A Closed-Form Directed
-  Goodness-of-Fit Test for Sparse Logistic Regression.* Manuscript.
+  Ebrahim, E. K., Hussein, O. A. E.-A. & El-Kotory, A. (2026). *A
+  grouped calibration test for logistic regression that tolerates a few
+  corrupted records.* arXiv:2608.20511
 - **EF — the omnibus test**
   ([`ef.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/ef.gof.md)):
-  Ebrahim, E. K. & El-Kotory, A. (2026). *A directional Hosmer–Lemeshow
-  goodness-of-fit test for sparse logistic regression.* arXiv:2607.15454
-  · Zenodo
+  Ebrahim, E. K., Khattab, I. G. & El-Kotory, A. (2026). *A modified
+  Hosmer–Lemeshow goodness-of-fit test for asymmetric links:
+  second-order power and robustness.* arXiv:2607.15454 · Zenodo
   [10.5281/zenodo.21184547](https://doi.org/10.5281/zenodo.21184547)
+- **DeepGOF-1 — the pretrained test**
+  ([`deepgof1()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/deepgof1.md),
+  [`deepgof1.external()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/deepgof1.external.md)):
+  Ebrahim, E. K., Hussein, O. A. E.-A. & El-Kotory, A. (2026). *Where
+  does a logistic risk model fail? An audited neural goodness-of-fit
+  test for model development and external validation.* arXiv:2609.29575
+- **Shrinkage — penalized fits**
+  ([`shrink.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/shrink.gof.md)):
+  Ebrahim, E. K. (2026). *Shrinkage invalidates the Hosmer–Lemeshow
+  test: goodness of fit for penalized logistic regression, with an
+  application to glaucoma diagnosis.* arXiv:2609.06413
+- **Localization**
+  ([`localize.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/localize.gof.md),
+  [`localize.external()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/localize.external.md)):
+  Ebrahim, E. K., El-Kotory, A. & Hussein, O. A. E.-A. (2026). *One
+  goodness-of-fit test is not enough: error-controlled localization of
+  misfit in logistic risk models.* Preprint · Zenodo
+  [10.5281/zenodo.23192535](https://doi.org/10.5281/zenodo.23192535)
 - **Benchmark — how the battery performs**: Ebrahim, E. K. &
   El-Kotory, A. (2026). *Benchmarking goodness-of-fit and calibration
-  algorithms for logistic regression.* arXiv:2607.16344 · Zenodo
-  [10.5281/zenodo.21286172](https://doi.org/10.5281/zenodo.21286172) —
-  an empirical comparison of the tests aggregated here (no single test
+  algorithms for logistic regression classifiers: a large-scale
+  simulation study under sparse data.* Journal of Intelligent Computing
+  and Data Science 2(2), 97–128.
+  [10.21608/jicds.2026.505341.1048](https://doi.org/10.21608/jicds.2026.505341.1048)
+  — an empirical comparison of the tests aggregated here (no single test
   wins across all alternatives).
 - **EDGES — the Cauchy-combination ensemble**
   ([`edges.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edges.gof.md)

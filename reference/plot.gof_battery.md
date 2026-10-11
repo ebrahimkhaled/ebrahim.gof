@@ -27,3 +27,14 @@ plot(x, ...)
 ## Value
 
 `x`, invisibly.
+
+## Examples
+
+``` r
+# \donttest{
+fit <- glm(outcome ~ age + bmi + sex + treatment, data = gof_demo, family = binomial)
+res <- run.all.gof(fit, tests = "GiViTI", calibration_plot = TRUE, install = "no")
+
+plot(res)
+# }
+```

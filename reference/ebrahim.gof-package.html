@@ -15,7 +15,7 @@ not merely weak but invalid."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">ebrahim.gof</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.9.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.10.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -28,6 +28,7 @@ not merely weak but invalid."></head><body>
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/ebrahim-gof-toolbox.html">A goodness-of-fit and calibration toolbox for logistic regression</a></li>
     <li><a class="dropdown-item" href="../articles/ebrahim-farrington-intro.html">Introduction to the Ebrahim-Farrington Goodness-of-Fit Test</a></li>
+    <li><a class="dropdown-item" href="../articles/extensions.html">Further examples: grouped data, the EF read-out, monitoring and ridge fits</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -95,6 +96,12 @@ know something about what you are looking for.</p><dl><dt>No prior idea of what 
     parametric bootstrap rather than from the network; its map shows where
     the misfit lies.</p></dd>
 
+  <dt>Which part of the model to repair</dt>
+<dd><p><code><a href="localize.external.html">localize.external</a></code> for
+    frozen predictions on validation data, <code><a href="localize.gof.html">localize.gof</a></code> for a fitted
+    logistic model — names the intercept, slope, link or covariate part of the
+    misfit with familywise error control, and the update the highest one calls for.</p></dd>
+
   <dt>A penalized (ridge) fit</dt>
 <dd><p><code><a href="calm.gof.html">calm.gof</a></code> for a closed-form
     reference from a single fit, or <code><a href="shrink.gof.html">shrink.gof</a></code> for the same
@@ -137,8 +144,9 @@ to journal.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p>The vignette
-  <code><a href="../articles/ebrahim-gof-toolbox.html">vignette("ebrahim-gof-toolbox", package = "ebrahim.gof")</a></code>.</p></div>
+    <div class="dont-index"><p>The vignettes
+  <code><a href="../articles/ebrahim-gof-toolbox.html">vignette("ebrahim-gof-toolbox", package = "ebrahim.gof")</a></code> and
+  <code><a href="../articles/extensions.html">vignette("extensions", package = "ebrahim.gof")</a></code>.</p></div>
     </div>
     <div class="section level2">
     <h2 id="author">Author<a class="anchor" aria-label="anchor" href="#author"></a></h2>
@@ -158,8 +166,10 @@ to journal.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># the omnibus test on the fitted probabilities</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="ef.gof.html">ef.gof</a></span><span class="op">(</span><span class="va">y</span>, <span class="fu"><a href="https://rdrr.io/r/stats/fitted.values.html" class="external-link">fitted</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                 Test Test_Statistic   p_value</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 Ebrahim-Farrington     -0.7714014 0.7666854</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                 Test Test_Statistic df Reference   p_value  G       HL</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 Ebrahim-Farrington       4.914394  8     chisq 0.7666854 10 4.957698</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>            C</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 0.04330371</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># the directed test, when misfit is expected in the calibration shape</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="edge.gof.html">edge.gof</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>

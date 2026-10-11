@@ -19,37 +19,55 @@
 Source:
 [`inst/CITATION`](https://github.com/ebrahimkhaled/ebrahim.gof/blob/main/inst/CITATION)
 
-Ebrahim, E. K. and El-Kotory, A. (2026). EDGE: A Closed-Form Directed
-Goodness-of-Fit Test for Sparse Logistic Regression. R package
-ebrahim.gof version 2.9.0.
+Ebrahim, E. K. (2026). ebrahim.gof: Goodness-of-Fit and Calibration
+Tests for Logistic Regression. R package version 2.10.0.
 https://CRAN.R-project.org/package=ebrahim.gof
 
-    @Misc{,
-      title = {{EDGE}: A Closed-Form Directed Goodness-of-Fit Test for Sparse Logistic Regression},
-      author = {Ebrahim Khaled Ebrahim and Ahmed El-Kotory},
+    @Manual{,
+      title = {{ebrahim.gof}: Goodness-of-Fit and Calibration Tests for Logistic Regression},
+      author = {Ebrahim Khaled Ebrahim},
       year = {2026},
-      note = {Manuscript; R package ebrahim.gof version 2.9.0},
+      note = {R package version 2.10.0},
       url = {https://CRAN.R-project.org/package=ebrahim.gof},
     }
 
-Ebrahim, E. K. and El-Kotory, A. (2026). A directional Hosmer-Lemeshow
-goodness-of-fit test for sparse logistic regression. arXiv:2607.15454.
+Ebrahim, E. K., Hussein, O. A. E.-A. and El-Kotory, A. (2026). A grouped
+calibration test for logistic regression that tolerates a few corrupted
+records. arXiv:2608.20511.
 
     @Misc{,
-      title = {A directional {Hosmer--Lemeshow} goodness-of-fit test for sparse logistic regression},
-      author = {Ebrahim Khaled Ebrahim and Ahmed El-Kotory},
+      title = {A grouped calibration test for logistic regression that tolerates a few corrupted records},
+      author = {Ebrahim Khaled Ebrahim and Osama Abd El-Aziz Hussein and Ahmed El-Kotory},
+      year = {2026},
+      note = {arXiv:2608.20511 [stat.ME]},
+      url = {https://arxiv.org/abs/2608.20511},
+    }
+
+Ebrahim, E. K., Khattab, I. G. and El-Kotory, A. (2026). A modified
+Hosmer-Lemeshow goodness-of-fit test for asymmetric links: second-order
+power and robustness. arXiv:2607.15454.
+
+    @Misc{,
+      title = {A modified {Hosmer--Lemeshow} goodness-of-fit test for asymmetric links: second-order power and robustness},
+      author = {Ebrahim Khaled Ebrahim and Ibrahim Galal Khattab and Ahmed El-Kotory},
       year = {2026},
       note = {arXiv:2607.15454 [stat.ME]},
       url = {https://arxiv.org/abs/2607.15454},
     }
 
 Ebrahim, E. K. and El-Kotory, A. (2026). Benchmarking goodness-of-fit
-and calibration algorithms for logistic regression. arXiv:2607.16344.
+and calibration algorithms for logistic regression classifiers: a
+large-scale simulation study under sparse data. Journal of Intelligent
+Computing and Data Science, 2(2), 97-128.
+doi:10.21608/jicds.2026.505341.1048.
 
-    @Misc{,
-      title = {Benchmarking goodness-of-fit and calibration algorithms for logistic regression},
+    @Article{,
+      title = {Benchmarking goodness-of-fit and calibration algorithms for logistic regression classifiers: a large-scale simulation study under sparse data},
       author = {Ebrahim Khaled Ebrahim and Ahmed El-Kotory},
+      journal = {Journal of Intelligent Computing and Data Science},
       year = {2026},
-      note = {Journal of Intelligent Computing and Data Science, in press; arXiv:2607.16344 [stat.ME]},
-      url = {https://arxiv.org/abs/2607.16344},
+      volume = {2},
+      number = {2},
+      pages = {97--128},
+      doi = {10.21608/jicds.2026.505341.1048},
     }

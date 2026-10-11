@@ -57,6 +57,15 @@ already know something about what you are looking for.
   parametric bootstrap rather than from the network; its map shows where
   the misfit lies.
 
+- Which part of the model to repair:
+
+  [`localize.external`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/localize.external.md)
+  for frozen predictions on validation data,
+  [`localize.gof`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/localize.gof.md)
+  for a fitted logistic model — names the intercept, slope, link or
+  covariate part of the misfit with familywise error control, and the
+  update the highest one calls for.
+
 - A penalized (ridge) fit:
 
   [`calm.gof`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/calm.gof.md)
@@ -100,8 +109,10 @@ preprint to journal.
 
 ## See also
 
-The vignette
-[`vignette("ebrahim-gof-toolbox", package = "ebrahim.gof")`](https://ebrahimkhaled.github.io/ebrahim.gof/articles/ebrahim-gof-toolbox.md).
+The vignettes
+[`vignette("ebrahim-gof-toolbox", package = "ebrahim.gof")`](https://ebrahimkhaled.github.io/ebrahim.gof/articles/ebrahim-gof-toolbox.md)
+and
+[`vignette("extensions", package = "ebrahim.gof")`](https://ebrahimkhaled.github.io/ebrahim.gof/articles/extensions.md).
 
 ## Author
 
@@ -130,8 +141,10 @@ fit <- glm(y ~ x, family = binomial())
 
 # the omnibus test on the fitted probabilities
 ef.gof(y, fitted(fit))
-#>                 Test Test_Statistic   p_value
-#> 1 Ebrahim-Farrington     -0.7714014 0.7666854
+#>                 Test Test_Statistic df Reference   p_value  G       HL
+#> 1 Ebrahim-Farrington       4.914394  8     chisq 0.7666854 10 4.957698
+#>            C
+#> 1 0.04330371
 
 # the directed test, when misfit is expected in the calibration shape
 edge.gof(fit)

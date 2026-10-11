@@ -28,8 +28,13 @@ run.all.gof(
 
 - object:
 
-  A fitted binary logistic [`glm`](https://rdrr.io/r/stats/glm.html), or
-  a binary (0/1) response vector `y` (then supply `predicted_probs`).
+  A fitted binary logistic [`glm`](https://rdrr.io/r/stats/glm.html),
+  with one row per binary record and no prior weights, or a binary (0/1)
+  response vector `y` (then supply `predicted_probs`). A grouped
+  (`cbind`) or weighted fit is refused: expand it to one row per record.
+  Another link gives a warning, since most tests assume the logit. A
+  warning is also given when some fitted risks are 0 or 1 (separation)
+  or when there are fewer than 10 events or non-events.
 
 - predicted_probs:
 
@@ -38,8 +43,11 @@ run.all.gof(
 
 - X:
 
-  Optional design matrix; lets the directed (DEF) tests run from the
-  `(y, predicted_probs)` form.
+  Optional design matrix; lets the directed (DEF) and covariate-space
+  tests run from the `(y, predicted_probs)` form. It should be the model
+  matrix of the fit that gave `predicted_probs`: a data frame is coded
+  with `model.matrix(~ ., X)`, and a matrix without a constant column
+  gets an intercept column in front.
 
 - tests:
 
@@ -156,7 +164,11 @@ whole sample without grouping.
   reference assumes many observations per covariate pattern. On sparse
   data that assumption fails and the test is unreliable in both
   directions; it is reported for completeness and comparison, not for
-  use.
+  use. It is printed without a significance flag and is not counted
+  among the rejections of the header or of
+  [`summary()`](https://rdrr.io/r/base/summary.html); the
+  `Pearson (grouped)` row, shown when covariate patterns repeat, is the
+  one to read.
 
 - `Deviance` – the likelihood-ratio statistic against the saturated
   model. On ungrouped binary data its expectation depends on the fitted
@@ -165,24 +177,30 @@ whole sample without grouping.
   below it when they are extreme; the direction of the error is set by
   the risk profile rather than by the fit. On a correctly specified
   model with mid-range risks it therefore rejects almost always. It is
-  reported for completeness and comparison, not for use.
+  reported for completeness and comparison, not for use, and like
+  `Pearson` it is not counted among the rejections.
 
 - `Osius-Rojek` – rescues the Pearson statistic by standardizing it with
   its asymptotic mean and variance computed under increasing sample size
   rather than increasing cell counts, giving a normal reference that
-  stays valid when patterns are unique. Fast, parameter-free, and a
-  sensible default. It can be anti-conservative at small samples and
-  conservative under a strongly skewed covariate.
+  stays valid when patterns are unique; the deviate is referred
+  two-sided. Fast, parameter-free, and a sensible default. It can be
+  anti-conservative at small samples and conservative under a strongly
+  skewed covariate.
 
 - `McCullagh` – standardizes the Pearson statistic by its *exact*
   conditional moments rather than asymptotic ones (computed by the Kuss
-  2002 algorithm). Typically the most powerful of the global statistics,
-  at a cost that grows steeply with sample size.
+  2002 algorithm). Typically the most powerful of the global statistics.
+  The deviate is referred to the upper tail of the normal, as in the
+  GOFLOGIT macro, so a Pearson statistic below its conditional mean is
+  not counted as misfit. The moments are computed from the p x p
+  information matrix, so the cost is linear in the sample size.
 
 - `Copas-RSS` – the unweighted sum of squares of the raw residuals,
-  referred to its own moments. Weighting each residual equally rather
-  than by its variance makes it comparatively sensitive to misfit in the
-  middle of the risk range.
+  standardized by its own moments and referred two-sided to the normal
+  (`df` is `NA`, as for the other normal deviates). Weighting each
+  residual equally rather than by its variance makes it comparatively
+  sensitive to misfit in the middle of the risk range.
 
 - `Information-Matrix` – the White/Orme test. It compares two estimators
   of the information matrix that agree only if the model is correctly
@@ -212,7 +230,19 @@ by group.
 
 - `F-test` – deviance residuals compared across the risk groups by a
   one-way analysis of variance. It is markedly liberal under sparsity
-  and grows more so with sample size; it is included for comparison.
+  and grows more so with sample size; it is included for comparison,
+  printed without a significance flag and not counted among the
+  rejections.
+
+- `EF`, `EF-normal` – the Ebrahim-Farrington test, Farrington's
+  correction on the Hosmer-Lemeshow risk groups. `EF` uses the
+  chi-square reference on \\G - 2\\ degrees of freedom at the battery's
+  `G`; `EF-normal` uses the plug-in normal reference, which is the
+  reference for many groups, at `G = "auto"` (groups of about 25
+  records) unless `control = list("EF-normal" = list(G = ...))` sets
+  another number; it needs the model or `X`. See
+  [`ef.gof`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/ef.gof.md).
+  Tied fitted risks are put in random order.
 
 - `Lai-Liu-HL` – Lai and Liu's procedure for using the Hosmer-Lemeshow
   test in large samples, where any test eventually rejects. It
@@ -236,9 +266,14 @@ by group.
 anything is wrong, these ask whether a *particular* shape of departure
 is present, which buys power when the guess is right.
 
-- `EF`, `EF-normal` – the omnibus Ebrahim-Farrington test, with the
-  chi-square and normal references respectively. Built for sparse data,
-  where the classical grouped statistics lose their reference.
+- `EDGE`, `EDGE.G10` – the EDGE test (the cubic basis of
+  [`edge.gof`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edge.gof.md))
+  at its default partition, `G = "auto"`, and at ten groups, whatever
+  the battery's `G`. When the default partition has ten groups (\\n \le
+  250\\) the two are one test and only `EDGE` is shown. The statistic
+  \\S\\ is a weighted sum of chi-squares: the note says when its p-value
+  comes from \\S/c \sim \chi^2\_{df}\\ (Satterthwaite), so `Statistic`
+  and `df` alone do not give it.
 
 - `DEF.poly2`, `DEF.poly3`, `DEF.stukel`, `DEF.sym` – the directed
   forms, each aiming the test at a smooth departure in the shape of the
@@ -249,8 +284,11 @@ is present, which buys power when the guess is right.
   `weights` and `G` through `control`, for example
   `control = list(DEF.sym = list(weights = "score", G = "auto"))`; see
   [`def.gof`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/def.gof.md).
-  On a sample with no event, or no non-event, there is no fitted model;
-  these rows and the `Stukel` row are then `NA`, and `Note` says why.
+  In the full battery `DEF.poly3` is left out when it would repeat
+  `EDGE.G10` (the battery's `G` is 10 and `control` does not move either
+  row); name it in `tests` to get it. On a sample with no event, or no
+  non-event, there is no fitted model; these rows and the `Stukel` row
+  are then `NA`, and `Note` says why.
 
 - `Stukel` – a score test against Stukel's generalized logistic link,
   which nests the logit and lets the two tails bend independently. It is
@@ -310,7 +348,9 @@ usable closed-form reference, these build one by simulation.
   along the fitted linear predictor and the largest excursion of that
   path is compared with a parametric bootstrap. It needs no binning and
   no bandwidth, and in practice it is the best-behaved test in the
-  battery on size. Set the number of resamples with
+  battery on size. The p-value is \\(1 + k)/(1 + B)\\, with \\k\\ the
+  number of bootstrap statistics at least as large as the observed one,
+  so it is never 0. Set the number of resamples with
   `control = list("Stute-Zhu" = list(B = ...))`.
 
 - `BAGofT` – the binary adaptive test, which splits the data, uses one
@@ -324,7 +364,9 @@ usable closed-form reference, these build one by simulation.
   which returns the same p-value as the BAGofT package for the same seed
   and needs only randomForest (and dcov above five covariates);
   `control = list(BAGofT = list(engine = "package"))` calls BAGofT
-  itself.
+  itself. When no simulated statistic is as extreme as the observed one,
+  BAGofT returns 0; the row then reports \\1/(nsim + 1)\\, the smallest
+  Monte Carlo p-value, and says so.
 
 - `Projection` – the projection test of Escanciano (2006) as defined for
   logistic regression by Liu et al. (2024): the cumulative residual
@@ -345,8 +387,11 @@ frequencies.
   which fits a polynomial of the fitted risk and tests whether it
   departs from the identity, under the internal and external development
   assumptions respectively. The two are *not* interchangeable: on data
-  used to fit the model the internal form is the appropriate one. It
-  also produces the calibration belt, which shows *where* on the risk
+  used to fit the model the internal form is the appropriate one, so the
+  full battery runs `GiViTI` only, and `GiViTI-external` runs when it is
+  named in `tests`. For frozen predictions on new data use
+  [`run.all.external`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/run.all.external.md).
+  It also produces the calibration belt, which shows *where* on the risk
   scale a model drifts; see `calibration_plot`. Wraps givitiR in an
   isolated callr subprocess, so a failure inside its compiled
   dependencies returns `NA` instead of ending your session. Select with
@@ -356,6 +401,16 @@ frequencies.
   \min(1, 1/e)\\. E-values are safe under optional stopping, which
   conventional p-values are not, but the conversion shown here is
   conservative.
+
+- `Cubic-LR` – the cubic calibration likelihood-ratio test: the square
+  and cube of the logit of the fitted risk are added to a logistic
+  regression of the outcome on it, and the drop in deviance is referred
+  to chi-squared on 2 degrees of freedom. It is the goodness-of-link
+  idea of Pregibon (1980) with the cubic logistic model of Morgan
+  (1985), and a fixed-degree relative of the GiViTI polynomial; fast,
+  and needs only the predictions. See
+  [`cubic.calib.gof`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/cubic.calib.gof.md),
+  which documents its origin.
 
 **Combinations** (`Family` "Ensemble"). Rather than choosing one test,
 these pool several.
@@ -564,16 +619,16 @@ The methods introduced by this package, and the studies that evaluate
 them, are reported in the following. Reproduction materials for each are
 archived and citable.
 
-Ebrahim EK, El-Kotory A (2026). "A Directional Hosmer-Lemeshow
-Goodness-of-Fit Test for Sparse Logistic Regression." arXiv:2607.15454
-\[stat.ME\].
+Ebrahim EK, Khattab IG, El-Kotory A (2026). "A Modified Hosmer-Lemeshow
+Goodness-of-Fit Test for Asymmetric Links: Second-Order Power and
+Robustness." arXiv:2607.15454 \[stat.ME\].
 [doi:10.48550/arXiv.2607.15454](https://doi.org/10.48550/arXiv.2607.15454)
 
 Ebrahim EK, El-Kotory A (2026). "Benchmarking Goodness-of-Fit and
 Calibration Algorithms for Logistic Regression Classifiers: A
 Large-Scale Simulation Study under Sparse Data." *Journal of Intelligent
-Computing and Data Science*, in press. arXiv:2607.16344 \[stat.ME\].
-[doi:10.48550/arXiv.2607.16344](https://doi.org/10.48550/arXiv.2607.16344)
+Computing and Data Science*, **2**(2), 97-128.
+[doi:10.21608/jicds.2026.505341.1048](https://doi.org/10.21608/jicds.2026.505341.1048)
 Reproduction materials:
 [doi:10.5281/zenodo.21286171](https://doi.org/10.5281/zenodo.21286171)
 
@@ -582,8 +637,11 @@ Machine-Learning Algorithms for Logistic Regression with Sparse Data."
 M.Sc. thesis, Alexandria University. arXiv:2608.11140 \[stat.ME\].
 [doi:10.48550/arXiv.2608.11140](https://doi.org/10.48550/arXiv.2608.11140)
 
-Ebrahim EK (2026). "EDGE: a directed goodness-of-fit test for sparse
-logistic regression." Reproduction materials.
+Ebrahim EK, Hussein OAE-A, El-Kotory A (2026). "A Grouped Calibration
+Test for Logistic Regression That Tolerates a Few Corrupted Records."
+arXiv:2608.20511 \[stat.ME\].
+[doi:10.48550/arXiv.2608.20511](https://doi.org/10.48550/arXiv.2608.20511)
+Reproduction materials (first version):
 [doi:10.5281/zenodo.21247541](https://doi.org/10.5281/zenodo.21247541)
 
 Ebrahim EK (2026). "EDGES: A Selection-Free Ensemble Goodness-of-Fit
@@ -594,9 +652,12 @@ Ebrahim EK (2026). "Detection Subspaces: A Theory of Goodness-of-Fit
 Tests." Reproduction materials.
 [doi:10.5281/zenodo.21687498](https://doi.org/10.5281/zenodo.21687498)
 
-Ebrahim EK (2026). "Shrinkage Invalidates the Hosmer-Lemeshow Test."
+Ebrahim EK (2026). "Shrinkage Invalidates the Hosmer-Lemeshow Test:
+Goodness of Fit for Penalized Logistic Regression, with an Application
+to Glaucoma Diagnosis." arXiv:2609.06413 \[stat.ME\].
+[doi:10.48550/arXiv.2609.06413](https://doi.org/10.48550/arXiv.2609.06413)
 Reproduction materials for
-[`shrink.gof`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/shrink.gof.md).
+[`shrink.gof`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/shrink.gof.md):
 [doi:10.5281/zenodo.21900114](https://doi.org/10.5281/zenodo.21900114)
 
 ## See also
@@ -624,69 +685,75 @@ fit <- glm(y ~ x, family = binomial())
 res <- run.all.gof(fit, include_slow = FALSE)
 res
 #> 
-#> Goodness-of-fit battery: 25 tests  (1 reject at 0.05)
+#> Goodness-of-fit battery: 25 tests  (0 reject at 0.05)
 #> ========================================================
 #>  Test                        Statistic   df  p-value    
 #>  --- Global --------------------------------------------
-#>  Pearson                         497.5  498   0.4982    
-#>  Deviance                          587  498   0.0036 ** 
+#>  Pearson [a]                     497.5  498   0.4982    
+#>  Deviance [a]                      587  498   0.0036    
 #>  Information-Matrix              1.022    2   0.5999    
 #>  --- Standardized --------------------------------------
-#>  Osius-Rojek                   -0.1689        0.8659    
-#>  McCullagh                     -0.7955        0.7868    
-#>  Copas-RSS                      0.9692    1   0.3324    
-#>  EF                              -1.12    8   0.8976    
-#>  EF-normal [a]                   -1.12    8   0.8686    
+#>  Osius-Rojek [b]               -0.1689        0.8659    
+#>  McCullagh [c]                 -0.7955        0.7868    
+#>  Copas-RSS [b]                  0.9692        0.3324    
 #>  --- Partition -----------------------------------------
 #>  HL                              3.423    8   0.9051    
-#>  HL-largeN [b]                   3.423    8   0.9052    
+#>  HL-largeN [d]                   3.423    8   0.9052    
 #>  HL-equalwidth                   6.803    6   0.3394    
 #>  Pigeon-Heyse                     3.43    9   0.9448    
-#>  F-test [c]                      1.174    9   0.3094    
+#>  F-test [e]                      1.174    9   0.3094    
+#>  EF                               3.52    8   0.8976    
+#>  EF-normal [f]                  -1.673        0.9529    
 #>  --- Covariate-space -----------------------------------
 #>  Tsiatis                         6.089    9   0.7310    
 #>  Xie                             5.338  8.5   0.7649    
-#>  Pulkstenis-Robinson [d]                           -    
+#>  Pulkstenis-Robinson [g]                           -    
 #>  --- Directed ------------------------------------------
-#>  EDGE [e]                       0.9478 2.01   0.6221    
-#>  EDGE.G10                        1.291 2.02   0.5265    
-#>  DEF.poly2                     0.01459 1.03   0.9089    
-#>  DEF.poly3                       1.291 2.02   0.5265    
-#>  DEF.stukel                      1.223 1.86   0.4450    
-#>  DEF.sym                        0.1795    1   0.2175    
+#>  EDGE [h]                       0.9478 2.01   0.6221    
+#>  EDGE.G10 [i]                    1.291 2.02   0.5265    
+#>  DEF.poly2 [i]                 0.01459 1.03   0.9089    
+#>  DEF.stukel [i]                  1.223 1.86   0.4450    
+#>  DEF.sym [i]                    0.1795    1   0.2175    
 #>  Stukel                          1.271    2   0.5297    
+#>  --- Calibration ---------------------------------------
+#>  Cubic-LR [j]                   0.9124    2   0.6337    
 #>  --- Ensemble ------------------------------------------
-#>  Ensemble.Vote(3DEF) [f]                      0.7654    
-#>  Ensemble.Univ(3DEF+EF) [f]                   0.8201    
+#>  Ensemble.Vote(3DEF) [k]                      0.7654    
+#>  Ensemble.Univ(3DEF+EF) [k]                   0.8201    
 #> --------------------------------------------------------
 #>  Signif.:  *** <.001   ** <.01   * <.05   . <.1
 #>  Notes:
-#>    [a] normal reference (thesis)
-#>    [b] H0: eps <= 2.74e-03 (n0 = 1e+06); eps_hat = 0.00e+00
-#>    [c] deviance residuals ~ groups (ANOVA F)
-#>    [d] Not applicable: needs a categorical covariate
-#>    [e] G = 20 (auto)
-#>    [f] Cauchy combination of the directed tests
+#>    [a] sparse form; comparison only, not counted
+#>    [b] normal deviate, two-sided
+#>    [c] normal deviate, upper tail
+#>    [d] H0: eps <= 2.74e-03 (n0 = 1e+06); eps_hat = 0.00e+00
+#>    [e] ANOVA F on deviance residuals; comparison only, not counted
+#>    [f] normal reference, many groups (G = 20)
+#>    [g] Not applicable: needs a categorical covariate
+#>    [h] S/c ~ chi-square(df), Satterthwaite; G = 20 (auto)
+#>    [i] S/c ~ chi-square(df), Satterthwaite
+#>    [j] eta^2 and eta^3 added to a logit fit on eta
+#>    [k] Cauchy combination of the directed tests
 
 ## The return value is a plain data.frame, so the panel can be read
 ## programmatically as well as printed.
 res[res$p_value < 0.05, c("Test", "Family", "p_value")]   # what rejected
 #> 
-#> Goodness-of-fit battery: 2 tests  (1 reject at 0.05)
+#> Goodness-of-fit battery: 2 tests  (0 reject at 0.05)
 #> ====================================
 #>  Test      Statistic df  p-value    
 #>  --- Global ------------------------
-#>  Deviance         NA NA   0.0036 ** 
+#>  Deviance         NA NA   0.0036    
 #>  --- NA ----------------------------
 #>  NA               NA NA        -    
 #> ------------------------------------
 #>  Signif.:  *** <.001   ** <.01   * <.05   . <.1
 table(res$Family)                                        # coverage by family
 #> 
-#> Covariate-space        Directed        Ensemble          Global       Partition 
-#>               3               7               2               3               5 
-#>    Standardized 
-#>               5 
+#>     Calibration Covariate-space        Directed        Ensemble          Global 
+#>               1               3               6               2               3 
+#>       Partition    Standardized 
+#>               7               3 
 
 ## A correctly specified model: the panel should mostly agree, and any
 ## isolated rejection is the false positive you expect at the 5 percent level.
@@ -698,95 +765,103 @@ y2  <- rbinom(n, 1, 1 / (1 + exp(-(0.6 * x + 0.5 * x^2))))
 bad <- glm(y2 ~ x, family = binomial())
 run.all.gof(bad, include_slow = FALSE)
 #> 
-#> Goodness-of-fit battery: 25 tests  (22 reject at 0.05)
+#> Goodness-of-fit battery: 25 tests  (20 reject at 0.05)
 #> ========================================================
 #>  Test                        Statistic   df  p-value    
 #>  --- Global --------------------------------------------
-#>  Pearson                         471.2  498   0.8007    
-#>  Deviance                        565.5  498   0.0192 *  
+#>  Pearson [a]                     471.2  498   0.8007    
+#>  Deviance [a]                    565.5  498   0.0192    
 #>  Information-Matrix              73.91    2  8.9e-17 ***
 #>  --- Standardized --------------------------------------
-#>  Osius-Rojek                    -7.002       2.5e-12 ***
-#>  McCullagh                      -7.515        1.0000    
-#>  Copas-RSS                        8.11    1  5.0e-16 ***
-#>  EF                              16.83    8  4.3e-13 ***
-#>  EF-normal [a]                   16.83    8  0.0e+00 ***
+#>  Osius-Rojek [b]                -7.002       2.5e-12 ***
+#>  McCullagh [c]                  -7.515        1.0000    
+#>  Copas-RSS [b]                    8.11       5.0e-16 ***
 #>  --- Partition -----------------------------------------
 #>  HL                               74.8    8  5.4e-13 ***
-#>  HL-largeN [b]                    74.8    8  5.5e-13 ***
+#>  HL-largeN [d]                    74.8    8  5.5e-13 ***
 #>  HL-equalwidth                   54.63    3  8.2e-12 ***
 #>  Pigeon-Heyse                    74.85    9  1.7e-12 ***
-#>  F-test [c]                      9.571    9  1.7e-13 ***
+#>  F-test [e]                      9.571    9  1.7e-13    
+#>  EF                              75.31    8  4.3e-13 ***
+#>  EF-normal [f]                   10.28       4.3e-25 ***
 #>  --- Covariate-space -----------------------------------
 #>  Tsiatis                         75.23    9  1.4e-12 ***
 #>  Xie                             77.52  8.5  2.8e-13 ***
-#>  Pulkstenis-Robinson [d]                           -    
+#>  Pulkstenis-Robinson [g]                           -    
 #>  --- Directed ------------------------------------------
-#>  EDGE [e]                        71.54 2.01  2.7e-16 ***
-#>  EDGE.G10                        69.47 2.02  6.9e-16 ***
-#>  DEF.poly2                       69.03 1.02  6.7e-17 ***
-#>  DEF.poly3                       69.47 2.02  6.9e-16 ***
-#>  DEF.stukel                      31.34 1.01  1.4e-14 ***
-#>  DEF.sym                         4.285    1  7.4e-13 ***
+#>  EDGE [h]                        71.54 2.01  2.7e-16 ***
+#>  EDGE.G10 [i]                    69.47 2.02  6.9e-16 ***
+#>  DEF.poly2 [i]                   69.03 1.02  6.7e-17 ***
+#>  DEF.stukel [i]                  31.34 1.01  1.4e-14 ***
+#>  DEF.sym [i]                     4.285    1  7.4e-13 ***
 #>  Stukel                          68.54    2  1.3e-15 ***
+#>  --- Calibration ---------------------------------------
+#>  Cubic-LR [j]                    88.89    2  5.0e-20 ***
 #>  --- Ensemble ------------------------------------------
-#>  Ensemble.Vote(3DEF) [f]                     1.4e-15 ***
-#>  Ensemble.Univ(3DEF+EF) [f]                  1.9e-15 ***
+#>  Ensemble.Vote(3DEF) [k]                     1.4e-15 ***
+#>  Ensemble.Univ(3DEF+EF) [k]                  1.9e-15 ***
 #> --------------------------------------------------------
 #>  Signif.:  *** <.001   ** <.01   * <.05   . <.1
 #>  Notes:
-#>    [a] normal reference (thesis)
-#>    [b] H0: eps <= 2.74e-03 (n0 = 1e+06); eps_hat = 3.65e-01
-#>    [c] deviance residuals ~ groups (ANOVA F)
-#>    [d] Not applicable: needs a categorical covariate
-#>    [e] G = 20 (auto)
-#>    [f] Cauchy combination of the directed tests
+#>    [a] sparse form; comparison only, not counted
+#>    [b] normal deviate, two-sided
+#>    [c] normal deviate, upper tail
+#>    [d] H0: eps <= 2.74e-03 (n0 = 1e+06); eps_hat = 3.65e-01
+#>    [e] ANOVA F on deviance residuals; comparison only, not counted
+#>    [f] normal reference, many groups (G = 20)
+#>    [g] Not applicable: needs a categorical covariate
+#>    [h] S/c ~ chi-square(df), Satterthwaite; G = 20 (auto)
+#>    [i] S/c ~ chi-square(df), Satterthwaite
+#>    [j] eta^2 and eta^3 added to a logit fit on eta
+#>    [k] Cauchy combination of the directed tests
 
 ## Pick specific tests, for instance one per family, which is the pairing the
 ## package recommends over relying on any single statistic.
 run.all.gof(fit, tests = c("McCullagh", "HL", "Stukel", "Tsiatis"))
 #> 
 #> Goodness-of-fit battery: 4 tests  (0 reject at 0.05)
-#> =======================================
-#>  Test       Statistic   df  p-value    
-#>  --- Standardized ---------------------
-#>  McCullagh    -0.7955        0.7868    
-#>  --- Partition ------------------------
-#>  HL             3.423    8   0.9051    
-#>  --- Covariate-space ------------------
-#>  Tsiatis        6.089    9   0.7310    
-#>  --- Directed -------------------------
-#>  Stukel         1.271    2   0.5297    
-#> ---------------------------------------
+#> =========================================
+#>  Test           Statistic df  p-value    
+#>  --- Standardized -----------------------
+#>  McCullagh [a]    -0.7955      0.7868    
+#>  --- Partition --------------------------
+#>  HL                 3.423  8   0.9051    
+#>  --- Covariate-space --------------------
+#>  Tsiatis            6.089  9   0.7310    
+#>  --- Directed ---------------------------
+#>  Stukel             1.271  2   0.5297    
+#> -----------------------------------------
 #>  Signif.:  *** <.001   ** <.01   * <.05   . <.1
+#>  Notes:
+#>    [a] normal deviate, upper tail
 
 ## Grouping tests take the number of groups; the choice is a convention
 ## rather than a derived optimum, so it is worth varying.
 for (g in c(5, 10, 20))
   print(run.all.gof(fit, tests = "HL", G = g))
 #> 
-#> Goodness-of-fit battery: 1 tests  (0 reject at 0.05)
-#> ==================================
-#>  Test  Statistic   df  p-value    
-#>  --- Partition -------------------
-#>  HL         1.99    3   0.5745    
-#> ----------------------------------
+#> Goodness-of-fit battery: 1 test  (0 reject at 0.05)
+#> ================================
+#>  Test  Statistic df  p-value    
+#>  --- Partition -----------------
+#>  HL         1.99  3   0.5745    
+#> --------------------------------
 #>  Signif.:  *** <.001   ** <.01   * <.05   . <.1
 #> 
-#> Goodness-of-fit battery: 1 tests  (0 reject at 0.05)
-#> ==================================
-#>  Test  Statistic   df  p-value    
-#>  --- Partition -------------------
-#>  HL        3.423    8   0.9051    
-#> ----------------------------------
+#> Goodness-of-fit battery: 1 test  (0 reject at 0.05)
+#> ================================
+#>  Test  Statistic df  p-value    
+#>  --- Partition -----------------
+#>  HL        3.423  8   0.9051    
+#> --------------------------------
 #>  Signif.:  *** <.001   ** <.01   * <.05   . <.1
 #> 
-#> Goodness-of-fit battery: 1 tests  (0 reject at 0.05)
-#> ==================================
-#>  Test  Statistic   df  p-value    
-#>  --- Partition -------------------
-#>  HL        7.616   18   0.9838    
-#> ----------------------------------
+#> Goodness-of-fit battery: 1 test  (0 reject at 0.05)
+#> ================================
+#>  Test  Statistic df  p-value    
+#>  --- Partition -----------------
+#>  HL        7.616 18   0.9838    
+#> --------------------------------
 #>  Signif.:  *** <.001   ** <.01   * <.05   . <.1
 
 # \donttest{
@@ -802,77 +877,81 @@ run.all.gof(fit, install = "no",
                            Projection = list(B = 99)))
 #> run.all.gof: running the full battery, including the slow tests (le-Cessie, the GAM tests, Stute-Zhu, eHL, BAGofT, Projection, GiViTI). For a quick run with the fast tests only, set include_slow = FALSE.
 #> 
-#> Goodness-of-fit battery: 36 tests  (1 reject at 0.05)
+#> Goodness-of-fit battery: 35 tests  (0 reject at 0.05)
 #> ========================================================
 #>  Test                        Statistic   df  p-value    
 #>  --- Global --------------------------------------------
-#>  Pearson                         497.5  498   0.4982    
-#>  Deviance                          587  498   0.0036 ** 
+#>  Pearson [a]                     497.5  498   0.4982    
+#>  Deviance [a]                      587  498   0.0036    
 #>  Information-Matrix              1.022    2   0.5999    
 #>  --- Standardized --------------------------------------
-#>  Osius-Rojek                   -0.1689        0.8659    
-#>  McCullagh                     -0.7955        0.7868    
-#>  Copas-RSS                      0.9692    1   0.3324    
-#>  EF                              -1.12    8   0.8976    
-#>  EF-normal [a]                   -1.12    8   0.8686    
+#>  Osius-Rojek [b]               -0.1689        0.8659    
+#>  McCullagh [c]                 -0.7955        0.7868    
+#>  Copas-RSS [b]                  0.9692        0.3324    
 #>  --- Partition -----------------------------------------
 #>  HL                              3.423    8   0.9051    
-#>  HL-largeN [b]                   3.423    8   0.9052    
+#>  HL-largeN [d]                   3.423    8   0.9052    
 #>  HL-equalwidth                   6.803    6   0.3394    
 #>  Pigeon-Heyse                     3.43    9   0.9448    
-#>  F-test [c]                      1.174    9   0.3094    
+#>  F-test [e]                      1.174    9   0.3094    
+#>  EF                               3.52    8   0.8976    
+#>  EF-normal [f]                  -1.673        0.9529    
 #>  --- Covariate-space -----------------------------------
 #>  Tsiatis                         6.089    9   0.7310    
 #>  Xie                             5.338  8.5   0.7649    
-#>  Pulkstenis-Robinson [d]                           -    
+#>  Pulkstenis-Robinson [g]                           -    
 #>  --- Directed ------------------------------------------
-#>  EDGE [e]                       0.9478 2.01   0.6221    
-#>  EDGE.G10                        1.291 2.02   0.5265    
-#>  DEF.poly2                     0.01459 1.03   0.9089    
-#>  DEF.poly3                       1.291 2.02   0.5265    
-#>  DEF.stukel                      1.223 1.86   0.4450    
-#>  DEF.sym                        0.1795    1   0.2175    
+#>  EDGE [h]                       0.9478 2.01   0.6221    
+#>  EDGE.G10 [i]                    1.291 2.02   0.5265    
+#>  DEF.poly2 [i]                 0.01459 1.03   0.9089    
+#>  DEF.stukel [i]                  1.223 1.86   0.4450    
+#>  DEF.sym [i]                    0.1795    1   0.2175    
 #>  Stukel                          1.271    2   0.5297    
 #>  --- Smoothing -----------------------------------------
 #>  le-Cessie                       3.073 4.17   0.5720    
 #>  --- GAM -----------------------------------------------
 #>  HL-GAM                          3.423    8   0.9051    
-#>  PR-GAM [d]                                        -    
+#>  PR-GAM [g]                                        -    
 #>  Xie-GAM                         5.338    8   0.7209    
 #>  --- Bootstrap -----------------------------------------
-#>  Stute-Zhu [f]                0.008052        0.7000    
-#>  BAGofT [g]                                   0.4000    
-#>  Lai-Liu-HL [h]                    0.3             -    
-#>  Projection [i]               0.008052        0.7600    
+#>  Stute-Zhu [j]                0.008052        0.7059    
+#>  BAGofT [k]                                   0.4000    
+#>  Lai-Liu-HL [l]                    0.3             -    
+#>  Projection [m]               0.008052        0.7600    
 #>  --- Calibration ---------------------------------------
-#>  eHL [j]                       0.02288        1.0000    
-#>  GiViTI [k]                                   0.8531    
-#>  GiViTI-external [l]                          1.0000    
+#>  eHL [n]                       0.02288        1.0000    
+#>  GiViTI [o]                                   0.8531    
+#>  Cubic-LR [p]                   0.9124    2   0.6337    
 #>  --- Ensemble ------------------------------------------
-#>  Ensemble.Vote(3DEF) [m]                      0.7654    
-#>  Ensemble.Univ(3DEF+EF) [m]                   0.8201    
+#>  Ensemble.Vote(3DEF) [q]                      0.7654    
+#>  Ensemble.Univ(3DEF+EF) [q]                   0.8201    
 #> --------------------------------------------------------
 #>  Signif.:  *** <.001   ** <.01   * <.05   . <.1
 #>  Notes:
-#>    [a] normal reference (thesis)
-#>    [b] H0: eps <= 2.74e-03 (n0 = 1e+06); eps_hat = 0.00e+00
-#>    [c] deviance residuals ~ groups (ANOVA F)
-#>    [d] Not applicable: needs a categorical covariate
-#>    [e] G = 20 (auto)
-#>    [f] 50 bootstrap reps
-#>    [g] adaptive RF partition; nsim=20; constant column added (single predictor); fast engine
-#>    [h] standardized power=0.3 (n0=500); decision: REJECT H0 (lack of fit)
-#>    [i] 99 model-based bootstrap refits
-#>    [j] e-value test (reported as p = min(1, 1/e))
-#>    [k] calibration belt; devel=internal
-#>    [l] calibration belt; devel=external
-#>    [m] Cauchy combination of the directed tests
+#>    [a] sparse form; comparison only, not counted
+#>    [b] normal deviate, two-sided
+#>    [c] normal deviate, upper tail
+#>    [d] H0: eps <= 2.74e-03 (n0 = 1e+06); eps_hat = 0.00e+00
+#>    [e] ANOVA F on deviance residuals; comparison only, not counted
+#>    [f] normal reference, many groups (G = 20)
+#>    [g] Not applicable: needs a categorical covariate
+#>    [h] S/c ~ chi-square(df), Satterthwaite; G = 20 (auto)
+#>    [i] S/c ~ chi-square(df), Satterthwaite
+#>    [j] 50 bootstrap reps
+#>    [k] adaptive RF partition; nsim=20; constant column added (single
+#>        predictor); fast engine
+#>    [l] standardized power=0.3 (n0=500); decision: REJECT H0 (lack of
+#>        fit)
+#>    [m] 99 model-based bootstrap refits
+#>    [n] e-value test (reported as p = min(1, 1/e))
+#>    [o] calibration belt; devel=internal
+#>    [p] eta^2 and eta^3 added to a logit fit on eta
+#>    [q] Cauchy combination of the directed tests
 
 ## The GiViTI calibration belt shows WHERE on the risk scale a model drifts,
 ## which a single p-value cannot.
 res2 <- run.all.gof(fit, tests = c("McCullagh", "GiViTI"),
                     calibration_plot = TRUE)
-#> run.all.gof: running the full battery, including the slow tests (le-Cessie, the GAM tests, Stute-Zhu, eHL, BAGofT, Projection, GiViTI). For a quick run with the fast tests only, set include_slow = FALSE.
 
 plot(res2)   # redraw the stored belt
 
@@ -881,13 +960,12 @@ plot(res2)   # redraw the stored belt
 set.seed(1)
 run.all.gof(fit, tests = "Stute-Zhu", parallel = TRUE, ncores = 2,
             control = list("Stute-Zhu" = list(B = 50)))
-#> run.all.gof: running the full battery, including the slow tests (le-Cessie, the GAM tests, Stute-Zhu, eHL, BAGofT, Projection, GiViTI). For a quick run with the fast tests only, set include_slow = FALSE.
 #> 
-#> Goodness-of-fit battery: 1 tests  (0 reject at 0.05)
+#> Goodness-of-fit battery: 1 test  (0 reject at 0.05)
 #> =========================================
 #>  Test           Statistic df  p-value    
 #>  --- Bootstrap --------------------------
-#>  Stute-Zhu [a]   0.008052      0.7800    
+#>  Stute-Zhu [a]   0.008052      0.7843    
 #> -----------------------------------------
 #>  Signif.:  *** <.001   ** <.01   * <.05   . <.1
 #>  Notes:

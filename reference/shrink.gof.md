@@ -55,7 +55,8 @@ shrink.gof(
 
 - seed:
 
-  optional integer for reproducibility.
+  optional integer for reproducibility; the session's random number
+  stream is restored on exit.
 
 - penalize:
 
@@ -85,6 +86,8 @@ tested.
 Reference implementation for: Ebrahim, E. K. (2026), "Shrinkage
 invalidates the Hosmer–Lemeshow test: goodness of fit for penalized
 logistic regression, with an application to glaucoma diagnosis."
+arXiv:2609.06413 \[stat.ME\].
+[doi:10.48550/arXiv.2609.06413](https://doi.org/10.48550/arXiv.2609.06413)
 
 Depends only on base R and stats, so results do not move with package
 versions.
@@ -131,7 +134,7 @@ shrink.gof(X, y, lambda = 40, basis = "decile", B = 99, seed = 1)
 #> Shrinkage-corrected Hosmer-Lemeshow test
 #> n = 400, p = 5 (p/n = 0.013), lambda = 40, G = 10, B = 99
 #> 
-#>   SC.HL    statistic =   8.5932   p = 0.3000
+#>   SC.HL    S =   8.5932  p = 0.3000
 #> 
 # }
 ```

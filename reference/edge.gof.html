@@ -25,7 +25,7 @@ Test label is "EDGE".'></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">ebrahim.gof</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.9.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.10.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,6 +38,7 @@ Test label is "EDGE".'></head><body>
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/ebrahim-gof-toolbox.html">A goodness-of-fit and calibration toolbox for logistic regression</a></li>
     <li><a class="dropdown-item" href="../articles/ebrahim-farrington-intro.html">Introduction to the Ebrahim-Farrington Goodness-of-Fit Test</a></li>
+    <li><a class="dropdown-item" href="../articles/extensions.html">Further examples: grouped data, the EF read-out, monitoring and ridge fits</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -151,10 +152,23 @@ frozen. Requires <code>weights = "unit"</code> and a basis other than
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A <code>data.frame</code> with one row per partition and columns <code>Test</code>
-  (<code>"EDGE"</code>), <code>Partition</code>, <code>Role</code> (<code>"verdict"</code> for the first
-  row, <code>"check"</code> for the second), <code>Basis</code>, <code>Test_Statistic</code>,
-  <code>df</code>, <code>Method</code> and <code>p_value</code>, as documented in <code><a href="def.gof.html">def.gof</a></code>.</p>
+    <p>A <code>data.frame</code> of class <code>c("edge_gof", "data.frame")</code> with one row per
+  partition and columns <code>Test</code> (<code>"EDGE"</code>), <code>Partition</code>, <code>Role</code>
+  (<code>"verdict"</code> for the first row, <code>"check"</code> for the second), <code>Basis</code>,
+  <code>Test_Statistic</code>, <code>df</code>, <code>Method</code> and <code>p_value</code>, as documented in
+  <code><a href="def.gof.html">def.gof</a></code>. It is a data frame in every respect; the class only adds a
+  <code>plot</code> method. The grouped pieces behind each row are kept in
+  <code>attr(, "details")</code>, a list with one element per row holding <code>r</code> (the grouped
+  residuals \((O_g - E_g)/\sqrt{V_g}\)), <code>Pz_r</code> (their projection on the basis, whose
+  sum of squares is the unit-form statistic), <code>O</code>, <code>E</code>, <code>V</code>, <code>size</code>,
+  <code>pbar</code> (the mean predicted risk of each group), <code>G</code>, <code>omega_diag</code> (the null
+  variance of each residual: below one in-sample, one for frozen predictions),
+  <code>external</code>, <code>adjusted</code>, <code>role</code>, <code>partition</code> and <code>statistic</code>.
+  A row without a p-value, or with <code>basis = "ensemble"</code>, has <code>NULL</code> there.
+  Rows selected or reordered with <code>x[i, ]</code> keep the attribute whole, and
+  <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> finds the pieces of a row by its partition, role and statistic.
+  <code><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset()</a></code> and <code><a href="https://rdrr.io/r/base/merge.html" class="external-link">merge()</a></code> drop the attribute, and rows bound from another
+  result have no pieces of their own; <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> then stops with a message.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -170,20 +184,24 @@ results. The first row is marked <code>Role = "verdict"</code> and the second
 ten groups are the robustness check; to let ten groups decide, give
 <code>G = c(10, "auto")</code>. If only the default partition rejects, the signal sits in the
 extreme groups: check those records. Give a single <code>G</code> to get one row.</p>
+<p><strong>The picture.</strong> <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> on the result draws the grouped residuals of one row
+with the shape the test looked for and the bands that say which groups are out of line;
+see <code><a href="plot.edge_gof.html">plot.edge_gof</a></code>.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
-    <p>Ebrahim EK, El-Kotory A (2026). "EDGE: A Closed-Form Directed Goodness-of-Fit
-Test for Sparse Logistic Regression." arXiv:2608.20511 [stat.ME].
+    <p>Ebrahim EK, Hussein OAE-A, El-Kotory A (2026). "A Grouped Calibration Test for Logistic
+Regression That Tolerates a Few Corrupted Records." arXiv:2608.20511 [stat.ME].
 <a href="https://doi.org/10.48550/arXiv.2608.20511" class="external-link">doi:10.48550/arXiv.2608.20511</a></p>
-<p>Ebrahim EK, El-Kotory A (2026). "A Directional Hosmer-Lemeshow Goodness-of-Fit
-Test for Sparse Logistic Regression." arXiv:2607.15454 [stat.ME].
-<a href="https://doi.org/10.48550/arXiv.2607.15454" class="external-link">doi:10.48550/arXiv.2607.15454</a></p>
+<p>Ebrahim EK, Khattab IG, El-Kotory A (2026). "A Modified Hosmer-Lemeshow
+Goodness-of-Fit Test for Asymmetric Links: Second-Order Power and Robustness."
+arXiv:2607.15454 [stat.ME]. <a href="https://doi.org/10.48550/arXiv.2607.15454" class="external-link">doi:10.48550/arXiv.2607.15454</a></p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="def.gof.html">def.gof</a></code> (legacy name), <code><a href="ef.gof.html">ef.gof</a></code>,
-  <code><a href="def.ensemble.gof.html">def.ensemble.gof</a></code>, <code><a href="run.all.gof.html">run.all.gof</a></code>.</p></div>
+    <div class="dont-index"><p><code><a href="plot.edge_gof.html">plot.edge_gof</a></code>, <code><a href="def.gof.html">def.gof</a></code> (legacy name),
+  <code><a href="edge.belt.html">edge.belt</a></code>, <code><a href="ef.gof.html">ef.gof</a></code>, <code><a href="def.ensemble.gof.html">def.ensemble.gof</a></code>,
+  <code><a href="run.all.gof.html">run.all.gof</a></code>.</p></div>
     </div>
     <div class="section level2">
     <h2 id="author">Author<a class="anchor" aria-label="anchor" href="#author"></a></h2>
@@ -231,6 +249,8 @@ Test for Sparse Logistic Regression." arXiv:2607.15454 [stat.ME].
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1 EDGE default (G = 20) verdict poly3      0.9477818 2.006467 satterthwaite</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     p_value</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1 0.6221428</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu">edge.gof</span><span class="op">(</span><span class="va">fit</span><span class="op">)</span><span class="op">)</span>                <span class="co"># the verdict row, on the residual scale</span></span></span>
+<span class="r-plt img"><img src="edge.gof-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

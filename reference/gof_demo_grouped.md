@@ -82,47 +82,53 @@ run.all.gof(fit, include_slow = FALSE, install = "no")
 #> ========================================================
 #>  Test                        Statistic   df  p-value    
 #>  --- Global --------------------------------------------
-#>  Pearson                         769.2  795   0.7377    
-#>  Pearson (grouped) [a]           346.8  323   0.1738    
-#>  Deviance                        833.7  795   0.1655    
-#>  Deviance (grouped) [a]          369.5  323   0.0380 *  
+#>  Pearson [a]                     769.2  795   0.7377    
+#>  Pearson (grouped) [b]           346.8  323   0.1738    
+#>  Deviance [a]                    833.7  795   0.1655    
+#>  Deviance (grouped) [b]          369.5  323   0.0380 *  
 #>  Information-Matrix              20.94    5   0.0008 ***
 #>  --- Standardized --------------------------------------
-#>  Osius-Rojek [a]                0.9196        0.3578    
-#>  McCullagh                      -1.864        0.9689    
-#>  McCullagh (grouped) [a]         0.847        0.1985    
-#>  Copas-RSS                       2.189    1   0.0286 *  
-#>  EF                              1.038    8   0.1445    
-#>  EF-normal [b]                   1.038    8   0.1496    
+#>  Osius-Rojek [b]                0.9196        0.3578    
+#>  McCullagh [c]                  -1.864        0.9689    
+#>  McCullagh (grouped) [b]         0.847        0.1985    
+#>  Copas-RSS [d]                   2.189        0.0286 *  
 #>  --- Partition -----------------------------------------
 #>  HL                              11.79    8   0.1610    
-#>  HL-largeN [c]                   11.79    8   0.1614    
+#>  HL-largeN [e]                   11.79    8   0.1614    
 #>  HL-equalwidth                   10.33    7   0.1706    
 #>  Pigeon-Heyse                    11.57    9   0.2387    
-#>  F-test [d]                      1.535    9   0.1312    
+#>  F-test [f]                      1.535    9   0.1312    
+#>  EF                              13.06    8   0.1099    
+#>  EF-normal [g]                   0.112        0.4554    
 #>  --- Covariate-space -----------------------------------
 #>  Tsiatis                         52.87    8  1.1e-08 ***
 #>  Xie                             48.98    7  2.3e-08 ***
-#>  Pulkstenis-Robinson [e]         84.93   43   0.0001 ***
+#>  Pulkstenis-Robinson [h]         84.93   43   0.0001 ***
 #>  --- Directed ------------------------------------------
-#>  EDGE [f]                        4.759 2.02   0.0906 .  
-#>  EDGE.G10                        4.657 2.08   0.0974 .  
-#>  DEF.poly2                       3.406 1.08   0.0645 .  
-#>  DEF.poly3                       4.657 2.08   0.0974 .  
-#>  DEF.stukel                        3.3 1.61   0.0936 .  
-#>  DEF.sym                        0.9373    1   0.0535 .  
+#>  EDGE [i]                        4.759 2.02   0.0906 .  
+#>  EDGE.G10 [j]                    4.657 2.08   0.0974 .  
+#>  DEF.poly2 [j]                   3.406 1.08   0.0645 .  
+#>  DEF.stukel [j]                    3.3 1.61   0.0936 .  
+#>  DEF.sym [j]                    0.9373    1   0.0535 .  
 #>  Stukel                          4.801    2   0.0907 .  
+#>  --- Calibration ---------------------------------------
+#>  Cubic-LR [k]                    5.206    2   0.0740 .  
 #>  --- Ensemble ------------------------------------------
-#>  Ensemble.Vote(3DEF) [g]                      0.0824 .  
-#>  Ensemble.Univ(3DEF+EF) [g]                   0.0924 .  
+#>  Ensemble.Vote(3DEF) [l]                      0.0824 .  
+#>  Ensemble.Univ(3DEF+EF) [l]                   0.0958 .  
 #> --------------------------------------------------------
 #>  Signif.:  *** <.001   ** <.01   * <.05   . <.1
 #>  Notes:
-#>    [a] grouped to 328 covariate patterns
-#>    [b] normal reference (thesis)
-#>    [c] H0: eps <= 2.74e-03 (n0 = 1e+06); eps_hat = 6.88e-02
-#>    [d] deviance residuals ~ groups (ANOVA F)
-#>    [e] split on categorical: age, sex, treatment
-#>    [f] G = 32 (auto)
-#>    [g] Cauchy combination of the directed tests
+#>    [a] sparse form; comparison only, not counted
+#>    [b] grouped to 328 covariate patterns
+#>    [c] normal deviate, upper tail
+#>    [d] normal deviate, two-sided
+#>    [e] H0: eps <= 2.74e-03 (n0 = 1e+06); eps_hat = 6.88e-02
+#>    [f] ANOVA F on deviance residuals; comparison only, not counted
+#>    [g] normal reference, many groups (G = 32)
+#>    [h] split on categorical: age, sex, treatment
+#>    [i] S/c ~ chi-square(df), Satterthwaite; G = 32 (auto)
+#>    [j] S/c ~ chi-square(df), Satterthwaite
+#>    [k] eta^2 and eta^3 added to a logit fit on eta
+#>    [l] Cauchy combination of the directed tests
 ```

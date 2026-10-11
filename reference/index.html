@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ebrahim.gof</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.9.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.10.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -20,6 +20,7 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/ebrahim-gof-toolbox.html">A goodness-of-fit and calibration toolbox for logistic regression</a></li>
     <li><a class="dropdown-item" href="../articles/ebrahim-farrington-intro.html">Introduction to the Ebrahim-Farrington Goodness-of-Fit Test</a></li>
+    <li><a class="dropdown-item" href="../articles/extensions.html">Further examples: grouped data, the EF read-out, monitoring and ridge fits</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -96,6 +97,13 @@
 
         </dt>
         <dd>EDGE: Directed Goodness-of-Fit Test for Binary Logistic Regression</dd>
+
+        <dt>
+
+          <code><a href="edge.belt.html">edge.belt()</a></code> <code><a href="edge.belt.html">print(<i>&lt;edge_belt&gt;</i>)</a></code> <code><a href="edge.belt.html">plot(<i>&lt;edge_belt&gt;</i>)</a></code>
+
+        </dt>
+        <dd>EDGE-Belt: the grouped calibration picture behind the EDGE test</dd>
 
         <dt>
 
@@ -184,10 +192,40 @@
 
         </dt>
         <dd>DeepGOF-1 for frozen predictions: external validation of a risk model</dd>
+
+        <dt>
+
+          <code><a href="gof_certificate.html">gof_certificate()</a></code>
+
+        </dt>
+        <dd>Can DeepGOF-1 detect this departure? A certificate from the frozen weights</dd>
+      </dl></div><div class="section level2">
+      <h2 id="localizing-the-misfit">Localizing the misfit<a class="anchor" aria-label="anchor" href="#localizing-the-misfit"></a></h2>
+
+      <div class="section-desc"><p>Which part of the misfit is present – the intercept, the slope, the link or the covariates – with familywise error control, and the update it calls for. For frozen predictions on validation data, or a fitted logistic model.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="localize.external.html">localize.external()</a></code>
+
+        </dt>
+        <dd>Localize the misfit of frozen predictions, with error control</dd>
+
+        <dt>
+
+          <code><a href="localize.gof.html">localize.gof()</a></code>
+
+        </dt>
+        <dd>Localize the misfit of a fitted logistic model, with error control</dd>
       </dl></div><div class="section level2">
       <h2 id="comparison-tests">Comparison tests<a class="anchor" aria-label="anchor" href="#comparison-tests"></a></h2>
 
-      <div class="section-desc"><p>Published tests implemented here so the battery can be compared with them on the same data: the projection test of Liu et al. (2024) and a fast implementation of the adaptive-partition test BAGofT.</p></div>
+      <div class="section-desc"><p>Published tests implemented here so the battery can be compared with them on the same data: the projection test of Liu et al. (2024), a fast implementation of the adaptive-partition test BAGofT, and the cubic calibration likelihood-ratio test.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -207,6 +245,13 @@
 
         </dt>
         <dd>Fast BAGofT: the Binary Adaptive Goodness-of-Fit Test</dd>
+
+        <dt>
+
+          <code><a href="cubic.calib.gof.html">cubic.calib.gof()</a></code>
+
+        </dt>
+        <dd>Cubic Calibration Likelihood-Ratio Test for Logistic Regression</dd>
       </dl></div><div class="section level2">
       <h2 id="building-your-own-scorer">Building your own scorer<a class="anchor" aria-label="anchor" href="#building-your-own-scorer"></a></h2>
 
@@ -279,10 +324,38 @@
 
         <dt>
 
+          <code><a href="summary.gof_battery.html">summary(<i>&lt;gof_battery&gt;</i>)</a></code> <code><a href="summary.gof_battery.html">print(<i>&lt;summary.gof_battery&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Summarise a goodness-of-fit battery by family</dd>
+
+        <dt>
+
           <code><a href="plot.gof_battery.html">plot(<i>&lt;gof_battery&gt;</i>)</a></code>
 
         </dt>
         <dd>Plot the GiViTI calibration belt from a goodness-of-fit battery</dd>
+
+        <dt>
+
+          <code><a href="plot.edge_gof.html">plot(<i>&lt;edge_gof&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Plot an EDGE result: the grouped residuals, the shape tested and the bands</dd>
+
+        <dt>
+
+          <code><a href="plot.deepgof1.html">plot(<i>&lt;deepgof1&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Plot the residual map of a DeepGOF-1 test</dd>
+
+        <dt>
+
+          <code><a href="plot.gof_localize.html">plot(<i>&lt;gof_localize&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Plot a localization verdict</dd>
       </dl></div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

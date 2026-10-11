@@ -1,5 +1,470 @@
 # Changelog
 
+## ebrahim.gof 2.10.0
+
+### Behaviour change
+
+- [`ef.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/ef.gof.md)
+  now computes the test as the EF paper defines it (Ebrahim, Khattab and
+  El-Kotory, arXiv:2607.15454), and **its default p-value changes for
+  some data**:
+
+  - The groups are equal in size to within one record. Up to 2.9.0 the
+    `n %% G` records left over all went to the last group, so results
+    change whenever `n` is not a multiple of `G`.
+  - Tied fitted risks are put in random order. They used to follow the
+    row order, so with binomial data expanded events first a group
+    boundary inside a covariate pattern manufactured misfit. A result
+    with tied risks now depends on the random number stream: call
+    [`set.seed()`](https://rdrr.io/r/base/Random.html) first to
+    reproduce it. Nothing is drawn when no risks are tied, so untied
+    data give the same groups as before (when `n` is a multiple of `G`)
+    and leave the stream alone.
+  - `Test_Statistic` is now EF itself, the statistic referred to
+    chi-squared on `G - 2` degrees of freedom. It used to be the
+    standardization `(EF - (G - 2)) / sqrt(2 (G - 2))` even when the
+    p-value came from the chi-squared reference. The `EF` row of
+    [`run.all.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/run.all.gof.md)
+    therefore prints EF beside its `df`.
+  - The result has new columns `df`, `Reference`, `G`, `HL` and `C`, and
+    an attribute `"groups"` with the per-group residuals `r`, weights
+    `b` and the directional read-out `c = b r`, whose sum is
+    `C = HL - EF`.
+
+  To reproduce a p-value of 2.9.0, pass its groups:
+  `ef.gof(y, p, groups = pmin(ceiling(rank(p, ties.method = "first") / floor(n / G)), G))`.
+  What takes the EF p-value changes with it: the `EF` row of
+  [`run.all.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/run.all.gof.md),
+  the `Ensemble.Univ(3DEF+EF)` row, `def.ensemble.gof(add_ef = TRUE)`,
+  [`legoft()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/legoft.md)
+  and
+  [`gof.features()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/gof.features.md).
+
+- `ef.gof(reference = "normal")` is the plug-in normal reference of the
+  EF paper (Theorem 3), with model-based moments; it is the reference
+  for many groups and needs the model’s design matrix (pass the fitted
+  `glm`, or `X`). The old `method = "normal"`, the standardization above
+  referred to the normal, is deprecated: it still works, with a warning,
+  to reproduce earlier results. The `EF-normal` row of
+  [`run.all.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/run.all.gof.md)
+  now uses the Theorem-3 reference, so its p-value changes.
+
+- The full battery of
+  [`run.all.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/run.all.gof.md)
+  no longer prints one test twice or a test outside its setting, and its
+  counts leave out the rows that are there for comparison:
+
+  - `DEF.poly3` is the cubic basis at the battery’s `G`, which is
+    `EDGE.G10` when `G = 10`, and `EDGE.G10` is `EDGE` itself when the
+    default partition has ten groups (n \<= 250). The repeated row is
+    left out (unless `control` moves it to other weights or another
+    `G`); name it in `tests` to get it.
+  - `GiViTI-external` assumes that the model was developed on other
+    data, which the fitted `glm` of
+    [`run.all.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/run.all.gof.md)
+    never is. It runs only when named in `tests`;
+    [`run.all.external()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/run.all.external.md)
+    has the GiViTI test for frozen predictions.
+  - The sparse `Pearson` and `Deviance` statistics and the `F-test` do
+    not hold their level on ungrouped binary data (in a null simulation
+    the deviance rejected 84 % of the time at the 5 % level, the F-test
+    23 %). They are still printed, for comparison, but without a
+    significance flag, with a note, and they are not counted among the
+    rejections of the header or of
+    [`summary()`](https://rdrr.io/r/base/summary.html), nor offered as a
+    family’s smallest p-value.
+  - The `(grouped)` rows are left out whenever every record is its own
+    covariate pattern. The rule used to compare the two numbers, which
+    could differ in the last digits and print a duplicate row.
+
+- `EF-normal` runs at `G = "auto"` (groups of about 25 records), since
+  the normal reference is the reference for many groups; it used the
+  battery’s `G` (10 by default). `EF` and `EF-normal` are now in the
+  `Partition` family, beside the Hosmer-Lemeshow test they correct, as
+  the help page already described them.
+
+- [`run.all.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/run.all.gof.md)
+  refuses a fit with prior weights or a grouped (`cbind`) response,
+  which used to give nonsense rows: expand the data to one row per
+  binary record. It warns when the link is not the logit, when some
+  fitted risks are 0 or 1 to machine precision (separation), and when
+  there are fewer than 10 events or non-events. The
+  `(y, predicted_probs, X)` form codes a data frame `X` with
+  [`model.matrix()`](https://rdrr.io/r/stats/model.matrix.html) and adds
+  an intercept column when `X` has none, so the directed and
+  covariate-space rows agree with the `glm` form. The
+  Pulkstenis-Robinson, le Cessie and GAM rows no longer take an
+  `(offset)` or `(weights)` column of the model frame for a covariate.
+
+- The `Stute-Zhu` p-value is `(1 + k) / (1 + B)`, with `k` the number of
+  bootstrap statistics at least as large as the observed one; it was
+  `k / B` and could be 0. When BAGofT returns 0 (no simulated statistic
+  as extreme), the `BAGofT` row reports `1 / (nsim + 1)` and says so.
+
+- Printing: whole-number degrees of freedom are printed in full (`2997`,
+  not `3e+03`), the header says “1 test”, notes and the
+  [`summary()`](https://rdrr.io/r/base/summary.html) lines are wrapped
+  to `getOption("width")`, the printed
+  [`summary()`](https://rdrr.io/r/base/summary.html) heads its columns
+  `Reject` and `Min p` and shortens a long test name in `Given by`, so
+  the table is not split, and the directed rows say when their p-value
+  comes from `S / c ~ chi-square(df)` (Satterthwaite), so that
+  `Statistic` and `df` alone do not give it. The message about slow
+  tests is printed only for the full battery.
+
+### New features
+
+- [`run.all.external()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/run.all.external.md):
+  the `Stukel (offset)` row is now the score test of Stukel’s two terms
+  at the null, with no model fitted, in place of the likelihood ratio.
+  The likelihood ratio rejected too often at low event rates, when only
+  a few records have risks above 0.5: 0.078 at a 10% event rate and
+  0.061 at 3% with heavy-tailed risks, against 0.035 to 0.053 for the
+  score form in the same 4,000-replicate null simulations. When no
+  prediction reaches 0.5 the empty upper term is dropped and the test
+  has one degree of freedom. **The Stukel (offset) p-values change.**
+
+- [`run.all.external()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/run.all.external.md)
+  has an `Osius-Rojek (external)` row (family “Standardized”): the
+  record-level Pearson statistic standardized with its moments under
+  frozen predictions, mean `n` and variance
+  `sum((1 - 2p)^2 / (p(1 - p)))`, two-sided. Nothing is projected out,
+  since no coefficient was fitted to the validation data. **The external
+  battery has one more row.**
+
+- [`edge.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edge.gof.md)
+  returns a data frame of class `c("edge_gof", "data.frame")`, so
+  [`plot()`](https://rdrr.io/r/graphics/plot.default.html) can draw it
+  (see below). The columns, their values and the printed table are
+  unchanged, and the result works as a data frame everywhere it did
+  before. The grouped pieces behind each row (residuals, their
+  projection on the basis, observed and expected counts, group sizes and
+  mean risks, and the null variance of each residual) are kept in
+  `attr(, "details")`. Rows selected or reordered with `x[i, ]` keep
+  them, and [`plot()`](https://rdrr.io/r/graphics/plot.default.html)
+  finds the pieces of a row by its partition, role and statistic;
+  [`subset()`](https://rdrr.io/r/base/subset.html) and
+  [`merge()`](https://rdrr.io/r/base/merge.html) drop them, and rows
+  bound from another result have none.
+
+- `ef.gof(G = "auto")` uses groups of about 25 records,
+  `max(10, ceiling(n / 25))`, the choice the EF paper recommends for
+  large samples, and `G = "paul"` the number of groups of Paul, Pennell
+  and Lemeshow (2013). `groups = "pattern"` keeps each covariate pattern
+  (records with the same fitted risk) in one group of its own, and
+  `groups` also takes any vector of group labels.
+
+- [`ef.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/ef.gof.md)
+  warns (class `ef_sparse_groups`) when some group expects fewer than
+  one half event or non-event: the chi-squared reference then needs
+  fewer groups. In
+  [`run.all.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/run.all.gof.md)
+  the warning goes to the Note of the `EF` row.
+
+### New functions
+
+- [`plot()`](https://rdrr.io/r/graphics/plot.default.html) for the
+  result of
+  [`edge.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edge.gof.md)
+  draws one row (`row = "verdict"`, `"check"` or a number): the
+  standardized residual of each risk group against its mean predicted
+  risk, the projection of the residuals on the basis (the shape the test
+  squared) as a curve, a pointwise band and a simultaneous band
+  (`band = "simultaneous"`, `"pointwise"` or `"none"`), with the groups
+  beyond the band drawn as triangles. The simultaneous band is the Sidak
+  form of the Bonferroni band over the `G` groups. For frozen
+  predictions (`external = TRUE`) the residuals are independent with
+  unit variance and the bands are exact, as in the EDGE paper. In-sample
+  each residual is divided by its null standard deviation, the square
+  root of the diagonal of Omega, and the legend calls the bands
+  approximate. `scale = "rate"` shows observed against predicted event
+  rates with the same band, and `scale = c("residual", "rate")` both
+  panels; `colour = FALSE` draws in greys. The figure has no title, so
+  it can go into a paper as it is.
+
+- [`plot()`](https://rdrr.io/r/graphics/plot.default.html) for the
+  result of
+  [`deepgof1()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/deepgof1.md)
+  or
+  [`deepgof1.external()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/deepgof1.external.md)
+  draws the K by K residual map that the network scored, each cell with
+  its value, coloured blue (fewer events than predicted) to vermilion
+  (more), with the two covariates of the map on the axes.
+
+- [`summary()`](https://rdrr.io/r/base/summary.html) for the result of
+  [`run.all.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/run.all.gof.md)
+  or
+  [`run.all.external()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/run.all.external.md)
+  gives one line per test family: the number of tests, how many returned
+  a p-value, how many reject at `alpha` (default 0.05), and the smallest
+  p-value with the test that gave it.
+
+- [`plot()`](https://rdrr.io/r/graphics/plot.default.html) for the
+  result of
+  [`localize.external()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/localize.external.md)
+  or
+  [`localize.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/localize.gof.md)
+  draws the verdict: a misfit compass (one wedge per part, its length
+  the strength of evidence, the parts named filled) beside the lattice
+  of closed tests (every set of parts with its p-value; a part is named
+  when every set that contains it rejects). The highest part named and
+  the next step are written underneath. `which = "compass"` or
+  `"lattice"` draws one panel; `colour = FALSE` draws in greys.
+  [`localize.external()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/localize.external.md)
+  and
+  [`localize.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/localize.gof.md)
+  draw it themselves in an interactive session (`plot = interactive()`);
+  set `plot = FALSE` to turn it off.
+
+- `localize.external(y, p, X)` says which part of the misfit is present
+  when frozen predictions are checked on validation data, with the
+  familywise error rate held at `alpha`. The misfit is split into four
+  parts that follow the calibration hierarchy: `INTERCEPT` (overall
+  risk), `SLOPE` (risks too extreme or too modest), `LINK` (a curved map
+  from score to risk) and `COV` (misfit among patients who share a
+  score). Each part is tested by a Cauchy combination of score tests
+  confined to it, and a part is named by closed testing over the four.
+  The Monte Carlo reference is exact under no misfit at every sample
+  size. The result names the groups and the update the highest of them
+  calls for: update the intercept, recalibrate, recalibrate flexibly, or
+  revise the model.
+
+- `localize.gof(fit)` is the in-sample counterpart for a fitted logistic
+  `glm`. After the fit the intercept and slope parts are zero, so it
+  names `LINK` and `COV`, calibrated by a parametric bootstrap with
+  refits; `dealias = TRUE` keeps covariate misfit out of `LINK`.
+
+- Two options in both functions. `naming = "holm"` or `"bonferroni"`
+  names the groups by Holm’s or Bonferroni’s correction of their
+  single-group p-values instead of by closure (the default); both keep
+  the familywise guarantee. `robust = TRUE` builds the bases on normal
+  scores of the score and the covariates, so that a few extreme
+  covariate values cannot drive a verdict; the level is unaffected,
+  since the Monte Carlo reference stays exact and the bootstrap still
+  refits the model on its original design.
+
+- Both reproduce, for the same seed, the p-values of the script behind
+  the paper “One Goodness-of-Fit Test Is Not Enough: Error-Controlled
+  Localization of Misfit in Logistic Risk Models”.
+
+- [`cubic.calib.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/cubic.calib.gof.md)
+  is the cubic calibration likelihood-ratio test, also in the battery as
+  the row `"Cubic-LR"` (family “Calibration”, fast): the square and the
+  cube of the logit of the fitted risk are added to a logistic
+  regression of the outcome on it, and the drop in deviance is referred
+  to chi-squared on 2 degrees of freedom. It is not a new test. It is
+  the goodness-of-link idea of Pregibon (1980), in the line of
+  Tukey’s (1949) one degree of freedom for non-additivity and
+  Ramsey’s (1969) RESET, applied with the cubic logistic model of Morgan
+  (1985), and a fixed-degree relative of the GiViTI polynomial; the help
+  page gives that history with its references. It takes a fitted model
+  or frozen predictions. **The fast battery of
+  [`run.all.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/run.all.gof.md)
+  has one more row.**
+
+- [`edge.belt()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edge.belt.md)
+  returns, and [`plot()`](https://rdrr.io/r/graphics/plot.default.html)
+  draws, the group-level picture behind
+  [`edge.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edge.gof.md):
+  the standardized group residuals divided by their estimation-adjusted
+  null standard deviations (the square roots of the diagonal of Omega,
+  below one in-sample), the projection of the residuals on the basis,
+  whose squared length is the EDGE statistic, a pointwise band and a
+  simultaneous band (the level quantile of the largest standardized
+  residual under N(0, Omega)), and a second panel with the same band on
+  the event-rate scale. The p-value is the one
+  [`def.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/def.gof.md)
+  returns, never recomputed. With `external = TRUE` the belt carries the
+  external test (Omega = I, constant column, d + 1 df), so its band is
+  exact rather than conservative.
+
+- [`gof_certificate()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/gof_certificate.md)
+  answers, before any bootstrap is run, whether
+  [`deepgof1()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/deepgof1.md)
+  is consistent against a departure you name. The scored statistic is
+  piecewise affine, so its recession function is the same network with
+  every offset set to zero, and one forward pass on the frozen weights
+  returns a slope whose sign decides whether power tends to one. Name
+  the departure as true probabilities (`pi_star`), as the omitted term
+  on the linear-predictor scale (`eta_shift`), or as a 6 by 6 map
+  `direction`. The slope is reported at unit map norm, so that margins
+  from different departures are comparable. With a fitted model the
+  direction is taken on the map of the default reading (the covariate
+  axis rule of 2.9.0). A departure that integrates to zero inside every
+  grid cell has no direction at all, and is reported as such rather than
+  as a near miss.
+
+### Performance
+
+- The `McCullagh`, `McCullagh (grouped)` and `Copas-RSS` rows of
+  [`run.all.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/run.all.gof.md)
+  no longer form n by n matrices. The leverages and the quadratic forms
+  they need are taken from the p by p information matrix, so each row
+  costs O(n p^2) time and O(n p) memory instead of O(n^3) time and
+  O(n^2) memory; McCullagh’s row took about 15 seconds at n = 2000 and
+  now takes milliseconds at n = 20,000. The statistics agree with the n
+  by n forms to rounding (a unit test keeps those forms verbatim).
+
+- The `Copas-RSS` row prints its normal deviate with `df = NA`, like the
+  other normal deviates; its p-value, the two-sided normal tail, is
+  unchanged. The notes of the `Osius-Rojek`, `Copas-RSS` and `McCullagh`
+  rows say which tail of the normal is used: two-sided for the first
+  two, the upper tail for McCullagh’s, as in the GOFLOGIT macro.
+
+### Documentation
+
+- References brought up to date. EDGE is cited as Ebrahim, Hussein and
+  El-Kotory, “A grouped calibration test for logistic regression that
+  tolerates a few corrupted records”, arXiv:2608.20511; EF as Ebrahim,
+  Khattab and El-Kotory, “A modified Hosmer-Lemeshow goodness-of-fit
+  test for asymmetric links: second-order power and robustness”,
+  arXiv:2607.15454; DeepGOF-1 as Ebrahim, Hussein and El-Kotory, “Where
+  does a logistic risk model fail? An audited neural goodness-of-fit
+  test for model development and external validation”, arXiv:2609.29575;
+  the shrinkage paper behind
+  [`shrink.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/shrink.gof.md)
+  with its arXiv identifier, arXiv:2609.06413;
+  [`calm.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/calm.gof.md)
+  with the title of its paper, “A closed-form goodness-of-fit reference
+  for penalised logistic regression in the proportional regime”; the
+  localization paper with its third author, O. A. E.-A. Hussein; and the
+  benchmark study as published in the Journal of Intelligent Computing
+  and Data Science 2(2), 97-128 (<doi:10.21608/jicds.2026.505341.1048>).
+
+- `citation("ebrahim.gof")` now lists the package itself, the EDGE and
+  EF preprints and the published benchmark study.
+
+- [`?def.gof`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/def.gof.md)
+  says which weighting to use for each basis, and when the quality of
+  the data overrides that choice.
+
+- The Description field names
+  [`run.all.external()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/run.all.external.md),
+  [`edge.stream()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edge.stream.md),
+  [`localize.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/localize.gof.md),
+  [`localize.external()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/localize.external.md),
+  [`projection.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/projection.gof.md)
+  and
+  [`bagoft.fast()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/bagoft.fast.md).
+
+- The vignette “A goodness-of-fit and calibration toolbox for logistic
+  regression” has new sections on the EDGE picture, external validation
+  of frozen predictions, localizing the misfit and monitoring a deployed
+  model with
+  [`edge.stream()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edge.stream.md),
+  and shows [`summary()`](https://rdrr.io/r/base/summary.html) of the
+  battery. The sentence on a GPU backend for le Cessie’s test and the
+  projection test is gone: that code is not part of the package.
+
+- New vignette “Further examples: grouped data, the EF read-out,
+  monitoring and ridge fits”
+  ([`vignette("extensions", package = "ebrahim.gof")`](https://ebrahimkhaled.github.io/ebrahim.gof/articles/extensions.md)):
+  the sparse and grouped forms on `gof_demo_grouped`, the per-group EF
+  read-out, `localize.gof(dealias = TRUE)`, monitoring a deployed model
+  with
+  [`edge.stream()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edge.stream.md),
+  and
+  [`shrink.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/shrink.gof.md)
+  and
+  [`calm.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/calm.gof.md)
+  on a ridge fit, including the two scales of `lambda`. It holds the
+  examples of the JSS paper that did not fit in its pages, with the same
+  code and seeds as the paper’s replication script.
+
+### Bug fix
+
+- [`deepgof1.external()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/deepgof1.external.md)
+  took the names of `y` and `p` for the printed `data:` line after
+  converting them to numbers, so the output listed every outcome and
+  probability instead of the variable names. The names are now taken
+  first (`data: died and risk`).
+  [`deepgof1()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/deepgof1.md)
+  also joins a long deparsed model call into one line. Test results are
+  unchanged.
+
+- `edge.gof(basis = "ensemble")` returned only the default partition.
+  The rule that reports a partition once when `n <= 250` compared the
+  two rows’ statistics, which ensemble rows do not have. It now compares
+  their numbers of groups, so the ten-group check row is back.
+
+- [`ef.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/ef.gof.md)
+  refuses a `G` that is not a whole number.
+
+- `ef.gof(fit)` stopped with a length mismatch when `fit` was fitted
+  with `na.action = na.exclude`, because
+  [`fitted()`](https://rdrr.io/r/stats/fitted.values.html) pads the
+  excluded records with `NA`. It now uses the records of the fit.
+
+- The same padding broke every other function that read
+  [`fitted()`](https://rdrr.io/r/stats/fitted.values.html) or
+  [`predict()`](https://rdrr.io/r/stats/predict.html) of a fit made with
+  `na.action = na.exclude`.
+  [`run.all.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/run.all.gof.md)
+  printed rejections for a correct model (the fitted values were
+  recycled against the outcomes),
+  [`edge.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edge.gof.md)
+  and
+  [`localize.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/localize.gof.md)
+  stopped with a length error, and
+  [`deepgof1()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/deepgof1.md)
+  returned `NA`. All of them now read `fitted.values` and
+  `linear.predictors` of the fit, which are never padded, and give the
+  result of the same fit made with `na.omit`.
+
+- [`localize.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/localize.gof.md),
+  [`localize.external()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/localize.external.md),
+  [`shrink.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/shrink.gof.md)
+  and
+  [`legoft()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/legoft.md)
+  called `set.seed(seed)` on the session’s stream and left it there, so
+  a call with `seed =` inside a simulation loop reset the loop’s own
+  draws and every later replicate drew the same data. They now restore
+  the session’s random number state on exit. Their results for a given
+  `seed` are unchanged.
+
+- [`localize.external()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/localize.external.md)
+  warns when the predictions are calibrated in the large and in slope to
+  machine precision, as a model’s own fitted values are: `INTERCEPT` and
+  `SLOPE` then read `p = 1` and pull every closed test that contains
+  them towards 1.
+  [`localize.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/localize.gof.md)
+  is the function for a model checked on its own data. The warnings that
+  [`splines::ns()`](https://rdrr.io/r/splines/ns.html) gives on tied or
+  extreme scores no longer reach the console.
+
+- The GiViTI rows, and the calibration belt, start a `callr` subprocess,
+  which drew from the session’s random number stream; the rows after
+  them in a battery therefore depended on whether a GiViTI row ran. The
+  stream is now restored after the subprocess.
+
+- [`calm.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/calm.gof.md)
+  and
+  [`shrink.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/shrink.gof.md)
+  check that `lambda` is a single non-negative number and that `X` and
+  `y` have no missing values, and accept a data frame `X` (coded with
+  [`model.matrix()`](https://rdrr.io/r/stats/model.matrix.html)).
+
+- [`plot()`](https://rdrr.io/r/graphics/plot.default.html) of a single
+  row taken from an
+  [`edge.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edge.gof.md)
+  result with `x[i, ]` draws that row instead of stopping because the
+  row is not the verdict row.
+
+- Printed output fits a console of `getOption("width")`: the
+  “recommended update” line of `localize.*()` is wrapped,
+  [`calm.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/calm.gof.md)
+  prints the two scales of `lambda` and `G` on separate lines and its
+  advice wrapped, and
+  [`shrink.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/shrink.gof.md)
+  prints `S =` and an uncorrected p-value that is 0 in 20,000 draws as
+  `< 0.0001`. [`print()`](https://rdrr.io/r/base/print.html) of
+  [`bagoft.fast()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/bagoft.fast.md)
+  shows a p-value of 0 as the bound `< 1/(nsim + 1)`; the stored values
+  are unchanged and equal to those of BAGofT. The lattice of
+  [`plot()`](https://rdrr.io/r/graphics/plot.default.html) for a
+  localization writes the intercept as `intcpt`, so the label fits its
+  node at 7 pt.
+
 ## ebrahim.gof 2.9.0
 
 CRAN release: 2026-10-01

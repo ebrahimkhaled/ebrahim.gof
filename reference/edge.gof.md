@@ -96,11 +96,29 @@ edge.gof(
 
 ## Value
 
-A `data.frame` with one row per partition and columns `Test` (`"EDGE"`),
-`Partition`, `Role` (`"verdict"` for the first row, `"check"` for the
-second), `Basis`, `Test_Statistic`, `df`, `Method` and `p_value`, as
-documented in
+A `data.frame` of class `c("edge_gof", "data.frame")` with one row per
+partition and columns `Test` (`"EDGE"`), `Partition`, `Role`
+(`"verdict"` for the first row, `"check"` for the second), `Basis`,
+`Test_Statistic`, `df`, `Method` and `p_value`, as documented in
 [`def.gof`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/def.gof.md).
+It is a data frame in every respect; the class only adds a `plot`
+method. The grouped pieces behind each row are kept in
+`attr(, "details")`, a list with one element per row holding `r` (the
+grouped residuals \\(O_g - E_g)/\sqrt{V_g}\\), `Pz_r` (their projection
+on the basis, whose sum of squares is the unit-form statistic), `O`,
+`E`, `V`, `size`, `pbar` (the mean predicted risk of each group), `G`,
+`omega_diag` (the null variance of each residual: below one in-sample,
+one for frozen predictions), `external`, `adjusted`, `role`, `partition`
+and `statistic`. A row without a p-value, or with `basis = "ensemble"`,
+has `NULL` there. Rows selected or reordered with `x[i, ]` keep the
+attribute whole, and
+[`plot()`](https://rdrr.io/r/graphics/plot.default.html) finds the
+pieces of a row by its partition, role and statistic.
+[`subset()`](https://rdrr.io/r/base/subset.html) and
+[`merge()`](https://rdrr.io/r/base/merge.html) drop the attribute, and
+rows bound from another result have no pieces of their own;
+[`plot()`](https://rdrr.io/r/graphics/plot.default.html) then stops with
+a message.
 
 ## Details
 
@@ -118,22 +136,30 @@ robustness check; to let ten groups decide, give `G = c(10, "auto")`. If
 only the default partition rejects, the signal sits in the extreme
 groups: check those records. Give a single `G` to get one row.
 
+**The picture.**
+[`plot()`](https://rdrr.io/r/graphics/plot.default.html) on the result
+draws the grouped residuals of one row with the shape the test looked
+for and the bands that say which groups are out of line; see
+[`plot.edge_gof`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/plot.edge_gof.md).
+
 ## References
 
-Ebrahim EK, El-Kotory A (2026). "EDGE: A Closed-Form Directed
-Goodness-of-Fit Test for Sparse Logistic Regression." arXiv:2608.20511
-\[stat.ME\].
+Ebrahim EK, Hussein OAE-A, El-Kotory A (2026). "A Grouped Calibration
+Test for Logistic Regression That Tolerates a Few Corrupted Records."
+arXiv:2608.20511 \[stat.ME\].
 [doi:10.48550/arXiv.2608.20511](https://doi.org/10.48550/arXiv.2608.20511)
 
-Ebrahim EK, El-Kotory A (2026). "A Directional Hosmer-Lemeshow
-Goodness-of-Fit Test for Sparse Logistic Regression." arXiv:2607.15454
-\[stat.ME\].
+Ebrahim EK, Khattab IG, El-Kotory A (2026). "A Modified Hosmer-Lemeshow
+Goodness-of-Fit Test for Asymmetric Links: Second-Order Power and
+Robustness." arXiv:2607.15454 \[stat.ME\].
 [doi:10.48550/arXiv.2607.15454](https://doi.org/10.48550/arXiv.2607.15454)
 
 ## See also
 
+[`plot.edge_gof`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/plot.edge_gof.md),
 [`def.gof`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/def.gof.md)
 (legacy name),
+[`edge.belt`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/edge.belt.md),
 [`ef.gof`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/ef.gof.md),
 [`def.ensemble.gof`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/def.ensemble.gof.md),
 [`run.all.gof`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/run.all.gof.md).
@@ -184,4 +210,6 @@ edge.gof(fit, G = "auto")          # the default partition alone: max(10, ceilin
 #> 1 EDGE default (G = 20) verdict poly3      0.9477818 2.006467 satterthwaite
 #>     p_value
 #> 1 0.6221428
+plot(edge.gof(fit))                # the verdict row, on the residual scale
+
 ```

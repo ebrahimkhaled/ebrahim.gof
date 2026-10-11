@@ -24,7 +24,7 @@
 
     <a class="navbar-brand me-2" href="index.html">ebrahim.gof</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.9.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.10.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -39,6 +39,7 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="articles/ebrahim-gof-toolbox.html">A goodness-of-fit and calibration toolbox for logistic regression</a></li>
     <li><a class="dropdown-item" href="articles/ebrahim-farrington-intro.html">Introduction to the Ebrahim-Farrington Goodness-of-Fit Test</a></li>
+    <li><a class="dropdown-item" href="articles/extensions.html">Further examples: grouped data, the EF read-out, monitoring and ridge fits</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
@@ -149,11 +150,12 @@
 </h3>
 <p>The main function that performs the goodness-of-fit test:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/ef.gof.html">ef.gof</a></span><span class="op">(</span><span class="va">y</span>, <span class="va">predicted_probs</span>, G <span class="op">=</span> <span class="fl">10</span>, model <span class="op">=</span> <span class="cn">NULL</span>, m <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>       method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"chisq"</span>, <span class="st">"normal"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><strong>Parameters:</strong> - <code>y</code>: a fitted binary-logistic <code>glm</code> (then <code>predicted_probs</code> is taken from it), or a binary response vector (0/1) / success counts for grouped data - <code>predicted_probs</code>: Vector of predicted probabilities from logistic model - <code>G</code>: Number of groups for binary data (default: 10) - <code>method</code>: reference distribution for the grouped statistic. <code>"chisq"</code> (default, new in 2.0.0) refers T_EF to a chi-square with G-2 df; <code>"normal"</code> uses the standardized Z_EF (the behaviour of versions &lt;= 1.0.0) - <code>model</code>: Optional glm object (required for the original Farrington test only) - <code>m</code>: Optional vector of trial counts (for grouped data; original Farrington only)</p>
+<code class="sourceCode R"><span><span class="fu"><a href="reference/ef.gof.html">ef.gof</a></span><span class="op">(</span><span class="va">y</span>, predicted_probs <span class="op">=</span> <span class="cn">NULL</span>, model <span class="op">=</span> <span class="cn">NULL</span>, m <span class="op">=</span> <span class="cn">NULL</span>, G <span class="op">=</span> <span class="fl">10</span>,</span>
+<span>       method <span class="op">=</span> <span class="cn">NULL</span>, reference <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"chisq"</span>, <span class="st">"normal"</span><span class="op">)</span>, X <span class="op">=</span> <span class="cn">NULL</span>, groups <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+<p><strong>Parameters:</strong> - <code>y</code>: a fitted binary-logistic <code>glm</code> (then <code>predicted_probs</code> and <code>X</code> are taken from it), or a binary response vector (0/1) / success counts for grouped data - <code>predicted_probs</code>: Vector of predicted probabilities from logistic model - <code>G</code>: Number of groups (default: 10); <code>"auto"</code> for groups of about 25 records; <code>"paul"</code> for the rule of Paul, Pennell and Lemeshow (2013) - <code>reference</code>: <code>"chisq"</code> (default) refers EF to a chi-square with G-2 df; <code>"normal"</code> is the plug-in normal reference for many groups (needs the fitted <code>glm</code> or <code>X</code>) - <code>groups</code>: <code>NULL</code> (equal-size groups by fitted risk, ties at random), <code>"pattern"</code> (one group per covariate pattern), or a vector of group labels - <code>method</code>: deprecated; <code>method = "normal"</code> reproduces the standardization of versions up to 2.9.0 - <code>model</code>: Optional glm object (required for the original Farrington test only) - <code>m</code>: Optional vector of trial counts (for grouped data; original Farrington only)</p>
+<p>The result carries <code>C = HL - EF</code> and, in <code>attr(result, "groups")</code>, the per-group read-out <code>c = b r</code>.</p>
 <blockquote>
-<p><strong>Note (breaking change in 2.0.0):</strong> <code><a href="reference/ef.gof.html">ef.gof()</a></code> now defaults to <code>method = "chisq"</code>. Use <code>method = "normal"</code> to reproduce p-values from version 1.0.0.</p>
+<p><strong>Note (behaviour change in 2.10.0):</strong> the groups are equal in size to within one record, tied fitted risks are put in random order (call <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> first), and <code>Test_Statistic</code> is EF itself. See NEWS for how to reproduce an earlier p-value.</p>
 </blockquote>
 <p><strong>Returns:</strong> A data frame with test name, test statistic, and p-value.</p>
 </div>
@@ -164,7 +166,7 @@
 <p>For predictions made without the data at hand, such as a published model checked on new patients or any machine-learning model scored on a validation set, pass the outcomes and the predicted probabilities. Nothing is refitted, so every test uses its external reference.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/run.all.external.html">run.all.external</a></span><span class="op">(</span><span class="va">y</span>, <span class="va">p</span>, G <span class="op">=</span> <span class="fl">10</span>, X <span class="op">=</span> <span class="cn">NULL</span>, include_slow <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
-<p>It returns the directed test in external mode (ten groups and <code>G = "auto"</code>), Cox’s recalibration test, calibration in the large, Spiegelhalter’s z, the GiViTI test (external), the Hosmer-Lemeshow statistic on chi-squared(G), Stukel’s test on the frozen linear predictor, le Cessie’s test when <code>X</code> is given and <code>include_slow = TRUE</code>, and the O/E ratio, calibration slope and c-statistic.</p>
+<p>It returns the directed test in external mode (ten groups and <code>G = "auto"</code>), Cox’s recalibration test, calibration in the large, Spiegelhalter’s z, Osius-Rojek’s standardized Pearson statistic with its external moments, the GiViTI test (external), the Hosmer-Lemeshow statistic on chi-squared(G), Stukel’s test on the frozen linear predictor, le Cessie’s test when <code>X</code> is given and <code>include_slow = TRUE</code>, and the O/E ratio, calibration slope and c-statistic.</p>
 </div>
 <div class="section level3">
 <h3 id="edgestream--monitoring-a-deployed-model">
@@ -226,7 +228,7 @@
 <span><span class="fu"><a href="reference/run.all.gof.html">run.all.gof</a></span><span class="op">(</span><span class="va">fit</span>, include_slow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>  <span class="co"># also the opt-in slow tests</span></span>
 <span><span class="fu"><a href="reference/run.all.gof.html">run.all.gof</a></span><span class="op">(</span><span class="va">fit</span>, tests <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"EF"</span>, <span class="st">"DEF.poly3"</span>, <span class="st">"HL"</span><span class="op">)</span><span class="op">)</span>   <span class="co"># a chosen subset</span></span>
 <span><span class="fu"><a href="reference/run.all.gof.html">run.all.gof</a></span><span class="op">(</span><span class="va">y</span>, <span class="fu"><a href="https://rdrr.io/r/stats/fitted.values.html" class="external-link">fitted</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span><span class="op">)</span>            <span class="co"># prediction-only tests (no model)</span></span></code></pre></div>
-<p>Default fast battery (22 rows on fully sparse data): Pearson, Deviance, Osius-Rojek, McCullagh, Copas-RSS, Information-Matrix, Hosmer-Lemeshow (deciles and equal-width), Pigeon-Heyse, the F-test, EF, EF-normal, the four DEF bases (poly2, poly3, stukel, sym), Stukel’s joint score test, Tsiatis, Xie, Pulkstenis-Robinson, and the two Cauchy-combination ensemble rows. With <code>include_slow = TRUE</code> it also runs le Cessie-van Houwelingen, the GAM-based tests (HL-GAM, PR-GAM, Xie-GAM; need <code>mgcv</code>), Stute-Zhu, eHL, BAGofT (computed by <code><a href="reference/bagoft.fast.html">bagoft.fast()</a></code>), the projection test of Liu et al. (2024) (<code><a href="reference/projection.gof.html">projection.gof()</a></code>), and the Lai &amp; Liu standardized-power HL test. Every test reproduces the implementation used in the original thesis simulation.</p>
+<p>Default fast battery (25 rows on fully sparse data with more than 250 records): Pearson, Deviance, Information-Matrix, Osius-Rojek, McCullagh, Copas-RSS, Hosmer-Lemeshow (deciles, large-sample and equal-width), Pigeon-Heyse, the F-test, EF, EF-normal, EDGE at its two partitions, the DEF bases poly2, stukel and sym, Stukel’s joint score test, Tsiatis, Xie, Pulkstenis-Robinson, Cubic-LR and the two Cauchy-combination ensemble rows. The sparse Pearson and deviance statistics and the F-test are printed for comparison only and are not counted as rejections. With <code>include_slow = TRUE</code> it also runs le Cessie-van Houwelingen, the GAM-based tests (HL-GAM, PR-GAM, Xie-GAM; need <code>mgcv</code>), Stute-Zhu, eHL, BAGofT (computed by <code><a href="reference/bagoft.fast.html">bagoft.fast()</a></code>), the projection test of Liu et al. (2024) (<code><a href="reference/projection.gof.html">projection.gof()</a></code>), and the Lai &amp; Liu standardized-power HL test. Every test reproduces the implementation used in the original thesis simulation.</p>
 </div>
 <div class="section level3">
 <h3 id="optional-packages-for-the-slow-tests">Optional packages for the slow tests<a class="anchor" aria-label="anchor" href="#optional-packages-for-the-slow-tests"></a>
@@ -355,8 +357,7 @@
 <span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">+</span> <span class="va">x2</span>, family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">binomial</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">predicted_probs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/fitted.values.html" class="external-link">fitted</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Test goodness of fit (chi-square reference by default in 2.0.0;</span></span>
-<span><span class="co"># use method = "normal" for the version 1.0.0 p-value)</span></span>
+<span><span class="co"># Test goodness of fit (EF on ten groups, chi-square reference on G - 2 df)</span></span>
 <span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/ef.gof.html">ef.gof</a></span><span class="op">(</span><span class="va">y</span>, <span class="va">predicted_probs</span>, G <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                 Test Test_Statistic p_value</span></span>
@@ -599,7 +600,7 @@
 </h2>
 <p>If you use this package in your research, please cite it (run <code>citation("ebrahim.gof")</code> in R for the up-to-date entries):</p>
 <pre><code>Ebrahim, E. K. (2026). ebrahim.gof: Goodness-of-Fit and Calibration Tests
-for Logistic Regression. R package version 2.4.0.
+for Logistic Regression. R package version 2.10.0.
 https://github.com/ebrahimkhaled/ebrahim.gof</code></pre>
 <div class="section level3">
 <h3 id="related-papers">Related papers<a class="anchor" aria-label="anchor" href="#related-papers"></a>
@@ -607,12 +608,19 @@ https://github.com/ebrahimkhaled/ebrahim.gof</code></pre>
 <p>The methods in this package are described in the following papers by the author (please cite the relevant one alongside the package):</p>
 <ul>
 <li>
-<strong>EDGE — the directed test</strong> (<code><a href="reference/edge.gof.html">edge.gof()</a></code> / <code><a href="reference/def.gof.html">def.gof()</a></code>): Ebrahim, E. K. &amp; El-Kotory, A. (2026). <em>EDGE: A Closed-Form Directed Goodness-of-Fit Test for Sparse Logistic Regression.</em> Manuscript.</li>
+<strong>EDGE — the directed test</strong> (<code><a href="reference/edge.gof.html">edge.gof()</a></code> / <code><a href="reference/def.gof.html">def.gof()</a></code>): Ebrahim, E. K., Hussein, O. A. E.-A. &amp; El-Kotory, A. (2026). <em>A grouped calibration test for logistic regression that tolerates a few corrupted records.</em> arXiv:2608.20511</li>
 <li>
-<strong>EF — the omnibus test</strong> (<code><a href="reference/ef.gof.html">ef.gof()</a></code>): Ebrahim, E. K. &amp; El-Kotory, A. (2026). <em>A directional Hosmer–Lemeshow goodness-of-fit test for sparse logistic regression.</em> arXiv:2607.15454 · Zenodo <a href="https://doi.org/10.5281/zenodo.21184547" class="external-link">10.5281/zenodo.21184547</a>
+<strong>EF — the omnibus test</strong> (<code><a href="reference/ef.gof.html">ef.gof()</a></code>): Ebrahim, E. K., Khattab, I. G. &amp; El-Kotory, A. (2026). <em>A modified Hosmer–Lemeshow goodness-of-fit test for asymmetric links: second-order power and robustness.</em> arXiv:2607.15454 · Zenodo <a href="https://doi.org/10.5281/zenodo.21184547" class="external-link">10.5281/zenodo.21184547</a>
 </li>
 <li>
-<strong>Benchmark — how the battery performs</strong>: Ebrahim, E. K. &amp; El-Kotory, A. (2026). <em>Benchmarking goodness-of-fit and calibration algorithms for logistic regression.</em> arXiv:2607.16344 · Zenodo <a href="https://doi.org/10.5281/zenodo.21286172" class="external-link">10.5281/zenodo.21286172</a> — an empirical comparison of the tests aggregated here (no single test wins across all alternatives).</li>
+<strong>DeepGOF-1 — the pretrained test</strong> (<code><a href="reference/deepgof1.html">deepgof1()</a></code>, <code><a href="reference/deepgof1.external.html">deepgof1.external()</a></code>): Ebrahim, E. K., Hussein, O. A. E.-A. &amp; El-Kotory, A. (2026). <em>Where does a logistic risk model fail? An audited neural goodness-of-fit test for model development and external validation.</em> arXiv:2609.29575</li>
+<li>
+<strong>Shrinkage — penalized fits</strong> (<code><a href="reference/shrink.gof.html">shrink.gof()</a></code>): Ebrahim, E. K. (2026). <em>Shrinkage invalidates the Hosmer–Lemeshow test: goodness of fit for penalized logistic regression, with an application to glaucoma diagnosis.</em> arXiv:2609.06413</li>
+<li>
+<strong>Localization</strong> (<code><a href="reference/localize.gof.html">localize.gof()</a></code>, <code><a href="reference/localize.external.html">localize.external()</a></code>): Ebrahim, E. K., El-Kotory, A. &amp; Hussein, O. A. E.-A. (2026). <em>One goodness-of-fit test is not enough: error-controlled localization of misfit in logistic risk models.</em> Preprint · Zenodo <a href="https://doi.org/10.5281/zenodo.23192535" class="external-link">10.5281/zenodo.23192535</a>
+</li>
+<li>
+<strong>Benchmark — how the battery performs</strong>: Ebrahim, E. K. &amp; El-Kotory, A. (2026). <em>Benchmarking goodness-of-fit and calibration algorithms for logistic regression classifiers: a large-scale simulation study under sparse data.</em> Journal of Intelligent Computing and Data Science 2(2), 97–128. <a href="https://doi.org/10.21608/jicds.2026.505341.1048" class="external-link">10.21608/jicds.2026.505341.1048</a> — an empirical comparison of the tests aggregated here (no single test wins across all alternatives).</li>
 <li>
 <strong>EDGES — the Cauchy-combination ensemble</strong> (<code><a href="reference/edges.gof.html">edges.gof()</a></code> / <code><a href="reference/def.ensemble.gof.html">def.ensemble.gof()</a></code>): Ebrahim, E. K. &amp; El-Kotory, A. (2026). <em>A Cauchy-combination ensemble of directed goodness-of-fit tests.</em> In preparation.</li>
 </ul>

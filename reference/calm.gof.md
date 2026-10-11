@@ -130,9 +130,10 @@ Davies, R. B. (1980). Algorithm AS 155: the distribution of a linear
 combination of chi-squared random variables. *Journal of the Royal
 Statistical Society, Series C*, **29**(3), 323–333.
 
-Ebrahim, E. K. (2026). A closed-form reference distribution for
-goodness-of-fit testing under penalized logistic regression in the
-proportional regime.
+Ebrahim, E. K. (2026). A closed-form goodness-of-fit reference for
+penalised logistic regression in the proportional regime. Preprint.
+Reproduction materials:
+[doi:10.5281/zenodo.22467285](https://doi.org/10.5281/zenodo.22467285)
 
 ## See also
 
@@ -151,11 +152,13 @@ y <- rbinom(n, 1, 1 / (1 + exp(-(X[, 1] - 0.5 * X[, 2]))))
 calm.gof(X, y, lambda = 100)
 #> 
 #> CALM: closed-form goodness of fit for penalized logistic regression
-#> lambda = 100 (theory scale) = 0.3333 on glmnet's scale | G = 10 | p/n = 0.067
-#>   SC.HL             statistic    7.133   p = 0.3733
-#>   SC.EDGE           statistic    0.531   p = 0.7304
-#>   SC.EDGE.adaptive  statistic    0.531   p = 0.7304   [degree 3, rho_hat 0.79]
+#> lambda = 100 (theory scale) = 0.3333 (glmnet scale)
+#> G = 10, p/n = 0.067
+#>   SC.HL            S =   7.133  p = 0.3733
+#>   SC.EDGE          S =   0.531  p = 0.7304
+#>   SC.EDGE.adaptive S =   0.531  p = 0.7304  [degree 3, rho_hat 0.79]
 #> 
-#> SC.EDGE.adaptive is the statistic to prefer; see ?calm.gof for the scope of the reference.
+#> SC.EDGE.adaptive is the statistic to prefer; see ?calm.gof for the scope of
+#> the reference.
 #> 
 ```

@@ -17,7 +17,7 @@ a clinical score: nothing is refitted."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">ebrahim.gof</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.9.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.10.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -30,6 +30,7 @@ a clinical score: nothing is refitted."></head><body>
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/ebrahim-gof-toolbox.html">A goodness-of-fit and calibration toolbox for logistic regression</a></li>
     <li><a class="dropdown-item" href="../articles/ebrahim-farrington-intro.html">Introduction to the Ebrahim-Farrington Goodness-of-Fit Test</a></li>
+    <li><a class="dropdown-item" href="../articles/extensions.html">Further examples: grouped data, the EF read-out, monitoring and ridge fits</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -117,6 +118,11 @@ these tests conservative.</p>
     intercept is 0 with the slope held at 1: \((O - E)/\sqrt{\sum p(1-p)}\).</p></li>
 <li><p><code>Spiegelhalter-z</code> [Calibration] – Spiegelhalter's (1986) \(z\) test,
     two-sided.</p></li>
+<li><p><code>Osius-Rojek (external)</code> [Standardized] – the Pearson statistic
+    \(X^2 = \sum (y - p)^2 / \{p(1-p)\}\) standardized with its moments under frozen
+    predictions, \(E X^2 = n\) and \(\mathrm{Var}\, X^2 = \sum (1-2p)^2 / \{p(1-p)\}\)
+    (Osius and Rojek 1992), two-sided. In-sample, <code><a href="run.all.gof.html">run.all.gof()</a></code> uses the
+    version that removes the part of the variance taken by the fitted coefficients.</p></li>
 <li><p><code>GiViTI</code> [Calibration] – the GiViTI calibration test in its external
     mode (Nattino et al. 2014), run in an isolated <span class="pkg">callr</span> process; needs
     <span class="pkg">givitiR</span> and <span class="pkg">callr</span>. When it selects a polynomial of degree one it
@@ -124,7 +130,10 @@ these tests conservative.</p>
 <li><p><code>Hosmer-Lemeshow (external)</code> [Partition] – \(G\) equal-frequency risk
     groups, referred to \(\chi^2_G\).</p></li>
 <li><p><code>Stukel (offset)</code> [Directed] – Stukel's two terms added to the frozen
-    linear predictor, likelihood-ratio \(\chi^2_2\).</p></li>
+    linear predictor, score test at the null referred to \(\chi^2_2\) (one degree of
+    freedom when no prediction reaches 0.5, so the upper term is empty). The score form
+    is used because the likelihood ratio rejects too often when only a few records have
+    risks above 0.5, as happens at low event rates.</p></li>
 <li><p><code>le Cessie (external)</code> [Smoothing] – le Cessie and van Houwelingen's
     kernel statistic over covariate space with \(\Omega = I\); only when <code>X</code>
     is given and <code>include_slow = TRUE</code>, because it builds an \(n \times n\)
@@ -156,37 +165,40 @@ recalibrating; the directed test says whether a recalibration would be enough.</
 <span class="r-in"><span><span class="va">y</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Binomial.html" class="external-link">rbinom</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">1</span>, <span class="fu"><a href="https://rdrr.io/r/stats/Logistic.html" class="external-link">plogis</a></span><span class="op">(</span><span class="op">-</span><span class="fl">1</span> <span class="op">+</span> <span class="fl">0.6</span> <span class="op">*</span> <span class="va">x</span><span class="op">)</span><span class="op">)</span>    <span class="co"># new patients: the model is overfitted</span></span></span>
 <span class="r-in"><span><span class="fu">run.all.external</span><span class="op">(</span><span class="va">y</span>, <span class="va">p</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Goodness-of-fit battery: 11 tests  (5 reject at 0.05)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ============================================================</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Test                            Statistic   df  p-value    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  --- Partition ---------------------------------------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Hosmer-Lemeshow (external) [a]      24.66   10   0.0060 ** </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  --- Directed ----------------------------------------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  EDGE (G=10) [b]                     14.86    4   0.0050 ** </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  EDGE (G=auto, 40) [b]               17.42    4   0.0016 ** </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Stukel (offset) [c]                 5.342    2   0.0692 .  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  --- Calibration -------------------------------------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Cox recalibration [d]                13.2    2   0.0014 ** </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Calibration-in-the-large [e]       0.8792    1   0.3484    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Spiegelhalter-z [f]                 1.565        0.1176    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  GiViTI [g]                                       0.0014 ** </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  --- Descriptive -------------------------------------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  O/E ratio [h]                      0.9566             -    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Calibration slope [i]              0.6643             -    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  c-statistic (AUC) [j]              0.6474             -    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ------------------------------------------------------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Goodness-of-fit battery: 12 tests  (7 reject at 0.05)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ==========================================================</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Test                            Statistic df  p-value    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  --- Standardized ----------------------------------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Osius-Rojek (external) [a]          2.243      0.0249 *  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  --- Partition -------------------------------------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Hosmer-Lemeshow (external) [b]      24.66 10   0.0060 ** </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  --- Directed --------------------------------------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  EDGE (G=10) [c]                     14.86  4   0.0050 ** </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  EDGE (G=auto, 40) [c]               17.42  4   0.0016 ** </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Stukel (offset) [d]                 5.994  2   0.0499 *  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  --- Calibration -----------------------------------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Cox recalibration [e]                13.2  2   0.0014 ** </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Calibration-in-the-large [f]       0.8792  1   0.3484    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Spiegelhalter-z [g]                 1.565      0.1176    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  GiViTI [h]                                     0.0014 ** </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  --- Descriptive -----------------------------------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  O/E ratio [i]                      0.9566           -    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Calibration slope [j]              0.6643           -    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  c-statistic (AUC) [k]              0.6474           -    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ----------------------------------------------------------</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Signif.:  *** &lt;.001   ** &lt;.01   * &lt;.05   . &lt;.1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Notes:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [a] 10 groups, chi-square(10)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [b] external mode, cubic basis + constant</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [c] terms added to logit(p)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [d] intercept -0.337, slope 0.664</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [e] O/E = 0.957</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [f] two-sided z</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [g] calibration belt; devel=external</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [h] 1 = calibrated in the large</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [i] 1 = calibrated; &lt; 1 = overfitted</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [j] discrimination, not calibration</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [a] two-sided z, record-level Pearson</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [b] 10 groups, chi-square(10)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [c] external mode, cubic basis + constant</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [d] score test, terms added to logit(p)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [e] intercept -0.337, slope 0.664</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [f] O/E = 0.957</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [g] two-sided z</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [h] calibration belt; devel=external</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [i] 1 = calibrated in the large</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [j] 1 = calibrated; &lt; 1 = overfitted</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    [k] discrimination, not calibration</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

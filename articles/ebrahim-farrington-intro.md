@@ -63,8 +63,10 @@ predicted_probs <- fitted(model)
 # Perform Ebrahim-Farrington test
 result <- ef.gof(y, predicted_probs, G = 10)
 print(result)
-#>                 Test Test_Statistic   p_value
-#> 1 Ebrahim-Farrington      -1.250567 0.9344997
+#>                 Test Test_Statistic df Reference   p_value  G       HL
+#> 1 Ebrahim-Farrington       2.997733  8     chisq 0.9344997 10 2.855296
+#>            C
+#> 1 -0.1424368
 ```
 
 ## Understanding the Test Statistic
@@ -99,9 +101,9 @@ results <- data.frame(
 print(results)
 #>   Groups   P_value
 #> 1      4 0.7449740
-#> 2      8 0.3317745
+#> 2      8 0.3289867
 #> 3     10 0.9344997
-#> 4     15 0.7347885
+#> 4     15 0.9707703
 #> 5     20 0.3532473
 ```
 
@@ -132,7 +134,7 @@ if (requireNamespace("ResourceSelection", quietly = TRUE)) {
 }
 #> ResourceSelection 0.3-6   2023-06-27
 #>                         Test   P_value Test_Statistic
-#>           Ebrahim-Farrington 0.9344997      -1.250567
+#>           Ebrahim-Farrington 0.9344997       2.997733
 #> X-squared    Hosmer-Lemeshow 0.9431075       2.855296
 ```
 
@@ -179,45 +181,51 @@ run.all.gof(model, include_slow = FALSE)
 #> ========================================================
 #>  Test                        Statistic   df  p-value    
 #>  --- Global --------------------------------------------
-#>  Pearson                         500.2  498   0.4640    
-#>  Deviance                        548.4  498   0.0587 .  
+#>  Pearson [a]                     500.2  498   0.4640    
+#>  Deviance [a]                    548.4  498   0.0587    
 #>  Information-Matrix            0.01797    2   0.9911    
 #>  --- Standardized --------------------------------------
-#>  Osius-Rojek                    0.1242        0.9012    
-#>  McCullagh                     0.04384        0.4825    
-#>  Copas-RSS                    0.001485    1   0.9988    
-#>  EF                             -1.251    8   0.9345    
-#>  EF-normal [a]                  -1.251    8   0.8945    
+#>  Osius-Rojek [b]                0.1242        0.9012    
+#>  McCullagh [c]                 0.04384        0.4825    
+#>  Copas-RSS [b]                0.001485        0.9988    
 #>  --- Partition -----------------------------------------
 #>  HL                              2.855    8   0.9431    
-#>  HL-largeN [b]                   2.855    8   0.9432    
+#>  HL-largeN [d]                   2.855    8   0.9432    
 #>  HL-equalwidth                    4.86    8   0.7724    
 #>  Pigeon-Heyse                    2.877    9   0.9690    
-#>  F-test [c]                       1.11    9   0.3536    
+#>  F-test [e]                       1.11    9   0.3536    
+#>  EF                              2.998    8   0.9345    
+#>  EF-normal [f]                  0.2565        0.3988    
 #>  --- Covariate-space -----------------------------------
 #>  Tsiatis                         5.778    9   0.7619    
 #>  Xie                             8.312  8.5   0.4535    
-#>  Pulkstenis-Robinson [d]                           -    
+#>  Pulkstenis-Robinson [g]                           -    
 #>  --- Directed ------------------------------------------
-#>  EDGE [e]                       0.2335 2.02   0.8904    
-#>  EDGE.G10                       0.1334 2.06   0.9395    
-#>  DEF.poly2                     0.06176 1.08   0.8227    
-#>  DEF.poly3                      0.1334 2.06   0.9395    
-#>  DEF.stukel                     0.3191    2   0.8313    
-#>  DEF.sym                       0.09206    1   0.5782    
+#>  EDGE [h]                       0.2335 2.02   0.8904    
+#>  EDGE.G10 [i]                   0.1334 2.06   0.9395    
+#>  DEF.poly2 [i]                 0.06176 1.08   0.8227    
+#>  DEF.stukel [i]                 0.3191    2   0.8313    
+#>  DEF.sym [i]                   0.09206    1   0.5782    
 #>  Stukel                        0.02061    2   0.9897    
+#>  --- Calibration ---------------------------------------
+#>  Cubic-LR [j]                  0.02093    2   0.9896    
 #>  --- Ensemble ------------------------------------------
-#>  Ensemble.Vote(3DEF) [f]                      0.8921    
-#>  Ensemble.Univ(3DEF+EF) [f]                   0.9070    
+#>  Ensemble.Vote(3DEF) [k]                      0.8921    
+#>  Ensemble.Univ(3DEF+EF) [k]                   0.9070    
 #> --------------------------------------------------------
 #>  Signif.:  *** <.001   ** <.01   * <.05   . <.1
 #>  Notes:
-#>    [a] normal reference (thesis)
-#>    [b] H0: eps <= 2.74e-03 (n0 = 1e+06); eps_hat = 0.00e+00
-#>    [c] deviance residuals ~ groups (ANOVA F)
-#>    [d] Not applicable: needs a categorical covariate
-#>    [e] G = 20 (auto)
-#>    [f] Cauchy combination of the directed tests
+#>    [a] sparse form; comparison only, not counted
+#>    [b] normal deviate, two-sided
+#>    [c] normal deviate, upper tail
+#>    [d] H0: eps <= 2.74e-03 (n0 = 1e+06); eps_hat = 0.00e+00
+#>    [e] ANOVA F on deviance residuals; comparison only, not counted
+#>    [f] normal reference, many groups (G = 20)
+#>    [g] Not applicable: needs a categorical covariate
+#>    [h] S/c ~ chi-square(df), Satterthwaite; G = 20 (auto)
+#>    [i] S/c ~ chi-square(df), Satterthwaite
+#>    [j] eta^2 and eta^3 added to a logit fit on eta
+#>    [k] Cauchy combination of the directed tests
 ```
 
 Add `include_slow = TRUE` to also run the opt-in slow tests (le Cessie,
@@ -261,10 +269,14 @@ members (HL) can have low power. DEF keeps the intuitive
 fitted-probability grouping but *directs* the test at calibration-curve
 shapes, which is why it tops the table without losing size control.
 
-> Note: as of 2.0.0,
+> Note:
 > [`ef.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/ef.gof.md)
-> defaults to the chi-square reference (`method = "chisq"`); use
-> `method = "normal"` for the version 1.0.0 behaviour.
+> refers EF to the chi-square on `G - 2` degrees of freedom. With many
+> groups use `reference = "normal"`, the normal reference of the EF
+> paper, and prefer groups of about 25 records (`G = "auto"`). Since
+> 2.10.0 the groups are equal in size to within one record and tied
+> fitted risks are put in random order (call
+> [`set.seed()`](https://rdrr.io/r/base/Random.html) first).
 
 ## Power Analysis Example
 

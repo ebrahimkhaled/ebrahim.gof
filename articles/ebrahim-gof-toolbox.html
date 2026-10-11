@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ebrahim.gof</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.9.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.10.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -35,6 +35,7 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/ebrahim-gof-toolbox.html">A goodness-of-fit and calibration toolbox for logistic regression</a></li>
     <li><a class="dropdown-item" href="../articles/ebrahim-farrington-intro.html">Introduction to the Ebrahim-Farrington Goodness-of-Fit Test</a></li>
+    <li><a class="dropdown-item" href="../articles/extensions.html">Further examples: grouped data, the EF read-out, monitoring and ridge fits</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -129,58 +130,87 @@ optional package is not present are simply skipped.</p>
 <span><span class="va">battery</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/run.all.gof.html">run.all.gof</a></span><span class="op">(</span><span class="va">fit</span>, include_slow <span class="op">=</span> <span class="cn">FALSE</span>, install <span class="op">=</span> <span class="st">"no"</span><span class="op">)</span></span>
 <span><span class="va">battery</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Goodness-of-fit battery: 25 tests  (19 reject at 0.05)</span></span>
+<span><span class="co">#&gt; Goodness-of-fit battery: 25 tests  (18 reject at 0.05)</span></span>
 <span><span class="co">#&gt; ========================================================</span></span>
 <span><span class="co">#&gt;  Test                        Statistic   df  p-value    </span></span>
 <span><span class="co">#&gt;  --- Global --------------------------------------------</span></span>
-<span><span class="co">#&gt;  Pearson                           760  795   0.8087    </span></span>
-<span><span class="co">#&gt;  Deviance                        839.1  795   0.1352    </span></span>
+<span><span class="co">#&gt;  Pearson [a]                       760  795   0.8087    </span></span>
+<span><span class="co">#&gt;  Deviance [a]                    839.1  795   0.1352    </span></span>
 <span><span class="co">#&gt;  Information-Matrix              26.39    5  7.5e-05 ***</span></span>
 <span><span class="co">#&gt;  --- Standardized --------------------------------------</span></span>
-<span><span class="co">#&gt;  Osius-Rojek                    -2.388        0.0169 *  </span></span>
-<span><span class="co">#&gt;  McCullagh                      -2.725        0.9968    </span></span>
-<span><span class="co">#&gt;  Copas-RSS                       3.352    1   0.0008 ***</span></span>
-<span><span class="co">#&gt;  EF                              1.988    8   0.0431 *  </span></span>
-<span><span class="co">#&gt;  EF-normal [a]                   1.988    8   0.0234 *  </span></span>
+<span><span class="co">#&gt;  Osius-Rojek [b]                -2.388        0.0169 *  </span></span>
+<span><span class="co">#&gt;  McCullagh [c]                  -2.725        0.9968    </span></span>
+<span><span class="co">#&gt;  Copas-RSS [b]                   3.352        0.0008 ***</span></span>
 <span><span class="co">#&gt;  --- Partition -----------------------------------------</span></span>
 <span><span class="co">#&gt;  HL                              15.52    8   0.0499 *  </span></span>
-<span><span class="co">#&gt;  HL-largeN [b]                   15.52    8   0.0501 .  </span></span>
+<span><span class="co">#&gt;  HL-largeN [d]                   15.52    8   0.0501 .  </span></span>
 <span><span class="co">#&gt;  HL-equalwidth                   22.11    7   0.0024 ** </span></span>
 <span><span class="co">#&gt;  Pigeon-Heyse                    15.58    9   0.0761 .  </span></span>
-<span><span class="co">#&gt;  F-test [c]                      2.088    9   0.0283 *  </span></span>
+<span><span class="co">#&gt;  F-test [e]                      2.088    9   0.0283    </span></span>
+<span><span class="co">#&gt;  EF                              15.95    8   0.0431 *  </span></span>
+<span><span class="co">#&gt;  EF-normal [f]                   1.767        0.0386 *  </span></span>
 <span><span class="co">#&gt;  --- Covariate-space -----------------------------------</span></span>
 <span><span class="co">#&gt;  Tsiatis                         63.53    9  2.8e-10 ***</span></span>
 <span><span class="co">#&gt;  Xie                              51.9    7  6.1e-09 ***</span></span>
-<span><span class="co">#&gt;  Pulkstenis-Robinson [d]         7.282    4   0.1217    </span></span>
+<span><span class="co">#&gt;  Pulkstenis-Robinson [g]         7.282    4   0.1217    </span></span>
 <span><span class="co">#&gt;  --- Directed ------------------------------------------</span></span>
-<span><span class="co">#&gt;  EDGE [e]                        11.21 2.01   0.0035 ** </span></span>
-<span><span class="co">#&gt;  EDGE.G10                         8.33 2.07   0.0150 *  </span></span>
-<span><span class="co">#&gt;  DEF.poly2                       8.299 1.08   0.0036 ** </span></span>
-<span><span class="co">#&gt;  DEF.poly3                        8.33 2.07   0.0150 *  </span></span>
-<span><span class="co">#&gt;  DEF.stukel                        6.5 1.56   0.0118 *  </span></span>
-<span><span class="co">#&gt;  DEF.sym                         1.519    1   0.0096 ** </span></span>
+<span><span class="co">#&gt;  EDGE [h]                        11.21 2.01   0.0035 ** </span></span>
+<span><span class="co">#&gt;  EDGE.G10 [i]                     8.33 2.07   0.0150 *  </span></span>
+<span><span class="co">#&gt;  DEF.poly2 [i]                   8.299 1.08   0.0036 ** </span></span>
+<span><span class="co">#&gt;  DEF.stukel [i]                    6.5 1.56   0.0118 *  </span></span>
+<span><span class="co">#&gt;  DEF.sym [i]                     1.519    1   0.0096 ** </span></span>
 <span><span class="co">#&gt;  Stukel                          11.58    2   0.0031 ** </span></span>
+<span><span class="co">#&gt;  --- Calibration ---------------------------------------</span></span>
+<span><span class="co">#&gt;  Cubic-LR [j]                    12.44    2   0.0020 ** </span></span>
 <span><span class="co">#&gt;  --- Ensemble ------------------------------------------</span></span>
-<span><span class="co">#&gt;  Ensemble.Vote(3DEF) [f]                      0.0070 ** </span></span>
-<span><span class="co">#&gt;  Ensemble.Univ(3DEF+EF) [f]                   0.0088 ** </span></span>
+<span><span class="co">#&gt;  Ensemble.Vote(3DEF) [k]                      0.0070 ** </span></span>
+<span><span class="co">#&gt;  Ensemble.Univ(3DEF+EF) [k]                   0.0088 ** </span></span>
 <span><span class="co">#&gt; --------------------------------------------------------</span></span>
 <span><span class="co">#&gt;  Signif.:  *** &lt;.001   ** &lt;.01   * &lt;.05   . &lt;.1</span></span>
 <span><span class="co">#&gt;  Notes:</span></span>
-<span><span class="co">#&gt;    [a] normal reference (thesis)</span></span>
-<span><span class="co">#&gt;    [b] H0: eps &lt;= 2.74e-03 (n0 = 1e+06); eps_hat = 9.69e-02</span></span>
-<span><span class="co">#&gt;    [c] deviance residuals ~ groups (ANOVA F)</span></span>
-<span><span class="co">#&gt;    [d] split on categorical: sex, treatment</span></span>
-<span><span class="co">#&gt;    [e] G = 32 (auto)</span></span>
-<span><span class="co">#&gt;    [f] Cauchy combination of the directed tests</span></span></code></pre></div>
+<span><span class="co">#&gt;    [a] sparse form; comparison only, not counted</span></span>
+<span><span class="co">#&gt;    [b] normal deviate, two-sided</span></span>
+<span><span class="co">#&gt;    [c] normal deviate, upper tail</span></span>
+<span><span class="co">#&gt;    [d] H0: eps &lt;= 2.74e-03 (n0 = 1e+06); eps_hat = 9.69e-02</span></span>
+<span><span class="co">#&gt;    [e] ANOVA F on deviance residuals; comparison only, not counted</span></span>
+<span><span class="co">#&gt;    [f] normal reference, many groups (G = 32)</span></span>
+<span><span class="co">#&gt;    [g] split on categorical: sex, treatment</span></span>
+<span><span class="co">#&gt;    [h] S/c ~ chi-square(df), Satterthwaite; G = 32 (auto)</span></span>
+<span><span class="co">#&gt;    [i] S/c ~ chi-square(df), Satterthwaite</span></span>
+<span><span class="co">#&gt;    [j] eta^2 and eta^3 added to a logit fit on eta</span></span>
+<span><span class="co">#&gt;    [k] Cauchy combination of the directed tests</span></span></code></pre></div>
 <p>Read the table by <em>family</em>. The <strong>global
 omnibus</strong> statistics (Pearson, deviance) spread their power over
 hundreds of covariate patterns and tend to <strong>miss</strong> this
-smooth misfit. The <strong>directed</strong> tests —
-<code>DEF.poly2</code>, <code>DEF.poly3</code> (EDGE),
-<code>DEF.stukel</code>, <code>DEF.sym</code>, and Stukel’s score test —
-concentrate their few degrees of freedom on the calibration-curve shape
-and <strong>detect</strong> it, as do the EF test and the ensemble. That
-contrast is the whole point of a directed test.</p>
+smooth misfit; on ungrouped data their sparse forms, and the F-test, are
+printed for comparison only and are not counted. The
+<strong>directed</strong> tests — <code>EDGE</code> and
+<code>EDGE.G10</code> (the cubic basis at two partitions),
+<code>DEF.poly2</code>, <code>DEF.stukel</code>, <code>DEF.sym</code>,
+and Stukel’s score test — concentrate their few degrees of freedom on
+the calibration-curve shape and <strong>detect</strong> it, as do the EF
+test and the ensemble. That contrast is the whole point of a directed
+test.</p>
+<p><code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> condenses the table to one line per family,
+with the number of rejections and the smallest p-value in each:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">battery</span><span class="op">)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Goodness-of-fit battery by family: 25 tests, 25 with a p-value, 18 reject at</span></span>
+<span><span class="co">#&gt; 0.05</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;  Family          Tests With p Reject Min p   Given by           </span></span>
+<span><span class="co">#&gt;  Global          3     3      1      7.5e-05 Information-Matrix </span></span>
+<span><span class="co">#&gt;  Standardized    3     3      2      0.0008  Copas-RSS          </span></span>
+<span><span class="co">#&gt;  Partition       7     7      4      0.0024  HL-equalwidth      </span></span>
+<span><span class="co">#&gt;  Covariate-space 3     3      2      2.8e-10 Tsiatis            </span></span>
+<span><span class="co">#&gt;  Directed        6     6      6      0.0031  Stukel             </span></span>
+<span><span class="co">#&gt;  Calibration     1     1      1      0.0020  Cubic-LR           </span></span>
+<span><span class="co">#&gt;  Ensemble        2     2      2      0.0070  Ensemble.Vote(3DEF)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Counts are descriptive: the tests in a family are correlated and not adjusted</span></span>
+<span><span class="co">#&gt; for multiplicity. Rows printed for comparison only are not counted as</span></span>
+<span><span class="co">#&gt; rejections.</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="sparse-or-grouped-let-the-package-show-you-both">Sparse or grouped? Let the package show you both<a class="anchor" aria-label="anchor" href="#sparse-or-grouped-let-the-package-show-you-both"></a>
@@ -206,7 +236,7 @@ battery detects this automatically and the two forms now disagree — on
 this data the sparse deviance says “fine” (p about 0.17) while the
 grouped deviance rejects (p about 0.04), with the degrees of freedom
 dropping from 795 to 323:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"gof_demo_grouped"</span>, package <span class="op">=</span> <span class="st">"ebrahim.gof"</span><span class="op">)</span></span>
 <span><span class="va">fit_g</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">outcome</span> <span class="op">~</span> <span class="va">age</span> <span class="op">+</span> <span class="va">bmi</span> <span class="op">+</span> <span class="va">sex</span> <span class="op">+</span> <span class="va">treatment</span>,</span>
 <span>             data <span class="op">=</span> <span class="va">gof_demo_grouped</span>, family <span class="op">=</span> <span class="va">binomial</span><span class="op">)</span></span>
@@ -217,49 +247,55 @@ dropping from 795 to 323:</p>
 <span><span class="co">#&gt; ========================================================</span></span>
 <span><span class="co">#&gt;  Test                        Statistic   df  p-value    </span></span>
 <span><span class="co">#&gt;  --- Global --------------------------------------------</span></span>
-<span><span class="co">#&gt;  Pearson                         769.2  795   0.7377    </span></span>
-<span><span class="co">#&gt;  Pearson (grouped) [a]           346.8  323   0.1738    </span></span>
-<span><span class="co">#&gt;  Deviance                        833.7  795   0.1655    </span></span>
-<span><span class="co">#&gt;  Deviance (grouped) [a]          369.5  323   0.0380 *  </span></span>
+<span><span class="co">#&gt;  Pearson [a]                     769.2  795   0.7377    </span></span>
+<span><span class="co">#&gt;  Pearson (grouped) [b]           346.8  323   0.1738    </span></span>
+<span><span class="co">#&gt;  Deviance [a]                    833.7  795   0.1655    </span></span>
+<span><span class="co">#&gt;  Deviance (grouped) [b]          369.5  323   0.0380 *  </span></span>
 <span><span class="co">#&gt;  Information-Matrix              20.94    5   0.0008 ***</span></span>
 <span><span class="co">#&gt;  --- Standardized --------------------------------------</span></span>
-<span><span class="co">#&gt;  Osius-Rojek [a]                0.9196        0.3578    </span></span>
-<span><span class="co">#&gt;  McCullagh                      -1.864        0.9689    </span></span>
-<span><span class="co">#&gt;  McCullagh (grouped) [a]         0.847        0.1985    </span></span>
-<span><span class="co">#&gt;  Copas-RSS                       2.189    1   0.0286 *  </span></span>
-<span><span class="co">#&gt;  EF                              1.038    8   0.1445    </span></span>
-<span><span class="co">#&gt;  EF-normal [b]                   1.038    8   0.1496    </span></span>
+<span><span class="co">#&gt;  Osius-Rojek [b]                0.9196        0.3578    </span></span>
+<span><span class="co">#&gt;  McCullagh [c]                  -1.864        0.9689    </span></span>
+<span><span class="co">#&gt;  McCullagh (grouped) [b]         0.847        0.1985    </span></span>
+<span><span class="co">#&gt;  Copas-RSS [d]                   2.189        0.0286 *  </span></span>
 <span><span class="co">#&gt;  --- Partition -----------------------------------------</span></span>
 <span><span class="co">#&gt;  HL                              11.79    8   0.1610    </span></span>
-<span><span class="co">#&gt;  HL-largeN [c]                   11.79    8   0.1614    </span></span>
+<span><span class="co">#&gt;  HL-largeN [e]                   11.79    8   0.1614    </span></span>
 <span><span class="co">#&gt;  HL-equalwidth                   10.33    7   0.1706    </span></span>
 <span><span class="co">#&gt;  Pigeon-Heyse                    11.57    9   0.2387    </span></span>
-<span><span class="co">#&gt;  F-test [d]                      1.535    9   0.1312    </span></span>
+<span><span class="co">#&gt;  F-test [f]                      1.535    9   0.1312    </span></span>
+<span><span class="co">#&gt;  EF                              11.62    8   0.1691    </span></span>
+<span><span class="co">#&gt;  EF-normal [g]                 -0.1266        0.5504    </span></span>
 <span><span class="co">#&gt;  --- Covariate-space -----------------------------------</span></span>
 <span><span class="co">#&gt;  Tsiatis                         52.87    8  1.1e-08 ***</span></span>
 <span><span class="co">#&gt;  Xie                             48.98    7  2.3e-08 ***</span></span>
-<span><span class="co">#&gt;  Pulkstenis-Robinson [e]         84.93   43   0.0001 ***</span></span>
+<span><span class="co">#&gt;  Pulkstenis-Robinson [h]         84.93   43   0.0001 ***</span></span>
 <span><span class="co">#&gt;  --- Directed ------------------------------------------</span></span>
-<span><span class="co">#&gt;  EDGE [f]                        4.759 2.02   0.0906 .  </span></span>
-<span><span class="co">#&gt;  EDGE.G10                        4.657 2.08   0.0974 .  </span></span>
-<span><span class="co">#&gt;  DEF.poly2                       3.406 1.08   0.0645 .  </span></span>
-<span><span class="co">#&gt;  DEF.poly3                       4.657 2.08   0.0974 .  </span></span>
-<span><span class="co">#&gt;  DEF.stukel                        3.3 1.61   0.0936 .  </span></span>
-<span><span class="co">#&gt;  DEF.sym                        0.9373    1   0.0535 .  </span></span>
+<span><span class="co">#&gt;  EDGE [i]                        4.759 2.02   0.0906 .  </span></span>
+<span><span class="co">#&gt;  EDGE.G10 [j]                    4.657 2.08   0.0974 .  </span></span>
+<span><span class="co">#&gt;  DEF.poly2 [j]                   3.406 1.08   0.0645 .  </span></span>
+<span><span class="co">#&gt;  DEF.stukel [j]                    3.3 1.61   0.0936 .  </span></span>
+<span><span class="co">#&gt;  DEF.sym [j]                    0.9373    1   0.0535 .  </span></span>
 <span><span class="co">#&gt;  Stukel                          4.801    2   0.0907 .  </span></span>
+<span><span class="co">#&gt;  --- Calibration ---------------------------------------</span></span>
+<span><span class="co">#&gt;  Cubic-LR [k]                    5.206    2   0.0740 .  </span></span>
 <span><span class="co">#&gt;  --- Ensemble ------------------------------------------</span></span>
-<span><span class="co">#&gt;  Ensemble.Vote(3DEF) [g]                      0.0824 .  </span></span>
-<span><span class="co">#&gt;  Ensemble.Univ(3DEF+EF) [g]                   0.0924 .  </span></span>
+<span><span class="co">#&gt;  Ensemble.Vote(3DEF) [l]                      0.0824 .  </span></span>
+<span><span class="co">#&gt;  Ensemble.Univ(3DEF+EF) [l]                   0.0879 .  </span></span>
 <span><span class="co">#&gt; --------------------------------------------------------</span></span>
 <span><span class="co">#&gt;  Signif.:  *** &lt;.001   ** &lt;.01   * &lt;.05   . &lt;.1</span></span>
 <span><span class="co">#&gt;  Notes:</span></span>
-<span><span class="co">#&gt;    [a] grouped to 328 covariate patterns</span></span>
-<span><span class="co">#&gt;    [b] normal reference (thesis)</span></span>
-<span><span class="co">#&gt;    [c] H0: eps &lt;= 2.74e-03 (n0 = 1e+06); eps_hat = 6.88e-02</span></span>
-<span><span class="co">#&gt;    [d] deviance residuals ~ groups (ANOVA F)</span></span>
-<span><span class="co">#&gt;    [e] split on categorical: age, sex, treatment</span></span>
-<span><span class="co">#&gt;    [f] G = 32 (auto)</span></span>
-<span><span class="co">#&gt;    [g] Cauchy combination of the directed tests</span></span></code></pre></div>
+<span><span class="co">#&gt;    [a] sparse form; comparison only, not counted</span></span>
+<span><span class="co">#&gt;    [b] grouped to 328 covariate patterns</span></span>
+<span><span class="co">#&gt;    [c] normal deviate, upper tail</span></span>
+<span><span class="co">#&gt;    [d] normal deviate, two-sided</span></span>
+<span><span class="co">#&gt;    [e] H0: eps &lt;= 2.74e-03 (n0 = 1e+06); eps_hat = 6.88e-02</span></span>
+<span><span class="co">#&gt;    [f] ANOVA F on deviance residuals; comparison only, not counted</span></span>
+<span><span class="co">#&gt;    [g] normal reference, many groups (G = 32)</span></span>
+<span><span class="co">#&gt;    [h] split on categorical: age, sex, treatment</span></span>
+<span><span class="co">#&gt;    [i] S/c ~ chi-square(df), Satterthwaite; G = 32 (auto)</span></span>
+<span><span class="co">#&gt;    [j] S/c ~ chi-square(df), Satterthwaite</span></span>
+<span><span class="co">#&gt;    [k] eta^2 and eta^3 added to a logit fit on eta</span></span>
+<span><span class="co">#&gt;    [l] Cauchy combination of the directed tests</span></span></code></pre></div>
 <p>Same model formula, same test family, opposite verdicts — so handling
 the grouping wrong silently changes conclusions. The package’s answer is
 to never make that choice for you invisibly: both forms are printed side
@@ -273,7 +309,7 @@ directed families below are the tools that remain valid.</p>
 <p>Each test is also callable directly. The EDGE test projects the
 grouped standardized residuals onto a small basis of smooth calibration
 shapes:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/edge.gof.html">edge.gof</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span>                 <span class="co"># directed EDGE test (poly3 basis)</span></span>
 <span><span class="co">#&gt;   Test           Partition    Role Basis Test_Statistic       df        Method</span></span>
 <span><span class="co">#&gt; 1 EDGE    default (G = 32) verdict poly3      11.208214 2.014108 satterthwaite</span></span>
@@ -287,14 +323,164 @@ shapes:</p>
 <span><span class="co">#&gt;       p_value</span></span>
 <span><span class="co">#&gt; 1 0.003576024</span></span>
 <span><span class="fu"><a href="../reference/ef.gof.html">ef.gof</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span>                   <span class="co"># the omnibus EF test</span></span>
-<span><span class="co">#&gt;                 Test Test_Statistic    p_value</span></span>
-<span><span class="co">#&gt; 1 Ebrahim-Farrington       1.987687 0.04309049</span></span></code></pre></div>
+<span><span class="co">#&gt;                 Test Test_Statistic df Reference    p_value  G       HL</span></span>
+<span><span class="co">#&gt; 1 Ebrahim-Farrington       15.95075  8     chisq 0.04309049 10 15.51547</span></span>
+<span><span class="co">#&gt;            C</span></span>
+<span><span class="co">#&gt; 1 -0.4352763</span></span></code></pre></div>
 <p>The Cauchy-combination ensemble pools the directed bases into a
 single p-value:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/def.ensemble.gof.html">def.ensemble.gof</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
 <span><span class="co">#&gt;           Test Combiner         Components k     p_value</span></span>
 <span><span class="co">#&gt; 1 DEF ensemble      cct poly2+poly3+stukel 3 0.006959379</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="where-the-misfit-sits-the-edge-picture">Where the misfit sits: the EDGE picture<a class="anchor" aria-label="anchor" href="#where-the-misfit-sits-the-edge-picture"></a>
+</h2>
+<p><code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> on an <code><a href="../reference/edge.gof.html">edge.gof()</a></code> result draws the
+standardized residual of each risk group, the shape the test looked for
+(the curve), a pointwise 95% band (dashed) and a simultaneous band
+(shaded). Groups beyond the simultaneous band are drawn as triangles.
+In-sample the residuals are divided by their null standard deviations,
+which the fit makes smaller than one, and the legend calls the band
+approximate; for frozen predictions it is exact.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">e</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/edge.gof.html">edge.gof</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">e</span><span class="op">)</span></span></code></pre></div>
+<p><img src="ebrahim-gof-toolbox_files/figure-html/edge-plot-1.png" class="r-plt" alt="" width="576"></p>
+<p>The curve is below zero in the lowest- and highest-risk groups and
+above it in between: the model predicts too many events at both ends of
+the risk range and too few in the middle, the shape that the missing
+quadratic term in age leaves. <code>scale = "rate"</code> shows the same
+groups as observed against predicted event rates.</p>
+</div>
+<div class="section level2">
+<h2 id="external-validation-of-frozen-predictions">External validation of frozen predictions<a class="anchor" aria-label="anchor" href="#external-validation-of-frozen-predictions"></a>
+</h2>
+<p>A published model is checked on new patients without refitting it.
+Nothing is estimated from the validation outcomes, so the references are
+exact rather than approximate. <code><a href="../reference/run.all.external.html">run.all.external()</a></code> is the
+battery for this setting. Here the first half of <code>gof_demo</code>
+plays the development data and the second half the validation data.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">dev</span> <span class="op">&lt;-</span> <span class="va">gof_demo</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">400</span>, <span class="op">]</span></span>
+<span><span class="va">val</span> <span class="op">&lt;-</span> <span class="va">gof_demo</span><span class="op">[</span><span class="fl">401</span><span class="op">:</span><span class="fl">800</span>, <span class="op">]</span></span>
+<span><span class="va">covs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"age"</span>, <span class="st">"bmi"</span>, <span class="st">"sex"</span>, <span class="st">"treatment"</span><span class="op">)</span></span>
+<span><span class="va">fit_dev</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">outcome</span> <span class="op">~</span> <span class="va">age</span> <span class="op">+</span> <span class="va">bmi</span> <span class="op">+</span> <span class="va">sex</span> <span class="op">+</span> <span class="va">treatment</span>, data <span class="op">=</span> <span class="va">dev</span>, family <span class="op">=</span> <span class="va">binomial</span><span class="op">)</span></span>
+<span><span class="va">p_val</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_dev</span>, newdata <span class="op">=</span> <span class="va">val</span>, type <span class="op">=</span> <span class="st">"response"</span><span class="op">)</span>   <span class="co"># frozen</span></span>
+<span><span class="fu"><a href="../reference/run.all.external.html">run.all.external</a></span><span class="op">(</span><span class="va">val</span><span class="op">$</span><span class="va">outcome</span>, <span class="va">p_val</span><span class="op">)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Goodness-of-fit battery: 12 tests  (0 reject at 0.05)</span></span>
+<span><span class="co">#&gt; ==========================================================</span></span>
+<span><span class="co">#&gt;  Test                            Statistic df  p-value    </span></span>
+<span><span class="co">#&gt;  --- Standardized ----------------------------------------</span></span>
+<span><span class="co">#&gt;  Osius-Rojek (external) [a]         0.8933      0.3717    </span></span>
+<span><span class="co">#&gt;  --- Partition -------------------------------------------</span></span>
+<span><span class="co">#&gt;  Hosmer-Lemeshow (external) [b]      14.33 10   0.1586    </span></span>
+<span><span class="co">#&gt;  --- Directed --------------------------------------------</span></span>
+<span><span class="co">#&gt;  EDGE (G=10) [c]                     6.495  4   0.1651    </span></span>
+<span><span class="co">#&gt;  EDGE (G=auto, 16) [c]               7.523  4   0.1107    </span></span>
+<span><span class="co">#&gt;  Stukel (offset) [d]                 2.059  2   0.3572    </span></span>
+<span><span class="co">#&gt;  --- Calibration -----------------------------------------</span></span>
+<span><span class="co">#&gt;  Cox recalibration [e]               2.881  2   0.2368    </span></span>
+<span><span class="co">#&gt;  Calibration-in-the-large [f]        2.609  1   0.1063    </span></span>
+<span><span class="co">#&gt;  Spiegelhalter-z [g]                 1.888      0.0590 .  </span></span>
+<span><span class="co">#&gt;  GiViTI [h]                                     0.2368    </span></span>
+<span><span class="co">#&gt;  --- Descriptive -----------------------------------------</span></span>
+<span><span class="co">#&gt;  O/E ratio [i]                       1.129           -    </span></span>
+<span><span class="co">#&gt;  Calibration slope [j]              0.9089           -    </span></span>
+<span><span class="co">#&gt;  c-statistic (AUC) [k]              0.6914           -    </span></span>
+<span><span class="co">#&gt; ----------------------------------------------------------</span></span>
+<span><span class="co">#&gt;  Signif.:  *** &lt;.001   ** &lt;.01   * &lt;.05   . &lt;.1</span></span>
+<span><span class="co">#&gt;  Notes:</span></span>
+<span><span class="co">#&gt;    [a] two-sided z, record-level Pearson</span></span>
+<span><span class="co">#&gt;    [b] 10 groups, chi-square(10)</span></span>
+<span><span class="co">#&gt;    [c] external mode, cubic basis + constant</span></span>
+<span><span class="co">#&gt;    [d] score test, terms added to logit(p)</span></span>
+<span><span class="co">#&gt;    [e] intercept 0.100, slope 0.909</span></span>
+<span><span class="co">#&gt;    [f] O/E = 1.129</span></span>
+<span><span class="co">#&gt;    [g] two-sided z</span></span>
+<span><span class="co">#&gt;    [h] calibration belt; devel=external</span></span>
+<span><span class="co">#&gt;    [i] 1 = calibrated in the large</span></span>
+<span><span class="co">#&gt;    [j] 1 = calibrated; &lt; 1 = overfitted</span></span>
+<span><span class="co">#&gt;    [k] discrimination, not calibration</span></span></code></pre></div>
+<p>On these 400 validation records none of the tests rejects at 0.05.
+The EDGE picture shows how far each group is from its prediction, on the
+event-rate scale:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">e_ext</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/edge.gof.html">edge.gof</a></span><span class="op">(</span>y <span class="op">=</span> <span class="va">val</span><span class="op">$</span><span class="va">outcome</span>, predicted_probs <span class="op">=</span> <span class="va">p_val</span>, external <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="va">e_ext</span></span>
+<span><span class="co">#&gt;   Test           Partition    Role Basis Test_Statistic df   Method   p_value</span></span>
+<span><span class="co">#&gt; 1 EDGE    default (G = 16) verdict poly3       7.523050  4 external 0.1106972</span></span>
+<span><span class="co">#&gt; 2 EDGE ten groups (G = 10)   check poly3       6.495071  4 external 0.1651012</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">e_ext</span>, scale <span class="op">=</span> <span class="st">"rate"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="ebrahim-gof-toolbox_files/figure-html/external-edge-1.png" class="r-plt" alt="" width="576"></p>
+</div>
+<div class="section level2">
+<h2 id="localizing-the-misfit">Localizing the misfit<a class="anchor" aria-label="anchor" href="#localizing-the-misfit"></a>
+</h2>
+<p>A rejection says that the model is wrong, not where.
+<code><a href="../reference/localize.gof.html">localize.gof()</a></code> (a fitted model) and
+<code><a href="../reference/localize.external.html">localize.external()</a></code> (frozen predictions) split the misfit
+into parts — the intercept, the slope, the link and the covariates —
+test every combination of them by closed testing, and name the parts
+that carry misfit with the familywise error rate controlled at
+<code>alpha</code>. The result gives the update the named part calls
+for. In-sample the intercept and the slope are fitted, so they cannot be
+tested there.</p>
+<p>The functions draw the verdict only in an interactive session; in a
+script or a report, call <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> explicitly.</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">loc</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/localize.gof.html">localize.gof</a></span><span class="op">(</span><span class="va">fit</span>, B <span class="op">=</span> <span class="fl">199</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span><span class="va">loc</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Localization of misfit: closed testing over orthogonal groups</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; data:     fit (n = 800)</span></span>
+<span><span class="co">#&gt; setting:  in-sample checking of a fitted logistic model</span></span>
+<span><span class="co">#&gt; reference: parametric bootstrap, 199 draws</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; p-values by group (alone, and adjusted by closed testing):</span></span>
+<span><span class="co">#&gt;       alone adjusted named</span></span>
+<span><span class="co">#&gt; LINK 0.0050   0.0050     *</span></span>
+<span><span class="co">#&gt; COV  0.0050   0.0050     *</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; groups named (closed testing) at FWER 0.05: LINK + COV</span></span>
+<span><span class="co">#&gt; recommended update: revise the model; recalibration cannot repair misfit among</span></span>
+<span><span class="co">#&gt;   patients who share a score</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">loc</span><span class="op">)</span></span></code></pre></div>
+<p><img src="ebrahim-gof-toolbox_files/figure-html/localize-1.png" class="r-plt" alt="" width="576"></p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">loc_ext</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/localize.external.html">localize.external</a></span><span class="op">(</span><span class="va">val</span><span class="op">$</span><span class="va">outcome</span>, <span class="va">p_val</span>, <span class="va">val</span><span class="op">[</span>, <span class="va">covs</span><span class="op">]</span>, M <span class="op">=</span> <span class="fl">199</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">loc_ext</span><span class="op">)</span></span></code></pre></div>
+<p><img src="ebrahim-gof-toolbox_files/figure-html/localize-external-1.png" class="r-plt" alt="" width="576"></p>
+</div>
+<div class="section level2">
+<h2 id="monitoring-a-deployed-model">Monitoring a deployed model<a class="anchor" aria-label="anchor" href="#monitoring-a-deployed-model"></a>
+</h2>
+<p><code><a href="../reference/edge.stream.html">edge.stream()</a></code> keeps the external EDGE test of a deployed
+model up to date as outcomes arrive. It stores four sums per risk group,
+so each update costs the same however many records came before, and the
+statistic always equals the one computed on all records at once. The
+groups are fixed in advance from reference predictions.</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">2</span><span class="op">)</span></span>
+<span><span class="va">s</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/edge.stream.html">edge.stream</a></span><span class="op">(</span>p_ref <span class="op">=</span> <span class="va">p_val</span>, G <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
+<span><span class="kw">for</span> <span class="op">(</span><span class="va">day</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fl">60</span><span class="op">)</span> <span class="op">{</span>                       <span class="co"># 100 patients a day</span></span>
+<span>  <span class="va">lp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">100</span>, <span class="op">-</span><span class="fl">1</span>, <span class="fl">1</span><span class="op">)</span></span>
+<span>  <span class="va">shift</span> <span class="op">&lt;-</span> <span class="kw">if</span> <span class="op">(</span><span class="va">day</span> <span class="op">&gt;</span> <span class="fl">30</span><span class="op">)</span> <span class="fl">0.5</span> <span class="kw">else</span> <span class="fl">0</span>      <span class="co"># from day 31 the event rate drifts upwards</span></span>
+<span>  <span class="va">s</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span><span class="va">s</span>, <span class="fu"><a href="https://rdrr.io/r/stats/Binomial.html" class="external-link">rbinom</a></span><span class="op">(</span><span class="fl">100</span>, <span class="fl">1</span>, <span class="fu"><a href="https://rdrr.io/r/stats/Logistic.html" class="external-link">plogis</a></span><span class="op">(</span><span class="va">lp</span> <span class="op">+</span> <span class="va">shift</span><span class="op">)</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/stats/Logistic.html" class="external-link">plogis</a></span><span class="op">(</span><span class="va">lp</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="kw">if</span> <span class="op">(</span><span class="va">day</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">30</span>, <span class="fl">60</span><span class="op">)</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">s</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span><span class="co">#&gt; EDGE stream: 3000 records in 10 groups (smallest 178), basis poly3</span></span>
+<span><span class="co">#&gt;   S = 3.807 on 4 df, p = 0.433</span></span>
+<span><span class="co">#&gt; EDGE stream: 6000 records in 10 groups (smallest 399), basis poly3</span></span>
+<span><span class="co">#&gt;   S = 63.134 on 4 df, p = 6.36e-13</span></span></code></pre></div>
+<p>The test taken after 30 days sees nothing; the one after 60 days,
+half of them after the drift, rejects. One test at a fixed time is
+valid. Testing after every update and stopping at the first rejection
+needs the level spread over the looks; see
+<code><a href="../reference/edge.stream.html">?edge.stream</a></code>.</p>
 </div>
 <div class="section level2">
 <h2 id="beyond-the-battery">Beyond the battery<a class="anchor" aria-label="anchor" href="#beyond-the-battery"></a>
@@ -312,7 +498,7 @@ on the same fitted model.</p>
 the grouped residuals acquire a non-centrality and the usual chi-squared
 reference is wrong. Two functions apply the same correction and differ
 only in what they refer it to.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">4</span><span class="op">)</span></span>
 <span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">300</span>; <span class="va">p</span> <span class="op">&lt;-</span> <span class="fl">8</span></span>
 <span><span class="va">X</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span> <span class="op">*</span> <span class="va">p</span><span class="op">)</span>, <span class="va">n</span>, <span class="va">p</span><span class="op">)</span></span>
@@ -322,12 +508,14 @@ only in what they refer it to.</p>
 <span><span class="fu"><a href="../reference/calm.gof.html">calm.gof</a></span><span class="op">(</span><span class="va">X</span>, <span class="va">y</span>, lambda <span class="op">=</span> <span class="fl">40</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; CALM: closed-form goodness of fit for penalized logistic regression</span></span>
-<span><span class="co">#&gt; lambda = 40 (theory scale) = 0.1333 on glmnet's scale | G = 10 | p/n = 0.027</span></span>
-<span><span class="co">#&gt;   SC.HL             statistic    6.189   p = 0.4904</span></span>
-<span><span class="co">#&gt;   SC.EDGE           statistic    3.453   p = 0.1017</span></span>
-<span><span class="co">#&gt;   SC.EDGE.adaptive  statistic    3.453   p = 0.1017   [degree 3, rho_hat 0.93]</span></span>
+<span><span class="co">#&gt; lambda = 40 (theory scale) = 0.1333 (glmnet scale)</span></span>
+<span><span class="co">#&gt; G = 10, p/n = 0.027</span></span>
+<span><span class="co">#&gt;   SC.HL            S =   6.189  p = 0.4904</span></span>
+<span><span class="co">#&gt;   SC.EDGE          S =   3.453  p = 0.1017</span></span>
+<span><span class="co">#&gt;   SC.EDGE.adaptive S =   3.453  p = 0.1017  [degree 3, rho_hat 0.93]</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; SC.EDGE.adaptive is the statistic to prefer; see ?calm.gof for the scope of the reference.</span></span></code></pre></div>
+<span><span class="co">#&gt; SC.EDGE.adaptive is the statistic to prefer; see ?calm.gof for the scope of</span></span>
+<span><span class="co">#&gt; the reference.</span></span></code></pre></div>
 <p><code><a href="../reference/shrink.gof.html">shrink.gof()</a></code> computes the same statistics and calibrates
 them by prepivoting instead, which costs <code>B</code> penalised
 refits. Prefer <code><a href="../reference/calm.gof.html">calm.gof()</a></code> unless you need
@@ -351,7 +539,8 @@ offline and shipped frozen, so two analysts obtain the same p-value;
 carries the misfit, with familywise error control.
 <code><a href="../reference/deepgof1.html">deepgof1()</a></code> is a pretrained convolutional statistic whose
 level comes from your own parametric bootstrap rather than from the
-network. None of these is retrained when you call it.</p>
+network, and <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> on its result draws the residual map
+the network read. None of these is retrained when you call it.</p>
 </div>
 <div class="section level3">
 <h3 id="building-your-own">Building your own<a class="anchor" aria-label="anchor" href="#building-your-own"></a>
@@ -376,9 +565,7 @@ installs them.</li>
 <li>
 <strong>Speed.</strong> The EDGE test is calibrated in closed form
 (no bootstrap, no refit), so it costs a few milliseconds even at large
-<code>n</code>. An optional GPU backend for the heavier
-O(n<sup>2)/O(n</sup>3) aggregated tests (le Cessie, projection) is
-available in the package’s replication materials.</li>
+<code>n</code>.</li>
 <li>
 <strong>Choosing a test.</strong> For the structured misfit that
 dominates practice — a wrong link or an omitted smooth term — prefer a
