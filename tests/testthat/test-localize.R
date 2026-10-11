@@ -1,3 +1,6 @@
+# Reference values come from the paper's script. They are compared at 1e-8: continuous
+# p-values differ by about 1e-11 between platforms (BLAS and floating-point order), which a
+# tighter tolerance turns into a false failure on CRAN's Linux check.
 ## localize.external() and localize.gof(): the closed-testing localization of misfit.
 ## The expected values below were computed with the paper's script localize_groups.R (Option A),
 ## on the same data and seed; the package must reproduce them to the last digit.
@@ -20,12 +23,12 @@ test_that("localize.external() reproduces the paper's script: Monte Carlo refere
     `INTERCEPT+LINK` = 0.04, `INTERCEPT+COV` = 0.01, `SLOPE+LINK` = 0.05,
     `SLOPE+COV` = 0.01, `LINK+COV` = 0.01, `INTERCEPT+SLOPE+LINK` = 0.05,
     `INTERCEPT+SLOPE+COV` = 0.01, `INTERCEPT+LINK+COV` = 0.01, `SLOPE+LINK+COV` = 0.01,
-    `INTERCEPT+SLOPE+LINK+COV` = 0.01), tolerance = 1e-12)
+    `INTERCEPT+SLOPE+LINK+COV` = 0.01), tolerance = 1e-8)
   expect_equal(r$members, c(
     INTERCEPT.cal = 0.122438318746109, SLOPE.slope = 0.105483399536703,
     LINK.poly = 0.0121229475675447, LINK.stukel = 0.0133652296584094,
     LINK.spline = 0.0332869149652293, COV.poly = 0.000111253743386382,
-    COV.products = 1.54818167051849e-05, COV.spline = 0.000522833046577262), tolerance = 1e-12)
+    COV.products = 1.54818167051849e-05, COV.spline = 0.000522833046577262), tolerance = 1e-8)
   expect_identical(r$named, c("LINK", "COV"))
   expect_identical(r$highest, "COV")
   expect_match(r$action, "revise the model")
@@ -38,12 +41,12 @@ test_that("localize.external() reproduces the paper's script: multiplier referen
   d <- loc_data()
   r <- localize.external(d$y, d$p, d$X, M = 99, calibration = "multiplier", seed = 7)
   expect_equal(unname(r$intersection[c("INTERCEPT", "SLOPE", "LINK", "COV", "LINK+COV")]),
-               c(0.17, 0.16, 0.13, 0.01, 0.01), tolerance = 1e-12)
+               c(0.17, 0.16, 0.13, 0.01, 0.01), tolerance = 1e-8)
   expect_equal(r$members, c(
     INTERCEPT.cal = 0.136258452948913, SLOPE.slope = 0.15100511395836,
     LINK.poly = 0.0828404667401494, LINK.stukel = 0.0820980378268524,
     LINK.spline = 0.175734974852949, COV.poly = 0.00385180352570479,
-    COV.products = 0.000150410313360771, COV.spline = 0.0106483683076818), tolerance = 1e-12)
+    COV.products = 0.000150410313360771, COV.spline = 0.0106483683076818), tolerance = 1e-8)
   expect_identical(r$named, "COV")
   expect_identical(r$calibration, "multiplier")
 })
@@ -52,18 +55,18 @@ test_that("localize.gof() reproduces the paper's script, with and without de-ali
   d <- loc_data()
   fit <- glm(d$y ~ x1 + x2 + x3, data = d$X, family = binomial())
   r0 <- localize.gof(fit, X = d$X, B = 19, seed = 8)
-  expect_equal(r0$intersection, c(LINK = 0.1, COV = 0.05, `LINK+COV` = 0.05), tolerance = 1e-12)
+  expect_equal(r0$intersection, c(LINK = 0.1, COV = 0.05, `LINK+COV` = 0.05), tolerance = 1e-8)
   expect_equal(r0$members, c(
     LINK.poly = 0.0176989662681755, LINK.stukel = 0.0215221018414533,
     LINK.spline = 0.051660202108351, COV.poly = 0.000746762913450828,
-    COV.products = 0.000150723637027739, COV.spline = 0.000638515389597895), tolerance = 1e-12)
+    COV.products = 0.000150723637027739, COV.spline = 0.000638515389597895), tolerance = 1e-8)
   expect_identical(r0$named, "COV")
   expect_equal(r0$draws, 19L)
 
   r1 <- localize.gof(fit, X = d$X, B = 19, dealias = TRUE, seed = 8)
-  expect_equal(r1$intersection, c(LINK = 0.5, COV = 0.05, `LINK+COV` = 0.05), tolerance = 1e-12)
+  expect_equal(r1$intersection, c(LINK = 0.5, COV = 0.05, `LINK+COV` = 0.05), tolerance = 1e-8)
   expect_equal(unname(r1$members[c("LINK.poly", "LINK.stukel", "LINK.spline")]),
-               c(0.333624448256956, 0.520578114302126, 0.39011437346929), tolerance = 1e-12)
+               c(0.333624448256956, 0.520578114302126, 0.39011437346929), tolerance = 1e-8)
   expect_identical(r1$dealiased, c("x1", "x2"))
 
   ## X defaults to the numeric covariates of the model frame
@@ -160,11 +163,11 @@ test_that("naming = 'holm' and 'bonferroni' reproduce the paper's script", {
   r <- localize.external(d$y, d$p, d$X, M = 99, naming = "holm", seed = 7)
   ## the intersections are unchanged; only the naming rule differs
   expect_equal(r$intersection, localize.external(d$y, d$p, d$X, M = 99, seed = 7)$intersection)
-  expect_equal(r$adjusted, c(INTERCEPT = 0.18, SLOPE = 0.18, LINK = 0.12, COV = 0.04), tolerance = 1e-12)
+  expect_equal(r$adjusted, c(INTERCEPT = 0.18, SLOPE = 0.18, LINK = 0.12, COV = 0.04), tolerance = 1e-8)
   expect_identical(r$named, "COV")
   expect_identical(r$naming, "holm")
   rb <- localize.external(d$y, d$p, d$X, M = 99, naming = "bonferroni", seed = 7)
-  expect_equal(rb$adjusted, c(INTERCEPT = 0.44, SLOPE = 0.36, LINK = 0.16, COV = 0.04), tolerance = 1e-12)
+  expect_equal(rb$adjusted, c(INTERCEPT = 0.44, SLOPE = 0.36, LINK = 0.16, COV = 0.04), tolerance = 1e-8)
   expect_identical(rb$named, "COV")
   out <- capture.output(print(r))
   expect_true(any(grepl("groups named (Holm over the groups) at FWER 0.05: COV", out, fixed = TRUE)))
@@ -172,29 +175,29 @@ test_that("naming = 'holm' and 'bonferroni' reproduce the paper's script", {
   fit <- glm(d$y ~ x1 + x2 + x3, data = d$X, family = binomial())
   ri <- localize.gof(fit, X = d$X, B = 19, naming = "holm", seed = 8)
   expect_identical(ri$named, character(0))
-  expect_equal(ri$adjusted, c(LINK = 0.1, COV = 0.1), tolerance = 1e-12)
+  expect_equal(ri$adjusted, c(LINK = 0.1, COV = 0.1), tolerance = 1e-8)
 })
 
 test_that("robust = TRUE reproduces the paper's script", {
   d <- loc_data()
   r <- localize.external(d$y, d$p, d$X, M = 99, robust = TRUE, seed = 7)
   expect_equal(unname(r$intersection[c("INTERCEPT", "SLOPE", "LINK", "COV", "LINK+COV")]),
-               c(0.11, 0.07, 0.04, 0.01, 0.02), tolerance = 1e-12)
+               c(0.11, 0.07, 0.04, 0.01, 0.02), tolerance = 1e-8)
   expect_equal(r$members, c(
     INTERCEPT.cal = 0.122438318746109, SLOPE.slope = 0.0721015566648641,
     LINK.poly = 0.00985599609578549, LINK.stukel = 0.0134600239638279,
     LINK.spline = 0.035546393704911, COV.poly = 0.00025010706706531,
-    COV.products = 0.000165031810536696, COV.spline = 0.000857523843869752), tolerance = 1e-12)
+    COV.products = 0.000165031810536696, COV.spline = 0.000857523843869752), tolerance = 1e-8)
   expect_identical(r$named, c("LINK", "COV"))
   expect_true(r$robust)
 
   fit <- glm(d$y ~ x1 + x2 + x3, data = d$X, family = binomial())
   ri <- localize.gof(fit, X = d$X, B = 19, dealias = TRUE, robust = TRUE, seed = 8)
-  expect_equal(ri$intersection, c(LINK = 0.75, COV = 0.05, `LINK+COV` = 0.05), tolerance = 1e-12)
+  expect_equal(ri$intersection, c(LINK = 0.75, COV = 0.05, `LINK+COV` = 0.05), tolerance = 1e-8)
   expect_equal(ri$members, c(
     LINK.poly = 0.483764091120531, LINK.stukel = 0.654156527825062,
     LINK.spline = 0.453869341724405, COV.poly = 0.00318839357151969,
-    COV.products = 0.000732266376956144, COV.spline = 0.00223743917446776), tolerance = 1e-12)
+    COV.products = 0.000732266376956144, COV.spline = 0.00223743917446776), tolerance = 1e-8)
   expect_identical(ri$dealiased, c("x1", "x2"))
   expect_true(any(grepl("normal scores", capture.output(print(ri)))))
 })

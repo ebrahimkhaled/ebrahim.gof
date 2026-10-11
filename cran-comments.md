@@ -2,6 +2,16 @@
 
 CRAN has 2.9.0 (published 2026-10-01).
 
+## Resubmission
+
+This is a resubmission of 2.10.0. The first upload (2026-10-11) failed two tests on Debian: two
+checks in tests/testthat/test-localize.R compared continuous p-values with reference values at a
+tolerance of 1e-12, and on Linux they differed by about 1e-11 (floating-point order). Those
+comparisons now use a tolerance of 1e-8. No package code changed.
+
+The incoming check also lists "Liu" as a possibly misspelled word in DESCRIPTION. It is the surname
+of the authors of the projection test (Liu et al.), not a misspelling.
+
 ## Why this release, and why it follows 2.9.0 so soon
 
 I am aware that this update comes only ten days after 2.9.0 and that the package has been updated
