@@ -193,12 +193,37 @@
   names(tcols)[sort(order(sc, decreasing = TRUE)[1:2])]
 }
 
+## The score statistic for adding the squares and the product of the two axis covariates to the
+## fitted model: U' V^{-1} U, with U the score of the new columns at the fit and V their information
+## after projecting out the model's own columns (Pregibon 1980). A binary covariate's square is the
+## covariate itself, so it is left out; a column that the model already spans is dropped by the
+## pivoted QR. Returns the statistic and its degrees of freedom (NA and 0 when nothing is left).
+.dg_pair_score <- function(mm, ph, r, xa, xb) {
+  Z <- cbind(if (length(unique(xa)) > 2L) xa^2, if (length(unique(xb)) > 2L) xb^2, xa * xb)
+  Z <- Z[, apply(Z, 2, stats::sd) > 1e-10, drop = FALSE]
+  if (!ncol(Z)) return(c(stat = NA_real_, df = 0))
+  w <- ph * (1 - ph)
+  XtW <- t(mm * w)
+  A <- tryCatch(solve(XtW %*% mm, XtW %*% Z), error = function(e) NULL)
+  if (is.null(A)) return(c(stat = NA_real_, df = 0))   # an aliased design: no statistic
+  Zr <- Z - mm %*% A
+  q <- qr(Zr * sqrt(w))
+  Zr <- Zr[, q$pivot[seq_len(q$rank)], drop = FALSE]
+  if (!ncol(Zr)) return(c(stat = NA_real_, df = 0))
+  U <- crossprod(Zr, r)
+  V <- crossprod(Zr * w, Zr)
+  c(stat = as.numeric(crossprod(U, solve(V, U))), df = ncol(Zr))
+}
+
 ## Every statistic of one call from ONE set of bootstrap refits:
 ##   axes     the network score of the map over the two axes of the axis rule (chosen again per refit)
 ##   allpairs the largest network score over the maps of every pair of covariates
 ##   ss, max  the sum of squared cells and the largest |cell| of the axis-rule map (comparison
 ##            statistics; not offered by deepgof1())
-## Returns the observed values, the B x 4 matrix of bootstrap values, and the observed maps.
+##   score    the score statistic of the squares and product of the axis-rule pair (pairscore.gof);
+##            computed only when asked for, so the other columns and the RNG use do not change
+## Returns the observed values, the B x 4 (B x 5 with "score") matrix of bootstrap values, and the
+## observed maps.
 .dg_engine <- function(fit, B, K, X, mm, tb, score, need = c("axes", "allpairs"), tcols = NULL) {
   ph <- as.numeric(fit$fitted.values); y <- as.numeric(fit$y); n <- length(y)
   rk <- function(v) {
@@ -210,8 +235,10 @@
   cells <- if ("allpairs" %in% need || one_d) .dg_cells(X, K, tb) else NULL
   if (is.null(tcols))            # X holds model-matrix columns: each is its own term
     tcols <- stats::setNames(lapply(colnames(X), function(v) match(v, colnames(mm))), colnames(X))
+  cols <- c("axes", "allpairs", "ss", "max", if ("score" %in% need) "score")
   stats_of <- function(r, p, coefs) {
     out <- c(axes = NA_real_, allpairs = NA_real_, ss = NA_real_, max = NA_real_)
+    if ("score" %in% need) out["score"] <- NA_real_
     if (one_d) {
       m <- .dg_cellmap(cells$idx[[1]], r, p, K); s <- score(m)
       return(list(v = c(axes = s, allpairs = s, ss = sum(m^2), max = max(abs(m))), map = m,
@@ -223,6 +250,12 @@
       mA <- .dg_cellmap(as.integer((bins[, ax[1]] - 1L) * K + bins[, ax[2]]), r, p, K)
       out[c("axes", "ss", "max")] <- c(score(mA), sum(mA^2), max(abs(mA)))
     }
+    if ("score" %in% need) {
+      if (is.null(ax)) ax <- .dg_pick_axes(mm, tcols, coefs)
+      st <- .dg_pair_score(mm, p, r, X[, ax[1]], X[, ax[2]])
+      out["score"] <- st[["stat"]]
+      attr(out, "score_df") <- st[["df"]]
+    }
     top <- NA_integer_
     if ("allpairs" %in% need) {
       so <- vapply(cells$idx, function(i) score(.dg_cellmap(i, r, p, K)), 0)
@@ -233,7 +266,7 @@
   }
   obs <- stats_of(y - ph, ph, stats::coef(fit))
   itc <- attr(stats::terms(fit), "intercept") > 0L
-  boot <- matrix(NA_real_, B, 4L, dimnames = list(NULL, c("axes", "allpairs", "ss", "max")))
+  boot <- matrix(NA_real_, B, length(cols), dimnames = list(NULL, cols))
   for (b in seq_len(B)) {
     ys <- stats::rbinom(n, 1L, ph)
     fb <- tryCatch(suppressWarnings(stats::glm.fit(mm, ys, weights = fit$prior.weights,
@@ -243,7 +276,7 @@
     ## a failed refit counts AGAINST rejection (conservative); -Inf would deflate p
     boot[b, ] <- if (is.null(fb)) Inf else {
       pb <- as.numeric(fb$fitted.values)
-      stats_of(ys - pb, pb, fb$coefficients)$v[c("axes", "allpairs", "ss", "max")]
+      stats_of(ys - pb, pb, fb$coefficients)$v[cols]
     }
   }
   list(obs = obs, boot = boot, cells = cells)
@@ -349,6 +382,9 @@
 #' @param covariates optional character vector naming the covariates to form the pairs
 #'   from, for the all-pairs and combined readings. By default every covariate of the model that is
 #'   not constant is used.
+#' @param score.test if \code{TRUE}, also compute \code{\link{pairscore.gof}}, the pair score test of
+#'   the squares and product of the pair the axis rule selects, from the same bootstrap refits.
+#'   The other results are unchanged. Not available for \code{reading = "columns"}.
 #'
 #' @return An object of class \code{"deepgof1"}: a list with \code{statistic} (the observed
 #'   score), \code{p.value}, \code{B}, \code{K}, \code{reading}, \code{axes} (the
@@ -356,7 +392,8 @@
 #'   matrix of standardized residual sums whose rows follow the first axis), \code{pairs}
 #'   (for the all-pairs and combined readings, the observed score of every pair), \code{components}
 #'   (for \code{"combined"}, the p-values of the axis rule and the all-pairs reading), \code{boot} (the \code{B}
-#'   bootstrap statistics of the reported statistic) and \code{method}.
+#'   bootstrap statistics of the reported statistic) and \code{method}; with
+#'   \code{score.test = TRUE}, also \code{score.test}, a \code{"pairscore.gof"} object.
 #'
 #' @section Reproducibility:
 #' A bootstrap refit that fails to converge is scored \code{+Inf}, so it counts against
@@ -400,7 +437,7 @@
 #' @concept pretrained
 #' @export
 deepgof1 <- function(fit, B = 199L, K = 6L, reading = c("axes", "allpairs", "combined", "columns"),
-                     covariates = NULL) {
+                     covariates = NULL, score.test = FALSE) {
   if (!inherits(fit, "glm") || fit$family$family != "binomial")
     stop("deepgof1() expects a glm fitted with family = binomial()", call. = FALSE)
   if (K != deepgof1_weights$K)
@@ -445,6 +482,9 @@ deepgof1 <- function(fit, B = 199L, K = 6L, reading = c("axes", "allpairs", "com
   }
   ## with one covariate there is no pair to choose: every reading is the 36-cell map along it
   pairs_path <- reading == "allpairs" || ncol(X) == 1L
+  if (score.test && (reading == "columns" || ncol(X) < 2L))
+    stop("the pair score test needs two covariates and a reading other than \"columns\"",
+         call. = FALSE)
 
   ## Ties among covariate values are broken at random, once per call: the same permutation
   ## serves the observed map and every bootstrap map, so the bootstrap reproduces the tie
@@ -485,8 +525,9 @@ deepgof1 <- function(fit, B = 199L, K = 6L, reading = c("axes", "allpairs", "com
   } else {
     need <- switch(reading, axes = "axes", allpairs = "allpairs", combined = c("axes", "allpairs"),
                    columns = "allpairs")
+    if (score.test) need <- c(need, "score")
     E <- .dg_engine(fit, B, K, X, mm, tb, score, need = need, tcols = tcols)
-    P <- .dg_pvalues(E$obs$v, E$boot)
+    P <- .dg_pvalues(E$obs$v, E$boot[, c("axes", "allpairs", "ss", "max"), drop = FALSE])
     key <- if (reading == "combined") "combined" else if (pairs_path) "allpairs" else "axes"
     pval <- P[[key]]
     Sobs <- if (reading == "combined") E$obs$v[["axes"]] else E$obs$v[[if (pairs_path) "allpairs" else "axes"]]
@@ -508,14 +549,33 @@ deepgof1 <- function(fit, B = 199L, K = 6L, reading = c("axes", "allpairs", "com
     if (reading == "combined")
       attr(pval, "components") <- c(axes = P[["axes"]], allpairs = P[["allpairs"]])
   }
-  structure(list(statistic = Sobs,
+  dname <- paste(deparse(substitute(fit)), collapse = " ")
+  out <- structure(list(statistic = Sobs,
                  p.value   = as.numeric(pval),
                  components = attr(pval, "components"),
                  B = B, K = K, reading = reading, axes = axes,
                  map = matrix(map, K, K, byrow = TRUE), pairs = pairs, boot = Sb,
                  method    = "DeepGOF-1: pretrained residual-map goodness-of-fit test",
-                 data.name = paste(deparse(substitute(fit)), collapse = " ")),
+                 data.name = dname),
             class = "deepgof1")
+  if (score.test) out$score.test <- .dg_score_result(E, B, dname)
+  out
+}
+
+## the pairscore.gof object from the engine's observed and bootstrap score statistics. A bootstrap
+## statistic that is NA (every new column aliased) counts against rejection, as a failed refit does.
+.dg_score_result <- function(E, B, dname) {
+  obs <- E$obs$v[["score"]]
+  df  <- attr(E$obs$v, "score_df")
+  sb  <- E$boot[, "score"]
+  sb[is.na(sb)] <- Inf
+  pb  <- if (is.na(obs)) NA_real_ else (1 + sum(sb >= obs)) / (B + 1)
+  pa  <- if (is.na(obs)) NA_real_ else stats::pchisq(obs, df, lower.tail = FALSE)
+  structure(list(statistic = obs, df = df, p.value = pb, p.asymptotic = pa, B = B,
+                 axes = E$obs$axes, boot = sb,
+                 method = "Pair score test: squares and product of the DeepGOF-1 pair",
+                 data.name = dname),
+            class = "pairscore.gof")
 }
 
 #' @concept goodness-of-fit
@@ -542,8 +602,93 @@ print.deepgof1 <- function(x, ...) {
   if (identical(x$reading, "combined") && !is.null(x$components))
     cat(sprintf("combined reading: axis rule p = %.4f, all-pairs p = %.4f\n",
                 x$components[["axes"]], x$components[["allpairs"]]))
+  if (!is.null(x$score.test))
+    cat(sprintf("pair score test (%s, %s): T = %.4f, df = %d, bootstrap p = %.4f\n",
+                x$score.test$axes[1], x$score.test$axes[2], x$score.test$statistic,
+                as.integer(x$score.test$df), x$score.test$p.value))
   alt <- if (is.null(x$alternative)) "the logistic model is misspecified" else x$alternative
   cat("alternative hypothesis: ", alt, "\n\n", sep = "")
+  invisible(x)
+}
+
+#' Pair score test: squares and product of the DeepGOF-1 pair
+#'
+#' The pair score test, an extra check that comes with \code{\link{deepgof1}}: it takes the pair of covariates that DeepGOF-1's
+#' default reading selects and tests whether the fitted logistic model needs the squares of the
+#' two covariates and their product. The statistic is the score (Lagrange multiplier) statistic
+#' for adding \eqn{x_a^2}, \eqn{x_b^2} and \eqn{x_a x_b} to the model, computed at the fit, so
+#' nothing is refitted to obtain it.
+#'
+#' The pair is chosen from the data by the axis rule of \code{deepgof1()}: the two covariates
+#' whose terms contribute most to the linear predictor. The pair is therefore chosen again in
+#' every bootstrap sample, and the p-value is the rank of the observed statistic among the
+#' \code{B} bootstrap statistics. This keeps the level although the pair was picked by looking at
+#' the data. The chi-squared p-value on \code{df} degrees of freedom is also returned
+#' (\code{p.asymptotic}); it ignores the selection of the pair and is given for comparison only.
+#'
+#' The square of a binary covariate is the covariate itself, so it is left out and the test has
+#' two degrees of freedom; a column that the model already contains is dropped in the same way.
+#' Factors enter by their level codes, as in \code{deepgof1()}, so the test is meant for numeric
+#' and binary covariates.
+#'
+#' The test uses the same pair selection, the same parametric bootstrap and the same random
+#' numbers as \code{deepgof1(fit, B)}: with the same seed, \code{pairscore.gof(fit, B)} and
+#' \code{deepgof1(fit, B, score.test = TRUE)$score.test} give the same result, and the latter also
+#' returns DeepGOF-1 itself from the same refits.
+#'
+#' Use it when the misfit is expected to be a smooth curvature or an interaction of the two
+#' leading covariates; it then has more power than DeepGOF-1. Use DeepGOF-1 when the shape of the
+#' misfit is unknown (for example a local bump or an oscillation) and to see where on the map the
+#' model fails.
+#'
+#' @param fit a fitted \code{glm} with \code{family = binomial()}, a 0/1 outcome and at least two
+#'   covariates.
+#' @param B number of parametric-bootstrap replicates; the p-value lies on a grid of
+#'   \code{1/(B+1)}.
+#' @param ... further arguments passed to \code{\link{deepgof1}}: \code{K} and \code{reading}
+#'   (which do not change the score test) or \code{covariates}.
+#'
+#' @return An object of class \code{"pairscore.gof"}: a list with \code{statistic} (the score
+#'   statistic), \code{df}, \code{p.value} (the bootstrap p-value), \code{p.asymptotic} (the
+#'   chi-squared p-value), \code{B}, \code{axes} (the selected pair), \code{boot} (the \code{B}
+#'   bootstrap statistics), \code{method} and \code{data.name}.
+#'
+#' @references
+#' Ebrahim EK, Hussein OAE-A, El-Kotory A (2026). "Where Does a Logistic Regression Model
+#' Fail? A Pretrained Neural Goodness-of-Fit Test with Bootstrap Validity." Submitted.
+#'
+#' Pregibon, D. (1980). Goodness of link tests for generalized linear models.
+#' \emph{Journal of the Royal Statistical Society, Series C} \strong{29}, 15--24.
+#' \doi{10.2307/2346405}
+#'
+#' @examples
+#' set.seed(1)
+#' n  <- 150
+#' x1 <- runif(n, -3, 3); x2 <- rnorm(n)
+#' y  <- rbinom(n, 1, plogis(0.3 + 0.8 * x1 - 0.5 * x2 + 0.9 * (x1^2 - mean(x1^2))))
+#' fit <- glm(y ~ x1 + x2, family = binomial())
+#' pairscore.gof(fit, B = 49)   # B = 49 to keep the example fast; use the default in practice
+#'
+#' @seealso \code{\link{deepgof1}}, \code{\link{run.all.gof}}
+#' @concept goodness-of-fit
+#' @concept logistic regression
+#' @concept score test
+#' @concept DeepGOF-1
+#' @export
+pairscore.gof <- function(fit, B = 199L, ...) {
+  r <- deepgof1(fit, B = B, ..., score.test = TRUE)$score.test
+  r$data.name <- paste(deparse(substitute(fit)), collapse = " ")
+  r
+}
+
+#' @export
+print.pairscore.gof <- function(x, ...) {
+  cat("\n\t", x$method, "\n\n", sep = "")
+  cat("data:  ", x$data.name, "\n", sep = "")
+  cat(sprintf("T = %.4f, df = %d, B = %d, p-value = %.4f (chi-squared p = %.4g)\n",
+              x$statistic, as.integer(x$df), x$B, x$p.value, x$p.asymptotic))
+  cat(sprintf("pair: %s and %s\n", x$axes[1], x$axes[2]))
+  cat("alternative hypothesis: the model needs the squares or the product of the pair\n\n")
   invisible(x)
 }
 

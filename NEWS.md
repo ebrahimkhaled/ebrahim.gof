@@ -1,3 +1,14 @@
+# ebrahim.gof 3.0.0
+
+## New features
+
+* `pairscore.gof()`: the pair score test, a score test of whether the fitted logistic model needs the squares and the
+  product of the two covariates that `deepgof1()` selects. The pair is chosen again in every
+  bootstrap sample, so the bootstrap p-value keeps its level; the chi-squared p-value is returned
+  for comparison. The square of a binary covariate is left out. It uses the same bootstrap and
+  random numbers as `deepgof1()`, and `deepgof1(score.test = TRUE)` returns it from the same
+  refits, beside unchanged DeepGOF-1 results (Ebrahim, Hussein and El-Kotory, 2026, submitted).
+
 # ebrahim.gof 2.10.0
 
 ## Behaviour change

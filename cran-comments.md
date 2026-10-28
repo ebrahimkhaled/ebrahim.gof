@@ -1,61 +1,28 @@
-# ebrahim.gof 2.10.0
+## Release summary
 
-CRAN has 2.9.0 (published 2026-10-01).
+ebrahim.gof 3.0.0. CRAN currently has 2.10.0. This release adds one exported function and one
+optional argument; no existing function changes its results.
 
-## Resubmission
-
-This is a resubmission of 2.10.0. The first upload (2026-10-11) failed two tests on Debian: two
-checks in tests/testthat/test-localize.R compared continuous p-values with reference values at a
-tolerance of 1e-12, and on Linux they differed by about 1e-11 (floating-point order). Those
-comparisons now use a tolerance of 1e-8. No package code changed.
-
-The incoming check also lists "Liu" as a possibly misspelled word in DESCRIPTION. It is the surname
-of the authors of the projection test (Liu et al.), not a misspelling.
-
-## Why this release, and why it follows 2.9.0 so soon
-
-I am aware that this update comes only ten days after 2.9.0 and that the package has been updated
-often this year. I would not send it so soon if it did not correct test results that users rely
-on. The first item below is a correctness fix:
-
-* `run.all.external()`: the `Stukel (offset)` row used the likelihood-ratio statistic, which
-  rejects too often at low event rates when only a few records have predicted risks above 0.5
-  (type I error 0.061 to 0.078 at a nominal 0.05 in 4,000-replicate null simulations). It is now
-  the score test of the same two terms at the null, which holds its level (0.035 to 0.053) and
-  needs no model fit. A new `Osius-Rojek (external)` row uses the exact moments of the Pearson
-  statistic under frozen predictions.
-* `ef.gof()` now computes the Ebrahim-Farrington test as its paper defines it (equal-size groups,
-  tied risks in random order, the Theorem-3 normal reference). Its default p-value changes for some
-  data; NEWS.md lists each change and gives the call that reproduces a 2.9.0 p-value.
-* New functions for locating misfit: `localize.gof()` and `localize.external()`, with a `plot()`
-  method.
-* New functions `cubic.calib.gof()`, `edge.belt()` and `gof_certificate()`, and new methods
-  `plot()` for `edge.gof()` and `deepgof1()` results and `summary()` for the battery.
-  `edge.gof()` returns a data frame with the extra class `edge_gof`; its columns and values are
-  unchanged.
-
-None adds a dependency.
+* New `pairscore.gof()`: the pair score test, a score test of whether a fitted logistic model needs
+  the squares and the product of the two covariates that `deepgof1()` selects, calibrated by the same
+  parametric bootstrap (the pair is chosen again in every bootstrap sample).
+* `deepgof1()` gains `score.test = FALSE`; with `TRUE` it also returns the pair score test from the
+  same refits. With the default, every output is unchanged (tested).
 
 ## Test environments
 
-* local: Windows 11 x64 (build 26200), R 4.4.1 (2024-06-14 ucrt), `R CMD check --as-cran` on the
-  built tarball -- 0 errors, 0 warnings, 2 notes (see below)
+* local Windows 11, R 4.4.1
 
 ## R CMD check results
 
-0 errors | 0 warnings | 2 notes
+0 errors | 0 warnings | 1 note
 
-    checking CRAN incoming feasibility ... NOTE
-    Number of updates in past 6 months: 7
-
-The reason for this update so soon after 2.9.0 is given at the top: it corrects the type I error
-of a test in run.all.external().
-
-    checking for future file timestamps ... NOTE
-    unable to verify current time
-
-This is the local machine being unable to reach the time server it uses, not a property of the
-package.
+* "unable to verify current time" (the check machine was offline for that step).
+* "Found the following (possibly) invalid DOIs: 10.1002/sim.943": the DOI is valid (Crossref resolves it);
+  the publisher's site refuses automated requests.
+* "Number of updates in past 6 months": sorry for the quick succession. 2.10.0 was a resubmission that
+  fixed a Linux test tolerance; this release adds the function that accompanies a manuscript now under
+  submission, so that readers can run it from CRAN. We do not plan another update for some months.
 
 ## Reverse dependencies
 

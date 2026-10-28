@@ -9,7 +9,8 @@ deepgof1(
   B = 199L,
   K = 6L,
   reading = c("axes", "allpairs", "combined", "columns"),
-  covariates = NULL
+  covariates = NULL,
+  score.test = FALSE
 )
 }
 \arguments{
@@ -28,6 +29,10 @@ and are not valid at any other resolution.}
 \item{covariates}{optional character vector naming the covariates to form the pairs
 from, for the all-pairs and combined readings. By default every covariate of the model that is
 not constant is used.}
+
+\item{score.test}{if \code{TRUE}, also compute \code{\link{pairscore.gof}}, the pair score test of
+the squares and product of the pair the axis rule selects, from the same bootstrap refits.
+The other results are unchanged. Not available for \code{reading = "columns"}.}
 }
 \value{
 An object of class \code{"deepgof1"}: a list with \code{statistic} (the observed
@@ -36,7 +41,8 @@ An object of class \code{"deepgof1"}: a list with \code{statistic} (the observed
   matrix of standardized residual sums whose rows follow the first axis), \code{pairs}
   (for the all-pairs and combined readings, the observed score of every pair), \code{components}
   (for \code{"combined"}, the p-values of the axis rule and the all-pairs reading), \code{boot} (the \code{B}
-  bootstrap statistics of the reported statistic) and \code{method}.
+  bootstrap statistics of the reported statistic) and \code{method}; with
+  \code{score.test = TRUE}, also \code{score.test}, a \code{"pairscore.gof"} object.
 }
 \description{
 Tests whether a fitted binomial \code{glm} is correctly specified, using a
