@@ -1,5 +1,11 @@
 ## Release summary
 
+This submission also fixes the test failures on CRAN's MKL check (issues reported 2026-10-29 for
+2.10.0, to be corrected before 2026-11-21). They came from tests comparing two separately computed
+floating-point results with identical(), which MKL does not reproduce bit for bit; these now use
+all.equal() tolerance, and the tests that reproduce the BAGofT package exactly run off CRAN only.
+No package code changed for this.
+
 ebrahim.gof 3.0.0. CRAN currently has 2.10.0. This release adds one exported function and one
 optional argument; no existing function changes its results.
 

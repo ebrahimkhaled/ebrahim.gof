@@ -133,9 +133,9 @@ test_that("a near-empty Stukel half-column is kept and scaled, not left to a sin
 
 test_that("G = 'auto' partitions as documented (n = 600 and n = 200)", {
   fit <- make_fit()                                                 # n = 600, so G = 24
-  expect_identical(def.gof(fit, G = "auto"), def.gof(fit, G = 24))
-  expect_identical(edge.gof(fit, G = "auto", basis = "sym")[, -2], edge.gof(fit, G = 24, basis = "sym")[, -2])   # all but the Partition label
-  expect_identical(def.gof(make_fit(n = 200), G = "auto"), def.gof(make_fit(n = 200), G = 10))
+  expect_equal(def.gof(fit, G = "auto"), def.gof(fit, G = 24))
+  expect_equal(edge.gof(fit, G = "auto", basis = "sym")[, -2], edge.gof(fit, G = 24, basis = "sym")[, -2])   # all but the Partition label
+  expect_equal(def.gof(make_fit(n = 200), G = "auto"), def.gof(make_fit(n = 200), G = 10))
   expect_error(def.gof(fit, G = "many"), "or 'auto'")
   res <- run.all.gof(fit, tests = "DEF.sym", control = list(DEF.sym = list(weights = "score", G = "auto")))
   expect_equal(res$p_value, def.gof(fit, G = 24, basis = "sym", weights = "score")$p_value)

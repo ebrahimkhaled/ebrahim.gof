@@ -58,7 +58,7 @@ test_that("projection.gof returns a valid, reproducible htest", {
   set.seed(9); r1 <- projection.gof(fit, B = 49)
   set.seed(9); r2 <- projection.gof(fit, B = 49)
   expect_s3_class(r1, "htest")
-  expect_identical(r1$p.value, r2$p.value)
+  expect_equal(r1$p.value, r2$p.value)
   expect_true(r1$p.value > 0 && r1$p.value <= 1)
   expect_equal(unname(r1$parameter), 49L)
   expect_length(r1$boot, 49)

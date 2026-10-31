@@ -54,7 +54,7 @@ test_that("pairscore.gof() reproduces the published score-test p-values", {
     expect_equal(dg$score.test$p.value, ps$p.value)
     assign(".Random.seed", seed, envir = globalenv())
     plain <- deepgof1(st)
-    expect_identical(plain$boot, dg$boot)
+    expect_equal(plain$boot, dg$boot)
     expect_null(plain$score.test)
   }
 })

@@ -9,6 +9,13 @@
   random numbers as `deepgof1()`, and `deepgof1(score.test = TRUE)` returns it from the same
   refits, beside unchanged DeepGOF-1 results (Ebrahim, Hussein and El-Kotory, 2026, submitted).
 
+## Tests
+
+* Tests that compared two separately computed floating-point results with `identical()` now use
+  `all.equal()` tolerance: under MKL (CRAN's MKL check, version 2026.2.0) such results can differ in
+  the last bits from one call to the next. The tests that reproduce the BAGofT package exactly now
+  run off CRAN only, since a near-tie there can be broken differently under MKL. No code changed.
+
 # ebrahim.gof 2.10.0
 
 ## Behaviour change

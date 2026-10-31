@@ -26,8 +26,8 @@ test_that("edge.gof() is still a data frame in every use", {
   expect_identical(nrow(subset(e, Role == "verdict")), 1L)
   # the numbers are those of def.gof(), the attribute only adds to them
   g <- def.gof(fit, G = "auto")
-  expect_identical(e$Test_Statistic[1], g$Test_Statistic)
-  expect_identical(e$p_value[1], g$p_value)
+  expect_equal(e$Test_Statistic[1], g$Test_Statistic)
+  expect_equal(e$p_value[1], g$p_value)
   expect_null(attr(g, "details"))                     # def.gof() never carries the pieces
   plain <- as.data.frame(e)
   attr(plain, "details") <- NULL

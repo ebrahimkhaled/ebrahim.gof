@@ -49,7 +49,7 @@ test_that("naming the departure on the two scales gives the same certificate", {
   sh <- 0.8 * (x1^2 - mean(x1^2))
   a <- gof_certificate(fit, eta_shift = sh)
   b <- gof_certificate(fit, pi_star = plogis(qlogis(fitted(fit)) + sh))
-  expect_identical(a$certificate, b$certificate)
+  expect_equal(a$certificate, b$certificate)
   expect_gt(a$certificate, 0)              # an omitted quadratic is detectable
   expect_equal(a$axes, c("x1", "x2"))
 })

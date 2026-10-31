@@ -65,12 +65,12 @@ test_that("tied fitted risks are broken at random, through set.seed()", {
   }
   set.seed(7); a <- ef.gof(d$fit)
   set.seed(7); b <- ef.gof(d$fit)
-  expect_identical(a, b)
+  expect_equal(a, b)
   ## untied data draw nothing, so the stream is left as it was
   u <- ef_ref_data(500, seed = 6)
   set.seed(8); ef.gof(u$fit); x1 <- runif(1)
   set.seed(8); x2 <- runif(1)
-  expect_identical(x1, x2)
+  expect_equal(x1, x2)
 })
 
 test_that("one group per pattern matches the paper's code with the pattern labels", {

@@ -78,7 +78,7 @@ test_that("without ties deepgof1() draws nothing extra, so earlier results repro
   ph <- fitted(fit)
   set.seed(25); invisible(deepgof1(fit, B = 3)); a <- runif(1)
   set.seed(25); for (b in 1:3) rbinom(n, 1L, ph); z <- runif(1)
-  expect_identical(a, z)
+  expect_equal(a, z)
 })
 
 test_that("deepgof1() rejects calls it cannot serve", {
@@ -104,9 +104,9 @@ test_that("with two covariates the all-pairs reading is the default rule, bit fo
   fit <- glm(y ~ x1 + x2, family = binomial())
   set.seed(32); a <- deepgof1(fit, B = 29, reading = "allpairs")
   set.seed(32); b <- deepgof1(fit, B = 29)
-  expect_identical(a$statistic, b$statistic)
-  expect_identical(a$boot, b$boot)
-  expect_identical(a$p.value, b$p.value)
+  expect_equal(a$statistic, b$statistic)
+  expect_equal(a$boot, b$boot)
+  expect_equal(a$p.value, b$p.value)
 })
 
 test_that("the statistic is the largest pair score and the map belongs to that pair", {
@@ -144,7 +144,7 @@ test_that("with one covariate the map is 36 quantile cells along it", {
   set.seed(1); r <- deepgof1(fit, B = 19)
   set.seed(1); ra <- deepgof1(fit, B = 19, reading = "allpairs")
   expect_identical(r$axes, "x")
-  expect_identical(r$p.value, ra$p.value)     # one covariate: both readings are the same map
+  expect_equal(r$p.value, ra$p.value)     # one covariate: both readings are the same map
   expect_equal(r$p.value * 20, round(r$p.value * 20))
 })
 
@@ -227,8 +227,8 @@ test_that("the axis rule reads covariates, not spline or dummy columns", {
   f2 <- glm(y ~ x1 + x2, data = d, family = binomial())
   set.seed(40); a <- deepgof1(f2, B = 19)
   set.seed(40); b <- deepgof1(f2, B = 19, reading = "columns")
-  expect_identical(a$boot, b$boot)
-  expect_identical(a$p.value, b$p.value)
+  expect_equal(a$boot, b$boot)
+  expect_equal(a$p.value, b$p.value)
 })
 
 test_that("the combined reading returns a valid p-value and its two components", {

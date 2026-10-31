@@ -23,7 +23,7 @@ test_that("parallel Stute-Zhu is reproducible across two same-seed runs", {
   p1 <- r1$p_value[r1$Test == "Stute-Zhu"]
   p2 <- r2$p_value[r2$Test == "Stute-Zhu"]
   expect_true(is.finite(p1))
-  expect_identical(p1, p2)
+  expect_equal(p1, p2)
   expect_match(r1$Note[r1$Test == "Stute-Zhu"], "parallel, 2 workers")
 })
 

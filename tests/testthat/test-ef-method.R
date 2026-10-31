@@ -6,7 +6,7 @@ test_that("ef.gof chisq (default) refers EF to chi-square(G - 2); method = 'norm
   ph <- plogis(0.5 * x)
   rc <- ef.gof(y, ph, reference = "chisq")
   expect_equal(rc$p_value, pchisq(rc$Test_Statistic, 8, lower.tail = FALSE))
-  expect_identical(ef.gof(y, ph, method = "chisq"), rc)
+  expect_equal(ef.gof(y, ph, method = "chisq"), rc)
   expect_warning(rn <- ef.gof(y, ph, method = "normal"), "versions up to 2.9.0")
   expect_equal(rn$Test_Statistic, (rc$Test_Statistic - 8) / 4)
   expect_equal(rn$p_value, pnorm(rn$Test_Statistic, lower.tail = FALSE))

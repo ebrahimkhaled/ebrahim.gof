@@ -9,8 +9,8 @@ test_that("the belt reports exactly the p-value def.gof() returns", {
     for (wt in c("unit", "score")) {
       b <- edge.belt(fit, G = 20, basis = bs, weights = wt, nsim = 2000, seed = 1)
       g <- def.gof(fit, G = 20, basis = bs, weights = wt)
-      expect_identical(b$test$p_value, g$p_value)
-      expect_identical(b$test$Test_Statistic, g$Test_Statistic)
+      expect_equal(b$test$p_value, g$p_value)
+      expect_equal(b$test$Test_Statistic, g$Test_Statistic)
     }
   }
 })
@@ -108,7 +108,7 @@ test_that("external = TRUE treats Omega = I as exact rather than conservative", 
   # the belt carries the external test itself (constant column, d + 1 df), and the curve is
   # the component that statistic squares
   ext <- def.gof(y[val], predicted_probs = p, G = 10, external = TRUE)
-  expect_identical(b$test$p_value, ext$p_value)
+  expect_equal(b$test$p_value, ext$p_value)
   expect_identical(b$test$df, ext$df)
   expect_equal(sum(b$groups$direction^2), ext$Test_Statistic, tolerance = 1e-10)
   # a fitted glm cannot be an external validation of itself

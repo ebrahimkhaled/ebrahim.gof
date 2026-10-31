@@ -180,7 +180,7 @@ test_that("test produces consistent results with same seed", {
   result1 <- ef.gof(y1, predicted_probs1, G = 10)
   result2 <- ef.gof(y2, predicted_probs2, G = 10)
   
-  expect_identical(result1, result2)
+  expect_equal(result1, result2)
 })
 
 test_that("a glm fitted with na.exclude gives the test on its complete records", {
