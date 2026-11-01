@@ -4,7 +4,14 @@
 \alias{legoft}
 \title{LEGofT: frozen-weight combination goodness-of-fit test for binary logistic regression}
 \usage{
-legoft(object, B = 199, seed = NULL, weights = NULL)
+legoft(
+  object,
+  B = 199,
+  seed = NULL,
+  weights = NULL,
+  panel = c("legoft", "equal", "full", "classical", "one.per.group", "protected"),
+  rule = c("cauchy", "hmp", "fisher", "minp")
+)
 }
 \arguments{
 \item{object}{a fitted binomial \code{glm}.}
@@ -16,11 +23,26 @@ legoft(object, B = 199, seed = NULL, weights = NULL)
 
 \item{weights}{optional named vector of member weights; defaults to the frozen rule.
 Supplying your own makes the result no longer the shipped procedure -- say so if
-you report it.}
+you report it. Members may be any of the eleven frozen-rule tests plus
+\code{"Stukel"}, \code{"Osius-Rojek"} and \code{"le-Cessie"}.}
+
+\item{panel}{which tests to combine. \code{"legoft"} (default) is the frozen rule.
+The others combine a panel of the panel paper with equal weights:
+\code{"equal"} (the eleven frozen-rule tests), \code{"full"} (all fourteen tests),
+\code{"classical"} (Hosmer-Lemeshow, Osius-Rojek, le Cessie-van Houwelingen, Stukel,
+Tsiatis, Xie), \code{"one.per.group"} (one test from each of the five groups of
+correlated tests) and \code{"protected"} (Hosmer-Lemeshow, EF, Pigeon-Heyse,
+le Cessie-van Houwelingen; robust to a few recording errors in a covariate).
+Ignored when \code{weights} is given.}
+
+\item{rule}{combination statistic: \code{"cauchy"} (default), \code{"hmp"} (harmonic
+mean p-value), \code{"fisher"} or \code{"minp"} (minimum p-value). The last three use
+equal weights, so they need a panel other than \code{"legoft"} or equal
+\code{weights}. Every rule is calibrated by the same parametric bootstrap.}
 }
 \value{
 an object of class \code{"legoft"}: the statistic, its bootstrap p-value,
-  the member p-values, and \code{B_used}.
+  the member p-values, the weights, the panel, the rule and \code{B_used}.
 }
 \description{
 Combines eleven classical and directed goodness-of-fit statistics with weights that
@@ -31,6 +53,13 @@ bootstrap at the fitted parameters. Nothing is retrained when you call it.
 The p-value is exact in finite samples when the null parameters are known. With the
 parameters estimated -- the case here -- the calibration is asymptotic; simulation at
 \eqn{n = 500} put the empirical size at 0.037 against a nominal 0.05.
+
+The panel paper recommends \code{panel = "equal"} or \code{"full"} with the default
+Cauchy rule for a single decision from many tests, and \code{panel = "protected"}
+when a few covariate values may be recorded wrongly. In its simulations the
+bootstrap-calibrated combination kept the 5\% level in three null designs. Panels
+that contain le Cessie-van Houwelingen are slower, because that test builds an
+\eqn{n \times n} matrix for the data and for every bootstrap replicate.
 }
 \examples{
 \donttest{
@@ -38,7 +67,9 @@ set.seed(1)
 x1 <- runif(300, -3, 3); x2 <- rnorm(300)
 y  <- rbinom(300, 1, plogis(0.3 + 0.8 * x1 - 0.5 * x2 + 0.25 * x1^2))
 fit <- glm(y ~ x1 + x2, family = binomial())
-legoft(fit, B = 99, seed = 1)
+legoft(fit, B = 99, seed = 1)                       # frozen LEGofT weights
+legoft(fit, B = 99, seed = 1, panel = "equal")      # equal weights, same tests
+legoft(fit, B = 99, seed = 1, panel = "protected")  # robust to recording errors
 }
 }
 \seealso{

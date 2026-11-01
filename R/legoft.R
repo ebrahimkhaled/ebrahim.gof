@@ -46,14 +46,42 @@
 ## Nine members come from the registry; the two covariate-space directed tests
 ## (A.poly, A.spline) are NOT registry entries -- they are cdef.gof() with the
 ## polynomial and spline bases -- so they are fetched separately and named to match.
+## Stukel, Osius-Rojek and le-Cessie are not read by the frozen rule, but they belong to
+## the panels of the companion panel paper, so they can be named in `weights` or `panel`.
+## le-Cessie is a slow registry test (it builds an n x n kernel), so it is switched on
+## only when a panel asks for it.
 .LEGOFT_REGISTRY_MEMBERS <- c("HL", "HL-equalwidth", "Pigeon-Heyse", "EF",
-                              "DEF.poly2", "DEF.poly3", "DEF.stukel", "Tsiatis", "Xie")
+                              "DEF.poly2", "DEF.poly3", "DEF.stukel", "Tsiatis", "Xie",
+                              "Stukel", "Osius-Rojek", "le-Cessie")
+
+## The panels studied in the panel paper (Ebrahim, "From a panel of goodness-of-fit
+## tests to one decision"). Each is combined with equal weights.
+.LEGOFT_PANELS <- list(
+  equal         = .LEGOFT_MEMBERS,
+  full          = c("HL", "HL-equalwidth", "Pigeon-Heyse", "Tsiatis", "Xie", "EF",
+                    "DEF.poly2", "DEF.poly3", "DEF.stukel", "Stukel", "Osius-Rojek",
+                    "le-Cessie", "A.poly", "A.spline"),
+  classical     = c("HL", "Osius-Rojek", "le-Cessie", "Stukel", "Tsiatis", "Xie"),
+  one.per.group = c("HL", "Xie", "DEF.poly3", "Osius-Rojek", "le-Cessie"),
+  protected     = c("HL", "EF", "Pigeon-Heyse", "le-Cessie"))
+
+## Combination statistic, larger = more misfit. "cauchy" is the weighted Cauchy sum used
+## by the frozen rule; the other three use the member p-values with equal weight.
+.panel_score <- function(pv, w, rule) {
+  p <- .clip_p(pv[names(w)])
+  switch(rule,
+         cauchy = sum(w * .cauchy(p), na.rm = TRUE),
+         hmp    = mean(1 / p, na.rm = TRUE),
+         fisher = -2 * sum(log(p), na.rm = TRUE),
+         minp   = -min(p, na.rm = TRUE))
+}
 
 .legoft_battery <- function(object, members = .LEGOFT_MEMBERS) {
   reg <- intersect(members, .LEGOFT_REGISTRY_MEMBERS)
   pv  <- stats::setNames(rep(NA_real_, length(members)), members)
   if (length(reg)) {
-    res <- run.all.gof(object, tests = reg, include_slow = FALSE)
+    res <- run.all.gof(object, tests = reg, include_slow = "le-Cessie" %in% reg,
+                       install = "no")
     got <- stats::setNames(as.numeric(res$p_value), as.character(res$Test))
     pv[names(got)[names(got) %in% members]] <- got[names(got) %in% members]
   }
@@ -102,13 +130,33 @@
 #' @param seed optional integer for reproducibility.
 #' @param weights optional named vector of member weights; defaults to the frozen rule.
 #'   Supplying your own makes the result no longer the shipped procedure -- say so if
-#'   you report it.
+#'   you report it. Members may be any of the eleven frozen-rule tests plus
+#'   \code{"Stukel"}, \code{"Osius-Rojek"} and \code{"le-Cessie"}.
+#' @param panel which tests to combine. \code{"legoft"} (default) is the frozen rule.
+#'   The others combine a panel of the panel paper with equal weights:
+#'   \code{"equal"} (the eleven frozen-rule tests), \code{"full"} (all fourteen tests),
+#'   \code{"classical"} (Hosmer-Lemeshow, Osius-Rojek, le Cessie-van Houwelingen, Stukel,
+#'   Tsiatis, Xie), \code{"one.per.group"} (one test from each of the five groups of
+#'   correlated tests) and \code{"protected"} (Hosmer-Lemeshow, EF, Pigeon-Heyse,
+#'   le Cessie-van Houwelingen; robust to a few recording errors in a covariate).
+#'   Ignored when \code{weights} is given.
+#' @param rule combination statistic: \code{"cauchy"} (default), \code{"hmp"} (harmonic
+#'   mean p-value), \code{"fisher"} or \code{"minp"} (minimum p-value). The last three use
+#'   equal weights, so they need a panel other than \code{"legoft"} or equal
+#'   \code{weights}. Every rule is calibrated by the same parametric bootstrap.
 #' @return an object of class \code{"legoft"}: the statistic, its bootstrap p-value,
-#'   the member p-values, and \code{B_used}.
+#'   the member p-values, the weights, the panel, the rule and \code{B_used}.
 #' @details
 #' The p-value is exact in finite samples when the null parameters are known. With the
 #' parameters estimated -- the case here -- the calibration is asymptotic; simulation at
 #' \eqn{n = 500} put the empirical size at 0.037 against a nominal 0.05.
+#'
+#' The panel paper recommends \code{panel = "equal"} or \code{"full"} with the default
+#' Cauchy rule for a single decision from many tests, and \code{panel = "protected"}
+#' when a few covariate values may be recorded wrongly. In its simulations the
+#' bootstrap-calibrated combination kept the 5\% level in three null designs. Panels
+#' that contain le Cessie-van Houwelingen are slower, because that test builds an
+#' \eqn{n \times n} matrix for the data and for every bootstrap replicate.
 #' @seealso \code{\link{legoft.localize}} for which domain of evidence carries the misfit.
 #' @examples
 #' \donttest{
@@ -116,7 +164,9 @@
 #' x1 <- runif(300, -3, 3); x2 <- rnorm(300)
 #' y  <- rbinom(300, 1, plogis(0.3 + 0.8 * x1 - 0.5 * x2 + 0.25 * x1^2))
 #' fit <- glm(y ~ x1 + x2, family = binomial())
-#' legoft(fit, B = 99, seed = 1)
+#' legoft(fit, B = 99, seed = 1)                       # frozen LEGofT weights
+#' legoft(fit, B = 99, seed = 1, panel = "equal")      # equal weights, same tests
+#' legoft(fit, B = 99, seed = 1, panel = "protected")  # robust to recording errors
 #' }
 #' @concept goodness-of-fit
 #' @concept calibration
@@ -126,20 +176,42 @@
 #' @concept frozen weights
 #' @concept familywise error
 #' @export
-legoft <- function(object, B = 199, seed = NULL, weights = NULL) {
+legoft <- function(object, B = 199, seed = NULL, weights = NULL,
+                   panel = c("legoft", "equal", "full", "classical", "one.per.group", "protected"),
+                   rule = c("cauchy", "hmp", "fisher", "minp")) {
   if (!inherits(object, "glm") || !identical(stats::family(object)$family, "binomial"))
     stop("legoft() needs a fitted binomial glm")
-  w <- if (is.null(weights)) .LEGOFT_WEIGHTS else weights
+  panel <- match.arg(panel)
+  rule  <- match.arg(rule)
+  if (!is.null(weights)) {
+    unknown <- setdiff(names(weights), c(.LEGOFT_MEMBERS, .LEGOFT_REGISTRY_MEMBERS))
+    if (is.null(names(weights)) || length(unknown))
+      stop("weights must be named by battery members; unknown: ",
+           paste(unknown, collapse = ", "))
+    w <- weights; panel <- "custom"
+  } else if (panel == "legoft") {
+    w <- .LEGOFT_WEIGHTS
+  } else {
+    m <- .LEGOFT_PANELS[[panel]]
+    w <- stats::setNames(rep(1 / length(m), length(m)), m)
+  }
+  if (rule != "cauchy" && length(unique(round(w, 12))) > 1)
+    stop("rule = \"", rule, "\" combines with equal weights; choose a panel other than ",
+         "\"legoft\" or give equal weights")
   members <- names(w)
   pv  <- .legoft_battery(object, members)
   if (all(is.na(pv))) stop("no battery member returned a p-value")
   REF <- .legoft_reference(object, B, members, seed)
   if (nrow(REF) < 20) stop("too few usable bootstrap replicates (", nrow(REF), ")")
-  obs <- .legoft_score(pv, w)
-  ref <- apply(REF, 1, function(r) .legoft_score(r, w))
+  obs <- .panel_score(pv, w, rule)
+  ref <- apply(REF, 1, function(r) .panel_score(r, w, rule))
+  method <- if (panel == "legoft" && rule == "cauchy")
+    "LEGofT (frozen weights, parametric-bootstrap calibration)" else
+    sprintf("Panel combination (panel = %s, rule = %s, %d tests, parametric-bootstrap calibration)",
+            panel, rule, length(w))
   structure(list(statistic = obs, p.value = .mc_p(obs, ref), members = pv,
-                 B_used = nrow(REF), weights = w,
-                 method = "LEGofT (frozen weights, parametric-bootstrap calibration)"),
+                 B_used = nrow(REF), weights = w, panel = panel, rule = rule,
+                 method = method),
             class = "legoft")
 }
 
