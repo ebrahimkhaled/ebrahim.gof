@@ -69,6 +69,7 @@ Suggests:
     randomForest,
     dcov,
     givitiR,
+    glmnet,
     callr,
     TH.data
 Encoding: UTF-8

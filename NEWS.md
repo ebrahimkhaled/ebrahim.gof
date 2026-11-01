@@ -9,6 +9,14 @@
   random numbers as `deepgof1()`, and `deepgof1(score.test = TRUE)` returns it from the same
   refits, beside unchanged DeepGOF-1 results (Ebrahim, Hussein and El-Kotory, 2026, submitted).
 
+* `cavity.gof()`: the leave-one-out (cavity) Hosmer-Lemeshow test for ridge, lasso and elastic-net
+  logistic regression in high dimensions, including p > n (Ebrahim and Arashi, 2026, submitted). It
+  groups, recalibrates and standardises on the one-step leave-one-out linear predictor and refers the
+  statistic to chi-squared on G - 2 degrees of freedom; options give the exact weighted reference, a
+  smooth version, the sample-split and cross-fitted tests, and a reference simulated from the fitted
+  model. It reports the share of observations with a twin (repeated rows of predictors) and warns when
+  the closed-form reference is unreliable. `glmnet` is added to Suggests for the lasso and elastic net.
+
 ## Tests
 
 * Tests that compared two separately computed floating-point results with `identical()` now use
