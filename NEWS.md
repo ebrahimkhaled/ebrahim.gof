@@ -18,6 +18,13 @@
 * `legoft()` gains `rule = c("cauchy", "hmp", "fisher", "minp")`: the Cauchy combination (default),
   the harmonic mean p-value, Fisher's rule or the minimum p-value, all calibrated by the bootstrap.
 * `Stukel`, `Osius-Rojek` and `le-Cessie` can now be named in `legoft(weights = )`.
+* `cavity.gof()`: the leave-one-out (cavity) Hosmer-Lemeshow test for ridge, lasso and elastic-net
+  logistic regression in high dimensions, including p > n (Ebrahim and Arashi, 2026, submitted). It
+  groups, recalibrates and standardises on the one-step leave-one-out linear predictor and refers the
+  statistic to chi-squared on G - 2 degrees of freedom; options give the exact weighted reference, a
+  smooth version, the sample-split and cross-fitted tests, and a reference simulated from the fitted
+  model. It reports the share of observations with a twin (repeated rows of predictors) and warns when
+  the closed-form reference is unreliable. `glmnet` is added to Suggests for the lasso and elastic net.
 
 ## Tests
 

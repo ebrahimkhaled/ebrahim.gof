@@ -6,7 +6,7 @@ floating-point results with identical(), which MKL does not reproduce bit for bi
 all.equal() tolerance, and the tests that reproduce the BAGofT package exactly run off CRAN only.
 No package code changed for this.
 
-ebrahim.gof 3.0.0. CRAN currently has 2.10.0. This release adds one exported function and
+ebrahim.gof 3.0.0. CRAN currently has 2.10.0. This release adds two exported functions and
 optional arguments to two others; with their defaults, no existing function changes its results.
 
 * New `pairscore.gof()`: the pair score test, a score test of whether a fitted logistic model needs
@@ -16,6 +16,9 @@ optional arguments to two others; with their defaults, no existing function chan
   same refits. With the default, every output is unchanged (tested).
 * `legoft()` gains `panel` and `rule`: alternative panels of tests and combination rules, with the
   same bootstrap calibration. The default is the existing rule, unchanged (tested).
+* New `cavity.gof()`: a leave-one-out Hosmer-Lemeshow test for ridge, lasso and elastic-net logistic
+  regression in high dimensions (Ebrahim and Arashi, 2026, submitted). `glmnet` is added to Suggests
+  and its tests are guarded by skip_if_not_installed().
 
 ## Test environments
 
@@ -23,14 +26,14 @@ optional arguments to two others; with their defaults, no existing function chan
 
 ## R CMD check results
 
-0 errors | 0 warnings | 1 note
+0 errors | 0 warnings | 2 notes
 
-* "unable to verify current time" (the check machine was offline for that step).
-* "Found the following (possibly) invalid DOIs: 10.1002/sim.943": the DOI is valid (Crossref resolves it);
-  the publisher's site refuses automated requests.
-* "Number of updates in past 6 months": sorry for the quick succession. 2.10.0 was a resubmission that
-  fixed a Linux test tolerance; this release adds the function that accompanies a manuscript now under
-  submission, so that readers can run it from CRAN. We do not plan another update for some months.
+* "Number of updates in past 6 months": sorry for the quick succession. This submission fixes the
+  MKL test failures CRAN reported for 2.10.0 and adds the functions that accompany three manuscripts
+  now under submission, in one release, so that readers can run them from CRAN. We do not plan
+  another update for some months.
+* "unable to verify current time" (the check machine was offline for that step). Some DOIs in the
+  Rd files timed out from the same machine; each resolves at doi.org.
 
 ## Reverse dependencies
 
