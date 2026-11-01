@@ -6,14 +6,16 @@ floating-point results with identical(), which MKL does not reproduce bit for bi
 all.equal() tolerance, and the tests that reproduce the BAGofT package exactly run off CRAN only.
 No package code changed for this.
 
-ebrahim.gof 3.0.0. CRAN currently has 2.10.0. This release adds one exported function and one
-optional argument; no existing function changes its results.
+ebrahim.gof 3.0.0. CRAN currently has 2.10.0. This release adds one exported function and
+optional arguments to two others; with their defaults, no existing function changes its results.
 
 * New `pairscore.gof()`: the pair score test, a score test of whether a fitted logistic model needs
   the squares and the product of the two covariates that `deepgof1()` selects, calibrated by the same
   parametric bootstrap (the pair is chosen again in every bootstrap sample).
 * `deepgof1()` gains `score.test = FALSE`; with `TRUE` it also returns the pair score test from the
   same refits. With the default, every output is unchanged (tested).
+* `legoft()` gains `panel` and `rule`: alternative panels of tests and combination rules, with the
+  same bootstrap calibration. The default is the existing rule, unchanged (tested).
 
 ## Test environments
 

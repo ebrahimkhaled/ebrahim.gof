@@ -8,6 +8,16 @@
   for comparison. The square of a binary covariate is left out. It uses the same bootstrap and
   random numbers as `deepgof1()`, and `deepgof1(score.test = TRUE)` returns it from the same
   refits, beside unchanged DeepGOF-1 results (Ebrahim, Hussein and El-Kotory, 2026, submitted).
+* `legoft()` runs the panels of the panel paper (Ebrahim, "From a panel of goodness-of-fit tests to
+  one decision"). The new argument `panel` combines, with equal weights and the same
+  parametric-bootstrap calibration, one of: `"equal"` (the eleven frozen-rule tests), `"full"` (all
+  fourteen tests), `"classical"` (Hosmer-Lemeshow, Osius-Rojek, le Cessie-van Houwelingen, Stukel,
+  Tsiatis, Xie), `"one.per.group"` (one test from each group of correlated tests) and `"protected"`
+  (Hosmer-Lemeshow, EF, Pigeon-Heyse, le Cessie-van Houwelingen; robust to a few recording errors in
+  a covariate). The default, `panel = "legoft"`, is the frozen rule, unchanged.
+* `legoft()` gains `rule = c("cauchy", "hmp", "fisher", "minp")`: the Cauchy combination (default),
+  the harmonic mean p-value, Fisher's rule or the minimum p-value, all calibrated by the bootstrap.
+* `Stukel`, `Osius-Rojek` and `le-Cessie` can now be named in `legoft(weights = )`.
 
 ## Tests
 
