@@ -32,6 +32,8 @@
   `all.equal()` tolerance: under MKL (CRAN's MKL check, version 2026.2.0) such results can differ in
   the last bits from one call to the next. The tests that reproduce the BAGofT package exactly now
   run off CRAN only, since a near-tie there can be broken differently under MKL. No code changed.
+* The `localize` tests that reproduce the paper's script compare Monte Carlo p-values with exact
+  counts; they now run off CRAN only, since one count differed on CRAN's linux-arm64 check.
 
 # ebrahim.gof 2.10.0
 

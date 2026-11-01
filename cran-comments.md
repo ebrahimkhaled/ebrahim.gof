@@ -1,11 +1,17 @@
 ## Resubmission
 
-This is a resubmission of 3.0.0 (submitted 2026-10-28, archived; its pretests had only the
-update-frequency NOTE). It now also fixes the test failures on CRAN's MKL check (issues reported
-2026-10-29 for 2.10.0, to be corrected before 2026-11-21). They came from tests comparing two separately computed
-floating-point results with identical(), which MKL does not reproduce bit for bit; these now use
-all.equal() tolerance, and the tests that reproduce the BAGofT package exactly run off CRAN only.
-No package code changed for this.
+This upload replaces the 3.0.0 submitted earlier today (2026-11-01). That 3.0.0 fixed the MKL
+additional issue but not the linux-arm64 one; this one fixes both. (A first 3.0.0, submitted
+2026-10-28, was archived; its pretests had only the update-frequency NOTE.)
+
+* MKL (deadline 2026-11-21): tests compared two separately computed floating-point results with
+  identical(), which MKL does not reproduce bit for bit; they now use all.equal() tolerance, and
+  the tests that reproduce the BAGofT package exactly run off CRAN only.
+* linux-arm64: tests of localize.external() and localize.gof() compared Monte Carlo p-values with
+  exact counts from the paper's script, and one count differed on arm64; those tests now run off
+  CRAN only.
+
+No package code changed for either fix.
 
 ## Release summary
 

@@ -15,6 +15,7 @@ loc_data <- function() {
 }
 
 test_that("localize.external() reproduces the paper's script: Monte Carlo reference", {
+  skip_on_cran()   # exact Monte Carlo counts: one can differ on another CPU (linux-arm64)
   d <- loc_data()
   r <- localize.external(d$y, d$p, d$X, M = 99, seed = 7)
   expect_s3_class(r, "gof_localize")
@@ -38,6 +39,7 @@ test_that("localize.external() reproduces the paper's script: Monte Carlo refere
 })
 
 test_that("localize.external() reproduces the paper's script: multiplier reference", {
+  skip_on_cran()   # exact Monte Carlo counts: one can differ on another CPU (linux-arm64)
   d <- loc_data()
   r <- localize.external(d$y, d$p, d$X, M = 99, calibration = "multiplier", seed = 7)
   expect_equal(unname(r$intersection[c("INTERCEPT", "SLOPE", "LINK", "COV", "LINK+COV")]),
@@ -52,6 +54,7 @@ test_that("localize.external() reproduces the paper's script: multiplier referen
 })
 
 test_that("localize.gof() reproduces the paper's script, with and without de-aliasing", {
+  skip_on_cran()   # exact Monte Carlo counts: one can differ on another CPU (linux-arm64)
   d <- loc_data()
   fit <- glm(d$y ~ x1 + x2 + x3, data = d$X, family = binomial())
   r0 <- localize.gof(fit, X = d$X, B = 19, seed = 8)
@@ -149,6 +152,7 @@ test_that("the inputs are checked", {
 })
 
 test_that("print() shows the groups named and the recommended update", {
+  skip_on_cran()   # exact Monte Carlo counts: one can differ on another CPU (linux-arm64)
   d <- loc_data()
   r <- localize.external(d$y, d$p, d$X, M = 99, seed = 7)
   out <- capture.output(print(r))
@@ -159,6 +163,7 @@ test_that("print() shows the groups named and the recommended update", {
 })
 
 test_that("naming = 'holm' and 'bonferroni' reproduce the paper's script", {
+  skip_on_cran()   # exact Monte Carlo counts: one can differ on another CPU (linux-arm64)
   d <- loc_data()
   r <- localize.external(d$y, d$p, d$X, M = 99, naming = "holm", seed = 7)
   ## the intersections are unchanged; only the naming rule differs
@@ -179,6 +184,7 @@ test_that("naming = 'holm' and 'bonferroni' reproduce the paper's script", {
 })
 
 test_that("robust = TRUE reproduces the paper's script", {
+  skip_on_cran()   # exact Monte Carlo counts: one can differ on another CPU (linux-arm64)
   d <- loc_data()
   r <- localize.external(d$y, d$p, d$X, M = 99, robust = TRUE, seed = 7)
   expect_equal(unname(r$intersection[c("INTERCEPT", "SLOPE", "LINK", "COV", "LINK+COV")]),
