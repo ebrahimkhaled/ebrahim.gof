@@ -1,3 +1,12 @@
+# ebrahim.gof 3.1.0 (development version)
+
+## Bug fixes
+
+* `cavity.gof()` with `recalibration = "logistic-normal"` could stop with "system is computationally
+  singular" when the noise parameter of the recalibration was weakly identified, which happens mostly
+  under a strong misfit. The covariance of the grouped residuals now uses a pseudo-inverse in that case,
+  so the test returns both p-values. Results are unchanged whenever 3.0.0 ran.
+
 # ebrahim.gof 3.0.0
 
 ## New features

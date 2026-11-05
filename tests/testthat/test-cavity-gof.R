@@ -70,6 +70,27 @@ test_that("the logistic-normal recalibration runs", {
   expect_identical(r$recal.family, "logistic-normal")
 })
 
+test_that("a singular recalibration information falls back to the pseudo-inverse", {
+  A <- matrix(c(2, 1, 1, 1, 1, 0.5, 1, 0.5, 0.5), 3)   # rank 2
+  Ai <- ebrahim.gof:::.cav_inverse(A)
+  expect_equal(A %*% Ai %*% A, A, tolerance = 1e-8)
+  expect_equal(ebrahim.gof:::.cav_inverse(diag(2) * 3), diag(2) / 3)
+})
+
+test_that("the logistic-normal recalibration does not stop under a strong misfit", {
+  skip_on_cran()
+  # seed 76 made 3.0.0 stop with "system is computationally singular"
+  set.seed(76)
+  n <- 400; p <- 100
+  S <- 0.7^abs(outer(1:p, 1:p, "-"))
+  X <- matrix(rnorm(n * p), n, p) %*% chol(S)
+  eta <- drop(X %*% (rep(c(0.5, -0.5), length.out = p) / sqrt(p) * 3))
+  eta <- eta + 0.6 * (eta^3 - 3 * eta)
+  y <- rbinom(n, 1, plogis(eta))
+  r <- cavity.gof(X, y, lambda = 80, recalibration = "logistic-normal", check.twins = FALSE)
+  expect_true(is.finite(r$p.value) && is.finite(r$p.exact))
+})
+
 test_that("the lasso path runs on the active set", {
   skip_if_not_installed("glmnet")
   d <- cav_data()

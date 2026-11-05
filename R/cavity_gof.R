@@ -80,6 +80,17 @@
 
 .cav_index <- function(f, y) f$eta - f$q / (1 - f$w * f$q) * (y - f$pi)
 
+# Inverse of the recalibration information. When tau is weakly identified (flat likelihood, often
+# under a strong misfit) the matrix is numerically singular; the pseudo-inverse then drops the
+# direction the data cannot estimate, as the code already does when tau sits on its bound.
+.cav_inverse <- function(A) {
+  inv <- tryCatch(solve(A), error = function(e) NULL)
+  if (!is.null(inv)) return(inv)
+  s <- svd(A)
+  keep <- s$d > max(s$d) * 1e-10
+  s$v[, keep, drop = FALSE] %*% (t(s$u[, keep, drop = FALSE]) / s$d[keep])
+}
+
 # ---- recalibration, grouping and the statistic, for a given index ---------------------------------
 .cav_statistic <- function(xi, y, G, recal, smooth.degree = 0) {
   n <- length(y)
@@ -118,7 +129,7 @@
   ex  <- vapply(idx, function(I) sum(m[I]), 0.0)
   e   <- (obs - ex) / sqrt(Vg)
   U   <- t(vapply(idx, function(I) colSums(Dm[I, , drop = FALSE]), numeric(ncol(Dm)))) / sqrt(Vg)
-  Om  <- diag(G) - U %*% solve(crossprod(Dm, Dm / v), t(U))
+  Om  <- diag(G) - U %*% .cav_inverse(crossprod(Dm, Dm / v)) %*% t(U)
   S   <- sum(e^2)
   out <- list(S = S, e = e, Omega = Om, groups = groups, m = m, theta = c(th, tau = tau),
               table = data.frame(group = seq_len(G), n = lengths(idx), observed = obs, expected = ex,
