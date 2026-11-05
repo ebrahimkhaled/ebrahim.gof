@@ -1,4 +1,4 @@
-# ebrahim.gof 3.1.0 (development version)
+# ebrahim.gof 3.1.0
 
 ## Bug fixes
 
