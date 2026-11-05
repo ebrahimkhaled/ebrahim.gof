@@ -1,5 +1,15 @@
 # ebrahim.gof 3.1.0
 
+## New features
+
+* Ridge networks, from the package ridgegraph 0.1.1 by Mohammad Arashi, now an author of this
+  package: `ridge_precision()` and `ridge_pcor()` give the ridge precision matrix and its partial
+  correlations; `effective_penalty()`, `effective_penalty_floor()` and `penalty_for_kappa()` estimate
+  the effective penalty, its limit as the penalty tends to zero, and the penalty that attains a given
+  effective penalty; `extrapolated_ridge()` combines two penalties; `mps_select()` selects edges with
+  a multi-penalty permutation threshold. See `vignette("ridge-networks")` and Arashi and Ebrahim
+  (2026, submitted). The results are identical to those of ridgegraph 0.1.1.
+
 ## Bug fixes
 
 * `cavity.gof()` with `recalibration = "logistic-normal"` could stop with "system is computationally

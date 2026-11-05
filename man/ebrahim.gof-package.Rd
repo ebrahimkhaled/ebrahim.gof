@@ -98,6 +98,11 @@ The vignettes
 \author{
 \strong{Maintainer}: Ebrahim Khaled Ebrahim \email{ebrahimkhaled@alexu.edu.eg} (\href{https://orcid.org/0009-0006-7839-8778}{ORCID})
 
+Authors:
+\itemize{
+  \item Mohammad Arashi \email{arashi@um.ac.ir} (\href{https://orcid.org/0000-0002-5881-9241}{ORCID}) (author of the ridge network functions in R/ridgegraph.R)
+}
+
 Other contributors:
 \itemize{
   \item Jiawei Zhang (author of the BAGofT package code adapted in R/bagoft_fast.R) [contributor, copyright holder]

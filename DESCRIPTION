@@ -2,12 +2,16 @@ Package: ebrahim.gof
 Type: Package
 Title: Goodness-of-Fit and Calibration Tests for Logistic Regression
 Version: 3.1.0
-Date: 2026-11-05
+Date: 2026-11-06
 Authors@R: c(
     person(given = "Ebrahim Khaled", family = "Ebrahim",
            email = "ebrahimkhaled@alexu.edu.eg",
            role = c("aut", "cre"),
            comment = c(ORCID = "0009-0006-7839-8778")),
+    person(given = "Mohammad", family = "Arashi",
+           email = "arashi@um.ac.ir", role = "aut",
+           comment = c(ORCID = "0000-0002-5881-9241",
+                       "author of the ridge network functions in R/ridgegraph.R")),
     person(given = "Jiawei", family = "Zhang", role = c("ctb", "cph"),
            comment = "author of the BAGofT package code adapted in R/bagoft_fast.R"),
     person(given = "Jie", family = "Ding", role = c("ctb", "cph"),
@@ -43,7 +47,11 @@ Description: Provides a unified battery of goodness-of-fit and calibration
     the slope, the link or the covariates) with familywise error control. For
     comparison, the projection test of Liu et al. is implemented as
     'projection.gof()' and a fast implementation of the adaptive-partition test
-    'BAGofT' as 'bagoft.fast()'. For more details see Hosmer (1980)
+    'BAGofT' as 'bagoft.fast()'. For Gaussian graphical models, 'ridge_pcor()',
+    'effective_penalty()', 'extrapolated_ridge()' and 'mps_select()' extract
+    networks from the ridge estimator of a precision matrix and estimate the
+    effective penalty that says which graph such a network estimates. For more
+    details see Hosmer (1980)
     <doi:10.1080/03610928008827941> and Farrington (1996)
     <doi:10.1111/j.2517-6161.1996.tb02086.x>.
 License: GPL-3

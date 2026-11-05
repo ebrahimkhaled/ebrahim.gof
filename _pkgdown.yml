@@ -44,6 +44,16 @@ reference:
   - calm.gof
   - shrink.gof
 
+- title: Ridge networks
+  desc: >
+    Networks read from the ridge estimator of a precision matrix, the effective
+    penalty that says which graph they estimate, and edge selection.
+  contents:
+  - ridge_precision
+  - effective_penalty
+  - extrapolated_ridge
+  - mps_select
+
 - title: Pretrained and frozen-weight tests
   desc: >
     Weights fixed offline and shipped frozen, so two analysts obtain the same
@@ -102,3 +112,4 @@ articles:
   - ebrahim-gof-toolbox
   - ebrahim-farrington-intro
   - extensions
+  - ridge-networks
