@@ -198,10 +198,12 @@ localize.update <- function(y, p, X, B = 199L, alpha = 0.05, naming = c("holm", 
 #' level: the mean size over \code{R} outcome vectors drawn from the simpler update, under which
 #' the part is absent. \code{excess} is the size minus the chance level. The noise interval is the
 #' size minus the 97.5\% and 2.5\% points of the chance draws; under no misfit it contains 0
-#' with probability of about 0.95.
+#' with probability of about 0.95. It is not a confidence interval for the true size: it only
+#' shows whether a size can be told from chance.
 #'
-#' The \code{COV} size is a floor: the revision is fitted with noise, and at moderate sample
-#' sizes the excess understates the true size. A size that cannot be told from its chance level
+#' \code{excess} is a cautious lower measure, not an estimate of the true size. Every size is
+#' fitted with noise, so at moderate sample sizes the excess understates the true size, most of
+#' all for \code{COV}. A size that cannot be told from its chance level
 #' does not show that a part is absent; \code{\link{localize.update}} carries that evidence.
 #'
 #' @param y,p,X as in \code{\link{localize.update}}.
