@@ -73,6 +73,8 @@ reference:
   contents:
   - localize.external
   - localize.gof
+  - localize.update
+  - localize.size
 
 - title: Comparison tests
   desc: >

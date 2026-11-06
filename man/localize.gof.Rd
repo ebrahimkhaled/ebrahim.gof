@@ -102,9 +102,9 @@ fit <- glm(y ~ x1 + x2, family = binomial())   # the interaction is missed
 localize.gof(fit, B = 49, seed = 1)   # B = 49 to keep the example fast; use 199 or more
 }
 \references{
-Ebrahim, E. K., El-Kotory, A. and Hussein, O. A. E.-A. (2026). One goodness-of-fit test
-is not enough: error-controlled localization of misfit in logistic risk models. Preprint.
-Reproduction materials: \doi{10.5281/zenodo.23192535}
+Ebrahim, E. K., El-Kotory, A. and Hussein, O. A. E.-A. (2026). Which update does a clinical
+risk model need? Error-controlled localization of misfit in logistic risk models. Submitted.
+Reproduction materials: \doi{10.5281/zenodo.24012171}
 
 Marcus, R., Peritz, E. and Gabriel, K. R. (1976). On closed testing procedures with special
 reference to ordered analysis of variance. \emph{Biometrika}, 63(3), 655--660.

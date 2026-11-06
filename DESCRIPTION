@@ -44,7 +44,9 @@ Description: Provides a unified battery of goodness-of-fit and calibration
     tests frozen predictions on validation data, and 'edge.stream()' updates the
     'EDGE' test as validation records arrive. 'localize.gof()' and
     'localize.external()' name which part of the model is wrong (the intercept,
-    the slope, the link or the covariates) with familywise error control. For
+    the slope, the link or the covariates) with familywise error control;
+    'localize.update()' tests each part against the model already updated for
+    the simpler parts, and 'localize.size()' gives the size of each part. For
     comparison, the projection test of Liu et al. is implemented as
     'projection.gof()' and a fast implementation of the adaptive-partition test
     'BAGofT' as 'bagoft.fast()'. For Gaussian graphical models, 'ridge_pcor()',

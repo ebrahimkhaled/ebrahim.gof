@@ -549,9 +549,9 @@ The methods in this package are described in the following papers by the author
 - **Shrinkage — penalized fits** (`shrink.gof()`): Ebrahim, E. K. (2026). *Shrinkage invalidates the
   Hosmer–Lemeshow test: goodness of fit for penalized logistic regression, with an application to
   glaucoma diagnosis.* arXiv:2609.06413
-- **Localization** (`localize.gof()`, `localize.external()`): Ebrahim, E. K., El-Kotory, A. &
-  Hussein, O. A. E.-A. (2026). *One goodness-of-fit test is not enough: error-controlled localization
-  of misfit in logistic risk models.* Preprint · Zenodo [10.5281/zenodo.23192535](https://doi.org/10.5281/zenodo.23192535)
+- **Localization** (`localize.gof()`, `localize.external()`, `localize.update()`, `localize.size()`): Ebrahim, E. K., El-Kotory, A. &
+  Hussein, O. A. E.-A. (2026). *Which update does a clinical risk model need? Error-controlled localization
+  of misfit in logistic risk models.* Submitted · Zenodo [10.5281/zenodo.24012171](https://doi.org/10.5281/zenodo.24012171)
 - **Benchmark — how the battery performs**: Ebrahim, E. K. & El-Kotory, A. (2026).
   *Benchmarking goodness-of-fit and calibration algorithms for logistic regression classifiers: a
   large-scale simulation study under sparse data.* Journal of Intelligent Computing and Data Science
