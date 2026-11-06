@@ -118,8 +118,8 @@ y <- rbinom(n, 1, plogis(-0.7 + qlogis(p) + 0.8 * X$x1 * X$x2))  # new patients
 localize.update(y, p, X, B = 49, seed = 1)   # B = 49 to keep the example fast; use 199 or more
 }
 \references{
-Ebrahim, E. K., El-Kotory, A. and Hussein, O. A. E.-A. (2026). Which update does a clinical
-risk model need? Error-controlled localization of misfit in logistic risk models. Submitted.
+Ebrahim, E. K., Hussein, O. A. E.-A. and El-Kotory, A. (2026). Which update does a clinical
+risk model need? Localization of misfit in logistic risk models. Submitted.
 Reproduction materials: \doi{10.5281/zenodo.24012171}
 
 Holm, S. (1979). A simple sequentially rejective multiple test procedure.

@@ -6,7 +6,7 @@
   is tested against the model already updated for the simpler parts, so a large error in overall risk or slope cannot inflate
   the tests of the more demanding parts. The parts are named by Holm's correction. `COV` gains a main-effects member, so a
   changed coefficient has a test of its own (`main = FALSE` for risks pooled by cross-validation), and `cluster` and `tau` add a
-  centre effect to the reference. Ebrahim, El-Kotory and Hussein (2026, submitted).
+  centre effect to the reference. Ebrahim, Hussein and El-Kotory (2026, submitted).
 * `localize.size()`: the size of each part in percentage points of risk, with its chance level and noise interval, the
   calibration intercept and slope, and the integrated calibration index.
 * Ridge networks, from the package ridgegraph 0.1.1 by Mohammad Arashi, now an author of this

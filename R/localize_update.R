@@ -69,8 +69,8 @@
 #'   usable draws over the parts (a refit that fails is dropped).
 #'
 #' @references
-#' Ebrahim, E. K., El-Kotory, A. and Hussein, O. A. E.-A. (2026). Which update does a clinical
-#' risk model need? Error-controlled localization of misfit in logistic risk models. Submitted.
+#' Ebrahim, E. K., Hussein, O. A. E.-A. and El-Kotory, A. (2026). Which update does a clinical
+#' risk model need? Localization of misfit in logistic risk models. Submitted.
 #' Reproduction materials: \doi{10.5281/zenodo.24012171}
 #'
 #' Holm, S. (1979). A simple sequentially rejective multiple test procedure.
@@ -216,8 +216,8 @@ localize.update <- function(y, p, X, B = 199L, alpha = 0.05, naming = c("holm", 
 #'   Austin and Steyerberg, in percentage points).
 #'
 #' @references
-#' Ebrahim, E. K., El-Kotory, A. and Hussein, O. A. E.-A. (2026). Which update does a clinical
-#' risk model need? Error-controlled localization of misfit in logistic risk models. Submitted.
+#' Ebrahim, E. K., Hussein, O. A. E.-A. and El-Kotory, A. (2026). Which update does a clinical
+#' risk model need? Localization of misfit in logistic risk models. Submitted.
 #' Reproduction materials: \doi{10.5281/zenodo.24012171}
 #'
 #' Austin, P. C. and Steyerberg, E. W. (2019). The Integrated Calibration Index (ICI) and

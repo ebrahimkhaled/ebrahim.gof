@@ -291,8 +291,8 @@
 #'   \code{method} and \code{data.name}.
 #'
 #' @references
-#' Ebrahim, E. K., El-Kotory, A. and Hussein, O. A. E.-A. (2026). Which update does a clinical
-#' risk model need? Error-controlled localization of misfit in logistic risk models. Submitted.
+#' Ebrahim, E. K., Hussein, O. A. E.-A. and El-Kotory, A. (2026). Which update does a clinical
+#' risk model need? Localization of misfit in logistic risk models. Submitted.
 #' Reproduction materials: \doi{10.5281/zenodo.24012171}
 #'
 #' Marcus, R., Peritz, E. and Gabriel, K. R. (1976). On closed testing procedures with special

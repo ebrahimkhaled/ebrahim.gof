@@ -49,8 +49,8 @@ y <- rbinom(n, 1, plogis(-0.7 + qlogis(p)))   # overall risk too high
 localize.size(y, p, X, R = 20, seed = 1)      # R = 20 to keep the example fast; use 200
 }
 \references{
-Ebrahim, E. K., El-Kotory, A. and Hussein, O. A. E.-A. (2026). Which update does a clinical
-risk model need? Error-controlled localization of misfit in logistic risk models. Submitted.
+Ebrahim, E. K., Hussein, O. A. E.-A. and El-Kotory, A. (2026). Which update does a clinical
+risk model need? Localization of misfit in logistic risk models. Submitted.
 Reproduction materials: \doi{10.5281/zenodo.24012171}
 
 Austin, P. C. and Steyerberg, E. W. (2019). The Integrated Calibration Index (ICI) and
