@@ -551,7 +551,7 @@ The methods in this package are described in the following papers by the author
   glaucoma diagnosis.* arXiv:2609.06413
 - **Localization** (`localize.gof()`, `localize.external()`, `localize.update()`, `localize.size()`): Ebrahim, E. K., Hussein, O. A. E.-A. &
   El-Kotory, A. (2026). *Which update does a clinical risk model need? Localization
-  of misfit in logistic risk models.* Submitted · Zenodo [10.5281/zenodo.24012171](https://doi.org/10.5281/zenodo.24012171)
+  of misfit in logistic risk models.* Submitted · Zenodo [10.5281/zenodo.24022697](https://doi.org/10.5281/zenodo.24022697)
 - **Benchmark — how the battery performs**: Ebrahim, E. K. & El-Kotory, A. (2026).
   *Benchmarking goodness-of-fit and calibration algorithms for logistic regression classifiers: a
   large-scale simulation study under sparse data.* Journal of Intelligent Computing and Data Science

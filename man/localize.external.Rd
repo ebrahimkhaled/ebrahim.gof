@@ -146,7 +146,7 @@ localize.external(y, p, X, M = 199, seed = 1)   # M = 199 to keep the example fa
 \references{
 Ebrahim, E. K., Hussein, O. A. E.-A. and El-Kotory, A. (2026). Which update does a clinical
 risk model need? Localization of misfit in logistic risk models. Submitted.
-Reproduction materials: \doi{10.5281/zenodo.24012171}
+Reproduction materials: \doi{10.5281/zenodo.24022697}
 
 Marcus, R., Peritz, E. and Gabriel, K. R. (1976). On closed testing procedures with special
 reference to ordered analysis of variance. \emph{Biometrika}, 63(3), 655--660.
