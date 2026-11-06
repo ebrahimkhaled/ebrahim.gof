@@ -120,7 +120,7 @@ localize.update(y, p, X, B = 49, seed = 1)   # B = 49 to keep the example fast; 
 \references{
 Ebrahim, E. K., Hussein, O. A. E.-A. and El-Kotory, A. (2026). Which update does a clinical
 risk model need? Localization of misfit in logistic risk models. Submitted.
-Reproduction materials: \doi{10.5281/zenodo.24022697}
+Reproduction materials: \doi{10.5281/zenodo.24022813}
 
 Holm, S. (1979). A simple sequentially rejective multiple test procedure.
 \emph{Scandinavian Journal of Statistics}, 6(2), 65--70.
