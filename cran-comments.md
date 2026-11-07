@@ -1,33 +1,21 @@
-## Resubmission
-
-This upload replaces the 3.0.0 submitted earlier today (2026-11-01). That 3.0.0 fixed the MKL
-additional issue but not the linux-arm64 one; this one fixes both. (A first 3.0.0, submitted
-2026-10-28, was archived; its pretests had only the update-frequency NOTE.)
-
-* MKL (deadline 2026-11-21): tests compared two separately computed floating-point results with
-  identical(), which MKL does not reproduce bit for bit; they now use all.equal() tolerance, and
-  the tests that reproduce the BAGofT package exactly run off CRAN only.
-* linux-arm64: tests of localize.external() and localize.gof() compared Monte Carlo p-values with
-  exact counts from the paper's script, and one count differed on arm64; those tests now run off
-  CRAN only.
-
-No package code changed for either fix.
-
 ## Release summary
 
-ebrahim.gof 3.0.0. CRAN currently has 2.10.0. This release adds two exported functions and
-optional arguments to two others; with their defaults, no existing function changes its results.
+ebrahim.gof 3.1.0. CRAN currently has 3.0.0 (published 2026-11-01).
 
-* New `pairscore.gof()`: the pair score test, a score test of whether a fitted logistic model needs
-  the squares and the product of the two covariates that `deepgof1()` selects, calibrated by the same
-  parametric bootstrap (the pair is chosen again in every bootstrap sample).
-* `deepgof1()` gains `score.test = FALSE`; with `TRUE` it also returns the pair score test from the
-  same refits. With the default, every output is unchanged (tested).
-* `legoft()` gains `panel` and `rule`: alternative panels of tests and combination rules, with the
-  same bootstrap calibration. The default is the existing rule, unchanged (tested).
-* New `cavity.gof()`: a leave-one-out Hosmer-Lemeshow test for ridge, lasso and elastic-net logistic
-  regression in high dimensions (Ebrahim and Arashi, 2026, submitted). `glmnet` is added to Suggests
-  and its tests are guarded by skip_if_not_installed().
+Sorry for another update so soon after 3.0.0. The main reason is a bug fix: in 3.0.0, `cavity.gof()` with
+`recalibration = "logistic-normal"` could stop with "system is computationally singular" when the noise
+parameter of the recalibration was weakly identified, which happens mostly under a strong misfit. The
+covariance of the grouped residuals now uses a pseudo-inverse in that case, so the test returns both
+p-values. Results are unchanged whenever 3.0.0 ran. Two manuscripts now being submitted describe the
+functions of this release and cite version 3.1.0.
+
+The release also adds exported functions; with their defaults, no existing function changes its results.
+
+* New `localize.update()` and `localize.size()`: which update a risk model needs on validation data, and the
+  size of each part of the misfit (Ebrahim, Hussein and El-Kotory, 2026, submitted).
+* New ridge network functions, from the package ridgegraph 0.1.1 by Mohammad Arashi, who joins as an
+  author: `ridge_precision()`, `ridge_pcor()`, `effective_penalty()`, `effective_penalty_floor()`,
+  `penalty_for_kappa()`, `extrapolated_ridge()` and `mps_select()`, with a new vignette. No new dependency.
 
 ## Test environments
 
@@ -37,12 +25,10 @@ optional arguments to two others; with their defaults, no existing function chan
 
 0 errors | 0 warnings | 2 notes
 
-* "Number of updates in past 6 months": sorry for the quick succession. This submission fixes the
-  MKL test failures CRAN reported for 2.10.0 and adds the functions that accompany three manuscripts
-  now under submission, in one release, so that readers can run them from CRAN. We do not plan
-  another update for some months.
-* "unable to verify current time" (the check machine was offline for that step). Some DOIs in the
-  Rd files timed out from the same machine; each resolves at doi.org.
+* "Days since last update: 6", "Number of updates in past 6 months: 9": see the release summary above.
+  After this release we plan no further update for several months.
+* "checking for future file timestamps ... unable to verify current time": the check machine could not
+  reach the time server.
 
 ## Reverse dependencies
 
