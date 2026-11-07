@@ -53,7 +53,7 @@ localize.size(y, p, X, R = 20, seed = 1)      # R = 20 to keep the example fast;
 \references{
 Ebrahim, E. K., Hussein, O. A. E.-A. and El-Kotory, A. (2026). Which update does a clinical
 risk model need? Localization of misfit in logistic risk models. Submitted.
-Reproduction materials: \doi{10.5281/zenodo.24022813}
+Reproduction materials: \doi{10.5281/zenodo.24025418}
 
 Austin, P. C. and Steyerberg, E. W. (2019). The Integrated Calibration Index (ICI) and
 related metrics for quantifying the calibration of logistic regression models.
