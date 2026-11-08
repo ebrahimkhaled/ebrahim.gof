@@ -186,7 +186,7 @@ b
 #> EDGE-Belt
 #>   n = 800, G = 32 groups, basis = poly3, form = unit
 #>   statistic = 7.216 on df = 2,  p = 0.02316
-#>   bands at 95%: pointwise +/-1.96, simultaneous +/-3.15
+#>   bands at 95%: pointwise +/-1.96, simultaneous +/-3.17
 #>   groups outside: 0 simultaneous, 1 pointwise (1.6 expected by chance)
 plot(b)
 

@@ -1,6 +1,118 @@
 # Changelog
 
+## ebrahim.gof 3.1.0
+
+CRAN release: 2026-11-07
+
+### New features
+
+- [`localize.update()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/localize.update.md):
+  which update does a risk model need? For frozen predictions on
+  validation data, each part of the misfit is tested against the model
+  already updated for the simpler parts, so a large error in overall
+  risk or slope cannot inflate the tests of the more demanding parts.
+  The parts are named by Holm’s correction. `COV` gains a main-effects
+  member, so a changed coefficient has a test of its own (`main = FALSE`
+  for risks pooled by cross-validation), and `cluster` and `tau` add a
+  centre effect to the reference. Ebrahim, Hussein and El-Kotory (2026,
+  submitted).
+- [`localize.size()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/localize.size.md):
+  the size of each part in percentage points of risk, with its chance
+  level and noise interval, the calibration intercept and slope, and the
+  integrated calibration index.
+- Ridge networks, from the package ridgegraph 0.1.1 by Mohammad Arashi,
+  now an author of this package:
+  [`ridge_precision()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/ridge_precision.md)
+  and
+  [`ridge_pcor()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/ridge_precision.md)
+  give the ridge precision matrix and its partial correlations;
+  [`effective_penalty()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/effective_penalty.md),
+  [`effective_penalty_floor()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/effective_penalty.md)
+  and
+  [`penalty_for_kappa()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/effective_penalty.md)
+  estimate the effective penalty, its limit as the penalty tends to
+  zero, and the penalty that attains a given effective penalty;
+  [`extrapolated_ridge()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/extrapolated_ridge.md)
+  combines two penalties;
+  [`mps_select()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/mps_select.md)
+  selects edges with a multi-penalty permutation threshold. See
+  [`vignette("ridge-networks")`](https://ebrahimkhaled.github.io/ebrahim.gof/articles/ridge-networks.md)
+  and Arashi and Ebrahim (2026, submitted). The results are identical to
+  those of ridgegraph 0.1.1.
+
+### Bug fixes
+
+- [`cavity.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/cavity.gof.md)
+  with `recalibration = "logistic-normal"` could stop with “system is
+  computationally singular” when the noise parameter of the
+  recalibration was weakly identified, which happens mostly under a
+  strong misfit. The covariance of the grouped residuals now uses a
+  pseudo-inverse in that case, so the test returns both p-values.
+  Results are unchanged whenever 3.0.0 ran.
+
+## ebrahim.gof 3.0.0
+
+CRAN release: 2026-11-01
+
+### New features
+
+- [`pairscore.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/pairscore.gof.md):
+  the pair score test, a score test of whether the fitted logistic model
+  needs the squares and the product of the two covariates that
+  [`deepgof1()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/deepgof1.md)
+  selects. The pair is chosen again in every bootstrap sample, so the
+  bootstrap p-value keeps its level; the chi-squared p-value is returned
+  for comparison. The square of a binary covariate is left out. It uses
+  the same bootstrap and random numbers as
+  [`deepgof1()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/deepgof1.md),
+  and `deepgof1(score.test = TRUE)` returns it from the same refits,
+  beside unchanged DeepGOF-1 results (Ebrahim, Hussein and El-Kotory,
+  2026, submitted).
+- [`legoft()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/legoft.md)
+  runs the panels of the panel paper (Ebrahim, “From a panel of
+  goodness-of-fit tests to one decision”). The new argument `panel`
+  combines, with equal weights and the same parametric-bootstrap
+  calibration, one of: `"equal"` (the eleven frozen-rule tests),
+  `"full"` (all fourteen tests), `"classical"` (Hosmer-Lemeshow,
+  Osius-Rojek, le Cessie-van Houwelingen, Stukel, Tsiatis, Xie),
+  `"one.per.group"` (one test from each group of correlated tests) and
+  `"protected"` (Hosmer-Lemeshow, EF, Pigeon-Heyse, le Cessie-van
+  Houwelingen; robust to a few recording errors in a covariate). The
+  default, `panel = "legoft"`, is the frozen rule, unchanged.
+- [`legoft()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/legoft.md)
+  gains `rule = c("cauchy", "hmp", "fisher", "minp")`: the Cauchy
+  combination (default), the harmonic mean p-value, Fisher’s rule or the
+  minimum p-value, all calibrated by the bootstrap.
+- `Stukel`, `Osius-Rojek` and `le-Cessie` can now be named in
+  `legoft(weights = )`.
+- [`cavity.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/cavity.gof.md):
+  the leave-one-out (cavity) Hosmer-Lemeshow test for ridge, lasso and
+  elastic-net logistic regression in high dimensions, including p \> n
+  (Ebrahim and Arashi, 2026, submitted). It groups, recalibrates and
+  standardises on the one-step leave-one-out linear predictor and refers
+  the statistic to chi-squared on G - 2 degrees of freedom; options give
+  the exact weighted reference, a smooth version, the sample-split and
+  cross-fitted tests, and a reference simulated from the fitted model.
+  It reports the share of observations with a twin (repeated rows of
+  predictors) and warns when the closed-form reference is unreliable.
+  `glmnet` is added to Suggests for the lasso and elastic net.
+
+### Tests
+
+- Tests that compared two separately computed floating-point results
+  with [`identical()`](https://rdrr.io/r/base/identical.html) now use
+  [`all.equal()`](https://rdrr.io/r/base/all.equal.html) tolerance:
+  under MKL (CRAN’s MKL check, version 2026.2.0) such results can differ
+  in the last bits from one call to the next. The tests that reproduce
+  the BAGofT package exactly now run off CRAN only, since a near-tie
+  there can be broken differently under MKL. No code changed.
+- The `localize` tests that reproduce the paper’s script compare Monte
+  Carlo p-values with exact counts; they now run off CRAN only, since
+  one count differed on CRAN’s linux-arm64 check.
+
 ## ebrahim.gof 2.10.0
+
+CRAN release: 2026-10-11
 
 ### Behaviour change
 

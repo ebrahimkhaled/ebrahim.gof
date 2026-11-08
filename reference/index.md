@@ -47,9 +47,10 @@ degrees of freedom on the shapes where structured misfit concentrates.
 ## Penalized (ridge) fits
 
 Under a penalty the usual chi-squared references are not merely weak but
-invalid, because shrinkage displaces the grouped residuals. These two
-apply the same correction and differ only in the reference they refer it
-to.
+invalid, because shrinkage displaces the grouped residuals. calm.gof and
+shrink.gof apply the same correction and differ only in the reference
+they refer it to; cavity.gof groups by leave-one-out predictions and
+needs one fit.
 
 - [`calm.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/calm.gof.md)
   : Closed-form goodness-of-fit test for penalized logistic regression
@@ -57,6 +58,27 @@ to.
 - [`shrink.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/shrink.gof.md)
   : Shrinkage-corrected goodness-of-fit test for penalized (ridge)
   logistic regression
+- [`cavity.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/cavity.gof.md)
+  : Leave-one-out (cavity) Hosmer-Lemeshow test for penalised logistic
+  regression
+
+## Ridge networks
+
+Networks read from the ridge estimator of a precision matrix, the
+effective penalty that says which graph they estimate, and edge
+selection.
+
+- [`ridge_precision()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/ridge_precision.md)
+  [`ridge_pcor()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/ridge_precision.md)
+  : Ridge precision matrix and ridge partial correlations
+- [`effective_penalty()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/effective_penalty.md)
+  [`effective_penalty_floor()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/effective_penalty.md)
+  [`penalty_for_kappa()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/effective_penalty.md)
+  : Effective penalty of the ridge precision estimator
+- [`extrapolated_ridge()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/extrapolated_ridge.md)
+  : Extrapolation of ridge precision estimates across penalties
+- [`mps_select()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/mps_select.md)
+  : Multi-penalty permutation selection of edges
 
 ## Pretrained and frozen-weight tests
 
@@ -73,6 +95,8 @@ same p-value. Nothing is retrained at call time.
 - [`deepgof1.external()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/deepgof1.external.md)
   : DeepGOF-1 for frozen predictions: external validation of a risk
   model
+- [`pairscore.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/pairscore.gof.md)
+  : Pair score test: squares and product of the DeepGOF-1 pair
 - [`gof_certificate()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/gof_certificate.md)
   : Can DeepGOF-1 detect this departure? A certificate from the frozen
   weights
@@ -88,6 +112,11 @@ logistic model.
   : Localize the misfit of frozen predictions, with error control
 - [`localize.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/localize.gof.md)
   : Localize the misfit of a fitted logistic model, with error control
+- [`localize.update()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/localize.update.md)
+  : Which update does a risk model need? Localization with the
+  updated-model reference
+- [`localize.size()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/localize.size.md)
+  : How large is each part of a misfit?
 
 ## Comparison tests
 

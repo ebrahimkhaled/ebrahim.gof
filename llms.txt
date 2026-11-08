@@ -57,7 +57,6 @@ for a full walkthrough on the bundled `gof_demo` dataset.
 > **New here? Start with these two lines.**
 >
 > ``` r
->
 > install.packages("ebrahim.gof")   # core battery — nothing else needed
 > library(ebrahim.gof)              # on load, it tells you if any optional
 >                                   # packages are missing and how to add them
@@ -77,7 +76,6 @@ for a full walkthrough on the bundled `gof_demo` dataset.
 Copy and paste this in R or R-studio.
 
 ``` r
-
 # Install devtools if you haven't already
 if (!requireNamespace("devtools", quietly = TRUE)) {
   install.packages("devtools")
@@ -92,7 +90,6 @@ devtools::install_github("ebrahimkhaled/ebrahim.gof")
 The released version is on CRAN:
 
 ``` r
-
 install.packages("ebrahim.gof")
 ```
 
@@ -103,7 +100,6 @@ on GitHub. What each release added is listed in
 ## Quick Start
 
 ``` r
-
 library(ebrahim.gof)
 
 # Example with binary data
@@ -130,7 +126,6 @@ print(result)
 The main function that performs the goodness-of-fit test:
 
 ``` r
-
 ef.gof(y, predicted_probs = NULL, model = NULL, m = NULL, G = 10,
        method = NULL, reference = c("chisq", "normal"), X = NULL, groups = NULL)
 ```
@@ -169,7 +164,6 @@ validation set, pass the outcomes and the predicted probabilities.
 Nothing is refitted, so every test uses its external reference.
 
 ``` r
-
 run.all.external(y, p, G = 10, X = NULL, include_slow = FALSE)
 ```
 
@@ -184,7 +178,6 @@ and the O/E ratio, calibration slope and c-statistic.
 ### `edge.stream()` — monitoring a deployed model
 
 ``` r
-
 s <- edge.stream(p_ref = p_dev, G = 10)   # cut points from the development predictions
 s <- update(s, y_new, p_new)              # each new batch, constant time per patient
 summary(s)                                # the external-mode test on everything seen so far
@@ -200,7 +193,6 @@ Concentrates power on calibration-curve shape directions by projecting
 the grouped residuals onto a small smooth basis.
 
 ``` r
-
 def.gof(object, predicted_probs = NULL, X = NULL, G = 10,
         basis = c("poly3", "poly2", "stukel", "sym", "ensemble"),
         method = c("satterthwaite", "imhof"),
@@ -230,7 +222,6 @@ def.gof(object, predicted_probs = NULL, X = NULL, G = 10,
   redundant.
 
 ``` r
-
 fit <- glm(y ~ x1 + x2, family = binomial())
 def.gof(fit)                                   # default poly3 basis
 def.gof(fit, basis = "sym", weights = "score") # symmetric tail direction, score form
@@ -243,7 +234,6 @@ Combines the three DEF basis tests (optionally the omnibus EF, or extra
 p-values) into one decision via the Cauchy combination test (CCT).
 
 ``` r
-
 def.ensemble.gof(fit)                # CCT of poly2 + poly3 + stukel
 def.ensemble.gof(fit, add_ef = TRUE) # add the omnibus EF
 ```
@@ -254,7 +244,6 @@ Runs a large battery of goodness-of-fit tests and returns one tidy data
 frame (one row per test). A failing test never aborts the run.
 
 ``` r
-
 fit <- glm(low ~ age + lwt + factor(race), data = MASS::birthwt, family = binomial())
 run.all.gof(fit)                       # the default (fast) battery + ensemble rows
 run.all.gof(fit, include_slow = TRUE)  # also the opt-in slow tests
@@ -293,7 +282,6 @@ offers to install any missing package it needs (the default
 `install = "ask"`), and you can install them all up front at any time:
 
 ``` r
-
 gof_install_suggests()                 # asks, then installs only the missing ones
 gof_install_suggests(update = TRUE)    # also update any that are out of date
 gof_install_suggests(ask = FALSE)      # install without a prompt (setup scripts)
@@ -375,7 +363,6 @@ The dashed red line marks the nominal 0.05 size.*
 ### Example 1: Basic Usage with Binary Data
 
 ``` r
-
 library(ebrahim.gof)
 
 # Simulate binary data
@@ -401,7 +388,6 @@ print(result)
 ### Example 2: Compare Different Group Numbers
 
 ``` r
-
 # Test with different numbers of groups
 results <- data.frame(
   Groups = c(4, 10, 20),
@@ -417,7 +403,6 @@ print(results)
 ### Example 3: Comparison with Hosmer-Lemeshow Test
 
 ``` r
-
 library(ResourceSelection)
 
 # Ebrahim-Farrington test
@@ -437,7 +422,6 @@ print(comparison)
 ### Example 4: Power Analysis
 
 ``` r
-
 # Function to simulate misspecified model
 simulate_power <- function(n, beta_quad = 0.1, n_sims = 100) {
   rejections <- 0
@@ -475,7 +459,6 @@ print(power_results)
 ### Example 5: Run the whole battery at once (`run.all.gof`)
 
 ``` r
-
 library(ebrahim.gof)
 
 # a model on the classic low-birth-weight data
@@ -497,7 +480,6 @@ run.all.gof(fit, tests = c("EF", "DEF.poly3", "Tsiatis", "HL"))
 ### Example 6: Directed test and the ensemble (`def.gof`, `def.ensemble.gof`)
 
 ``` r
-
 set.seed(1)
 n <- 800
 x <- runif(n, -3, 3)
@@ -592,7 +574,6 @@ tests. Their resampling loops can be spread across CPU cores with a
 single flag:
 
 ``` r
-
 # run just the bootstrap test on 4 workers
 run.all.gof(fit, tests = "Stute-Zhu", parallel = TRUE, ncores = 4,
             control = list("Stute-Zhu" = list(B = 2000)))
@@ -688,11 +669,13 @@ author (please cite the relevant one alongside the package):
   application to glaucoma diagnosis.* arXiv:2609.06413
 - **Localization**
   ([`localize.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/localize.gof.md),
-  [`localize.external()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/localize.external.md)):
-  Ebrahim, E. K., El-Kotory, A. & Hussein, O. A. E.-A. (2026). *One
-  goodness-of-fit test is not enough: error-controlled localization of
-  misfit in logistic risk models.* Preprint · Zenodo
-  [10.5281/zenodo.23192535](https://doi.org/10.5281/zenodo.23192535)
+  [`localize.external()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/localize.external.md),
+  [`localize.update()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/localize.update.md),
+  [`localize.size()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/localize.size.md)):
+  Ebrahim, E. K., Hussein, O. A. E.-A. & El-Kotory, A. (2026). *Which
+  update does a clinical risk model need? Localization of misfit in
+  logistic risk models.* Submitted · Zenodo
+  [10.5281/zenodo.24025418](https://doi.org/10.5281/zenodo.24025418)
 - **Benchmark — how the battery performs**: Ebrahim, E. K. &
   El-Kotory, A. (2026). *Benchmarking goodness-of-fit and calibration
   algorithms for logistic regression classifiers: a large-scale
@@ -737,7 +720,6 @@ release accompanying the papers). To install that exact version later,
 so the published examples reproduce even after newer releases:
 
 ``` r
-
 remotes::install_version("ebrahim.gof", version = "2.4.0")
 ```
 
@@ -790,9 +772,10 @@ degrees of freedom on the shapes where structured misfit concentrates.
 ## Penalized (ridge) fits
 
 Under a penalty the usual chi-squared references are not merely weak but
-invalid, because shrinkage displaces the grouped residuals. These two
-apply the same correction and differ only in the reference they refer it
-to.
+invalid, because shrinkage displaces the grouped residuals. calm.gof and
+shrink.gof apply the same correction and differ only in the reference
+they refer it to; cavity.gof groups by leave-one-out predictions and
+needs one fit.
 
 - [`calm.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/calm.gof.md)
   : Closed-form goodness-of-fit test for penalized logistic regression
@@ -800,6 +783,27 @@ to.
 - [`shrink.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/shrink.gof.md)
   : Shrinkage-corrected goodness-of-fit test for penalized (ridge)
   logistic regression
+- [`cavity.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/cavity.gof.md)
+  : Leave-one-out (cavity) Hosmer-Lemeshow test for penalised logistic
+  regression
+
+## Ridge networks
+
+Networks read from the ridge estimator of a precision matrix, the
+effective penalty that says which graph they estimate, and edge
+selection.
+
+- [`ridge_precision()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/ridge_precision.md)
+  [`ridge_pcor()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/ridge_precision.md)
+  : Ridge precision matrix and ridge partial correlations
+- [`effective_penalty()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/effective_penalty.md)
+  [`effective_penalty_floor()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/effective_penalty.md)
+  [`penalty_for_kappa()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/effective_penalty.md)
+  : Effective penalty of the ridge precision estimator
+- [`extrapolated_ridge()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/extrapolated_ridge.md)
+  : Extrapolation of ridge precision estimates across penalties
+- [`mps_select()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/mps_select.md)
+  : Multi-penalty permutation selection of edges
 
 ## Pretrained and frozen-weight tests
 
@@ -816,6 +820,8 @@ same p-value. Nothing is retrained at call time.
 - [`deepgof1.external()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/deepgof1.external.md)
   : DeepGOF-1 for frozen predictions: external validation of a risk
   model
+- [`pairscore.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/pairscore.gof.md)
+  : Pair score test: squares and product of the DeepGOF-1 pair
 - [`gof_certificate()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/gof_certificate.md)
   : Can DeepGOF-1 detect this departure? A certificate from the frozen
   weights
@@ -831,6 +837,11 @@ logistic model.
   : Localize the misfit of frozen predictions, with error control
 - [`localize.gof()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/localize.gof.md)
   : Localize the misfit of a fitted logistic model, with error control
+- [`localize.update()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/localize.update.md)
+  : Which update does a risk model need? Localization with the
+  updated-model reference
+- [`localize.size()`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/localize.size.md)
+  : How large is each part of a misfit?
 
 ## Comparison tests
 
@@ -897,3 +908,5 @@ calibration likelihood-ratio test.
   Test](https://ebrahimkhaled.github.io/ebrahim.gof/articles/ebrahim-farrington-intro.md):
 - [Further examples: grouped data, the EF read-out, monitoring and ridge
   fits](https://ebrahimkhaled.github.io/ebrahim.gof/articles/extensions.md):
+- [Ridge networks: effective penalty and edge
+  selection](https://ebrahimkhaled.github.io/ebrahim.gof/articles/ridge-networks.md):

@@ -189,10 +189,10 @@ test the updated (frozen) model on the other half with this function.
 
 ## References
 
-Ebrahim, E. K., El-Kotory, A. and Hussein, O. A. E.-A. (2026). One
-goodness-of-fit test is not enough: error-controlled localization of
-misfit in logistic risk models. Preprint. Reproduction materials:
-[doi:10.5281/zenodo.23192535](https://doi.org/10.5281/zenodo.23192535)
+Ebrahim, E. K., Hussein, O. A. E.-A. and El-Kotory, A. (2026). Which
+update does a clinical risk model need? Localization of misfit in
+logistic risk models. Submitted. Reproduction materials:
+[doi:10.5281/zenodo.24025418](https://doi.org/10.5281/zenodo.24025418)
 
 Marcus, R., Peritz, E. and Gabriel, K. R. (1976). On closed testing
 procedures with special reference to ordered analysis of variance.
@@ -218,6 +218,10 @@ size and shrinkage. *Statistics in Medicine*, 23(16), 2567–2586.
 
 ## See also
 
+[`localize.update`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/localize.update.md)
+when the error may be large, as after transport, and
+[`localize.size`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/localize.size.md)
+for the size of each part;
 [`localize.gof`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/localize.gof.md)
 for a fitted model checked on its own data;
 [`deepgof1.external`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/deepgof1.external.md)

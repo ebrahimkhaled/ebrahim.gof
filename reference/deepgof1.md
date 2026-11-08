@@ -16,7 +16,8 @@ deepgof1(
   B = 199L,
   K = 6L,
   reading = c("axes", "allpairs", "combined", "columns"),
-  covariates = NULL
+  covariates = NULL,
+  score.test = FALSE
 )
 ```
 
@@ -48,6 +49,14 @@ deepgof1(
   from, for the all-pairs and combined readings. By default every
   covariate of the model that is not constant is used.
 
+- score.test:
+
+  if `TRUE`, also compute
+  [`pairscore.gof`](https://ebrahimkhaled.github.io/ebrahim.gof/reference/pairscore.gof.md),
+  the pair score test of the squares and product of the pair the axis
+  rule selects, from the same bootstrap refits. The other results are
+  unchanged. Not available for `reading = "columns"`.
+
 ## Value
 
 An object of class `"deepgof1"`: a list with `statistic` (the observed
@@ -57,7 +66,8 @@ standardized residual sums whose rows follow the first axis), `pairs`
 (for the all-pairs and combined readings, the observed score of every
 pair), `components` (for `"combined"`, the p-values of the axis rule and
 the all-pairs reading), `boot` (the `B` bootstrap statistics of the
-reported statistic) and `method`.
+reported statistic) and `method`; with `score.test = TRUE`, also
+`score.test`, a `"pairscore.gof"` object.
 
 ## Details
 

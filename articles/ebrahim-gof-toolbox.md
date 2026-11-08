@@ -34,7 +34,6 @@ low-dimensional calibration distortion — exactly the misfit a *directed*
 test is built to detect and an *omnibus* test tends to miss.
 
 ``` r
-
 data("gof_demo", package = "ebrahim.gof")
 str(gof_demo)
 #> 'data.frame':    800 obs. of  5 variables:
@@ -57,7 +56,6 @@ installed or resampled while the vignette builds; tests whose optional
 package is not present are simply skipped.
 
 ``` r
-
 set.seed(1)
 battery <- run.all.gof(fit, include_slow = FALSE, install = "no")
 battery
@@ -128,7 +126,6 @@ to one line per family, with the number of rejections and the smallest
 p-value in each:
 
 ``` r
-
 summary(battery)
 #> 
 #> Goodness-of-fit battery by family: 25 tests, 25 with a p-value, 18 reject at
@@ -172,7 +169,6 @@ about 0.17) while the grouped deviance rejects (p about 0.04), with the
 degrees of freedom dropping from 795 to 323:
 
 ``` r
-
 data("gof_demo_grouped", package = "ebrahim.gof")
 fit_g <- glm(outcome ~ age + bmi + sex + treatment,
              data = gof_demo_grouped, family = binomial)
@@ -247,7 +243,6 @@ Each test is also callable directly. The EDGE test projects the grouped
 standardized residuals onto a small basis of smooth calibration shapes:
 
 ``` r
-
 edge.gof(fit)                 # directed EDGE test (poly3 basis)
 #>   Test           Partition    Role Basis Test_Statistic       df        Method
 #> 1 EDGE    default (G = 32) verdict poly3      11.208214 2.014108 satterthwaite
@@ -271,7 +266,6 @@ The Cauchy-combination ensemble pools the directed bases into a single
 p-value:
 
 ``` r
-
 def.ensemble.gof(fit)
 #>           Test Combiner         Components k     p_value
 #> 1 DEF ensemble      cct poly2+poly3+stukel 3 0.006959379
@@ -289,7 +283,6 @@ standard deviations, which the fit makes smaller than one, and the
 legend calls the band approximate; for frozen predictions it is exact.
 
 ``` r
-
 e <- edge.gof(fit)
 plot(e)
 ```
@@ -312,7 +305,6 @@ is the battery for this setting. Here the first half of `gof_demo` plays
 the development data and the second half the validation data.
 
 ``` r
-
 dev <- gof_demo[1:400, ]
 val <- gof_demo[401:800, ]
 covs <- c("age", "bmi", "sex", "treatment")
@@ -361,7 +353,6 @@ EDGE picture shows how far each group is from its prediction, on the
 event-rate scale:
 
 ``` r
-
 e_ext <- edge.gof(y = val$outcome, predicted_probs = p_val, external = TRUE)
 e_ext
 #>   Test           Partition    Role Basis Test_Statistic df   Method   p_value
@@ -390,7 +381,6 @@ script or a report, call
 [`plot()`](https://rdrr.io/r/graphics/plot.default.html) explicitly.
 
 ``` r
-
 loc <- localize.gof(fit, B = 199, seed = 1)
 loc
 #> 
@@ -414,7 +404,6 @@ plot(loc)
 ![](ebrahim-gof-toolbox_files/figure-html/localize-1.png)
 
 ``` r
-
 loc_ext <- localize.external(val$outcome, p_val, val[, covs], M = 199, seed = 1)
 plot(loc_ext)
 ```
@@ -431,7 +420,6 @@ the one computed on all records at once. The groups are fixed in advance
 from reference predictions.
 
 ``` r
-
 set.seed(2)
 s <- edge.stream(p_ref = p_val, G = 10)
 for (day in 1:60) {                       # 100 patients a day
@@ -469,7 +457,6 @@ is wrong. Two functions apply the same correction and differ only in
 what they refer it to.
 
 ``` r
-
 set.seed(4)
 n <- 300; p <- 8
 X <- matrix(rnorm(n * p), n, p)

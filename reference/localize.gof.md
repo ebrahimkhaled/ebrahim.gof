@@ -137,10 +137,10 @@ size.
 
 ## References
 
-Ebrahim, E. K., El-Kotory, A. and Hussein, O. A. E.-A. (2026). One
-goodness-of-fit test is not enough: error-controlled localization of
-misfit in logistic risk models. Preprint. Reproduction materials:
-[doi:10.5281/zenodo.23192535](https://doi.org/10.5281/zenodo.23192535)
+Ebrahim, E. K., Hussein, O. A. E.-A. and El-Kotory, A. (2026). Which
+update does a clinical risk model need? Localization of misfit in
+logistic risk models. Submitted. Reproduction materials:
+[doi:10.5281/zenodo.24025418](https://doi.org/10.5281/zenodo.24025418)
 
 Marcus, R., Peritz, E. and Gabriel, K. R. (1976). On closed testing
 procedures with special reference to ordered analysis of variance.

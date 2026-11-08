@@ -8,3 +8,5 @@
   Test](https://ebrahimkhaled.github.io/ebrahim.gof/articles/ebrahim-farrington-intro.md):
 - [Further examples: grouped data, the EF read-out, monitoring and ridge
   fits](https://ebrahimkhaled.github.io/ebrahim.gof/articles/extensions.md):
+- [Ridge networks: effective penalty and edge
+  selection](https://ebrahimkhaled.github.io/ebrahim.gof/articles/ridge-networks.md):

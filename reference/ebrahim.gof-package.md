@@ -119,6 +119,12 @@ and
 **Maintainer**: Ebrahim Khaled Ebrahim <ebrahimkhaled@alexu.edu.eg>
 ([ORCID](https://orcid.org/0009-0006-7839-8778))
 
+Authors:
+
+- Mohammad Arashi <arashi@um.ac.ir>
+  ([ORCID](https://orcid.org/0000-0002-5881-9241)) (author of the ridge
+  network functions in R/ridgegraph.R)
+
 Other contributors:
 
 - Jiawei Zhang (author of the BAGofT package code adapted in

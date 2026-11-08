@@ -14,7 +14,6 @@ The working model enters age linearly, so it is wrong in a smooth way,
 in one covariate, by design.
 
 ``` r
-
 library("ebrahim.gof")
 data("gof_demo", package = "ebrahim.gof")
 fit <- glm(outcome ~ age + bmi + sex + treatment, data = gof_demo,
@@ -40,7 +39,6 @@ values. (Bins of 5 years were tried first and gave no change of
 verdict.) The 800 records share 328 covariate patterns.
 
 ``` r
-
 data("gof_demo_grouped", package = "ebrahim.gof")
 fit_g <- glm(outcome ~ age + bmi + sex + treatment,
   data = gof_demo_grouped, family = binomial)
@@ -93,7 +91,6 @@ directional read-out `c = b r`. Their sum is the removed part
 grouping draws nothing at random.
 
 ``` r
-
 ef <- ef.gof(fit, G = "auto", reference = "normal")
 ef
 #>                 Test Test_Statistic df Reference    p_value  G       HL
@@ -138,7 +135,6 @@ the map from score to risk. `dealias = TRUE` removes from the `LINK`
 bases what the covariates explain.
 
 ``` r
-
 loc_d <- localize.gof(fit, B = 199, seed = 1, dealias = TRUE)
 loc_d
 #> 
@@ -180,7 +176,6 @@ calibration intercept and the slope drift. Each day the stream is
 updated with the new records only.
 
 ``` r
-
 set.seed(2)
 p_dev <- plogis(rnorm(5000, -1.5, 1))
 s <- edge.stream(p_ref = p_dev, G = 10)
@@ -203,7 +198,6 @@ first on day 33, three days after the drift begins, and is about 6e-35
 on day 60.
 
 ``` r
-
 lp10 <- -log10(pmax(pv_day, 1e-300))
 op <- par(mar = c(3.6, 3.9, 0.6, 0.6), mgp = c(2.4, 0.6, 0), las = 1)
 plot(1:60, lp10, type = "n", xlab = "Day of deployment",
@@ -218,7 +212,6 @@ lines(1:60, lp10, type = "s", lwd = 1.6, col = "#0072B2")
 steeply after it.](extensions_files/figure-html/stream-plot-1.png)
 
 ``` r
-
 par(op)
 ```
 
@@ -243,7 +236,6 @@ covariates, five of which carry the signal; the logistic model is
 correct.
 
 ``` r
-
 set.seed(4)
 n <- 400
 k <- 80
@@ -260,7 +252,6 @@ value). With `uncorrected = TRUE`,
 also prints the p-values of the usual references.
 
 ``` r
-
 shrink.gof(Xr, yr, lambda = 40, B = 199, seed = 1,
   uncorrected = TRUE)
 #> 
@@ -278,7 +269,6 @@ The corrected statistics do not (p = 0.2650 and 0.1250).
 replaces the 199 refits by a closed-form reference:
 
 ``` r
-
 calm.gof(Xr, yr, lambda = 40, basis = "adaptive")
 #> 
 #> CALM: closed-form goodness of fit for penalized logistic regression
@@ -295,7 +285,6 @@ scale gives the same result, while `lambda = 0.1` on the default scale
 is a penalty 400 times weaker and tests another fit:
 
 ``` r
-
 a1 <- calm.gof(Xr, yr, lambda = 40, basis = "adaptive")
 a2 <- calm.gof(Xr, yr, lambda = 0.1, lambda_scale = "glmnet",
   basis = "adaptive")

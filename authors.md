@@ -5,6 +5,10 @@
 - **Ebrahim Khaled Ebrahim**. Author, maintainer.
   [](https://orcid.org/0009-0006-7839-8778)
 
+- **Mohammad Arashi**. Author.
+  [](https://orcid.org/0000-0002-5881-9241)  
+  author of the ridge network functions in R/ridgegraph.R
+
 - **Jiawei Zhang**. Contributor, copyright holder.  
   author of the BAGofT package code adapted in R/bagoft_fast.R
 
@@ -20,14 +24,14 @@ Source:
 [`inst/CITATION`](https://github.com/ebrahimkhaled/ebrahim.gof/blob/main/inst/CITATION)
 
 Ebrahim, E. K. (2026). ebrahim.gof: Goodness-of-Fit and Calibration
-Tests for Logistic Regression. R package version 2.10.0.
+Tests for Logistic Regression. R package version 3.1.0.
 https://CRAN.R-project.org/package=ebrahim.gof
 
     @Manual{,
       title = {{ebrahim.gof}: Goodness-of-Fit and Calibration Tests for Logistic Regression},
       author = {Ebrahim Khaled Ebrahim},
       year = {2026},
-      note = {R package version 2.10.0},
+      note = {R package version 3.1.0},
       url = {https://CRAN.R-project.org/package=ebrahim.gof},
     }
 

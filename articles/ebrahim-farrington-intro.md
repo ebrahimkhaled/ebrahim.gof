@@ -27,7 +27,6 @@ binary data.
 ## Installation and Loading
 
 ``` r
-
 # Install from GitHub
 devtools::install_github("ebrahimkhaled/ebrahim.gof")
 
@@ -36,7 +35,6 @@ library(ebrahim.gof)
 ```
 
 ``` r
-
 library(ebrahim.gof)
 ```
 
@@ -47,7 +45,6 @@ The main function
 performs the goodness-of-fit test:
 
 ``` r
-
 # Simulate binary data
 set.seed(123)
 n <- 500
@@ -89,7 +86,6 @@ The null hypothesis is that the model fits the data adequately.
 The number of groups $`G`$ can affect the test’s performance:
 
 ``` r
-
 # Test with different numbers of groups
 group_sizes <- c(4, 8, 10, 15, 20)
 results <- data.frame(
@@ -113,7 +109,6 @@ Let’s compare the Ebrahim-Farrington test with the traditional
 Hosmer-Lemeshow test:
 
 ``` r
-
 # Hosmer-Lemeshow test (requires ResourceSelection package)
 if (requireNamespace("ResourceSelection", quietly = TRUE)) {
   library(ResourceSelection)
@@ -149,7 +144,6 @@ combines the DEF bases via the Cauchy combination test, and
 runs a whole battery of GOF tests at once.
 
 ``` r
-
 # Directed Ebrahim-Farrington test (takes the fitted model)
 def.gof(model)                       # default poly3 basis
 #>                          Test Basis Test_Statistic       df        Method
@@ -174,7 +168,6 @@ returns one tidy data frame, one row per test (here the fast battery;
 the slow tests are shown below):
 
 ``` r
-
 run.all.gof(model, include_slow = FALSE)
 #> 
 #> Goodness-of-fit battery: 25 tests  (0 reject at 0.05)
@@ -286,7 +279,6 @@ columns is the tests’ behaviour and not the noise between two separate
 runs. The data carry a quadratic term; the fitted model omits it.
 
 ``` r
-
 set.seed(2026)
 
 power_paired <- function(n, beta_quad = 0.15, n_sims = 200, G = 10) {
@@ -328,7 +320,6 @@ For datasets with grouped observations (multiple trials per covariate
 pattern), you can use the original Farrington test:
 
 ``` r
-
 # Simulate grouped data
 set.seed(456)
 n_groups <- 30
