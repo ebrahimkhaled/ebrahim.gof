@@ -38,11 +38,13 @@ reference:
 - title: Penalized (ridge) fits
   desc: >
     Under a penalty the usual chi-squared references are not merely weak but
-    invalid, because shrinkage displaces the grouped residuals. These two apply
-    the same correction and differ only in the reference they refer it to.
+    invalid, because shrinkage displaces the grouped residuals. calm.gof and
+    shrink.gof apply the same correction and differ only in the reference they
+    refer it to; cavity.gof groups by leave-one-out predictions and needs one fit.
   contents:
   - calm.gof
   - shrink.gof
+  - cavity.gof
 
 - title: Ridge networks
   desc: >
@@ -63,6 +65,7 @@ reference:
   - legoft.localize
   - deepgof1
   - deepgof1.external
+  - pairscore.gof
   - gof_certificate
 
 - title: Localizing the misfit
